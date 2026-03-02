@@ -1,0 +1,21 @@
+GIMP Palette
+Name: OSPOS
+Columns: 4
+#
+ 37  99 235	Primary Blue
+ 29  78 216	Primary Dark
+219 234 254	Primary Light
+ 22 163  74	Success Green
+220 252 231	Success Light
+220  38  38	Error Red
+254 226 226	Error Light
+245 158  11	Warning Amber
+254 243 199	Warning Light
+255 255 255	Background White
+249 250 251	Surface
+229 231 235	Border
+ 17  24  39	Text Primary
+107 114 128	Text Secondary
+209 213 219	Text Disabled
+  5 150 105	Cash Green
+  0   0   0	True Black

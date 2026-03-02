@@ -1,0 +1,119 @@
+appId: com.ospos.app
+name: "Sim 1 — Quick Sale (1 item, exact cash)"
+tags:
+  - simulation
+---
+# Onboarding
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      text: "How do you want to get paid?"
+    timeout: 120000
+- tapOn:
+    text: "Free \u2014 Cash Only"
+- extendedWaitUntil:
+    visible:
+      text: "Order"
+    timeout: 20000
+
+# Go to Menu tab
+- tapOn: "Menu"
+- extendedWaitUntil:
+    visible:
+      text: "+ Add Item"
+    timeout: 8000
+- takeScreenshot: "sim01-empty-menu"
+
+# Item 1: Coffee $4.50
+- tapOn: "+ Add Item"
+- extendedWaitUntil:
+    visible:
+      text: "Save"
+    timeout: 5000
+- tapOn:
+    id: "input-item-name"
+- eraseText: 20
+- inputText: "Coffee"
+- tapOn:
+    id: "input-item-price"
+- eraseText: 10
+- inputText: "4.50"
+- hideKeyboard
+- tapOn: "Save"
+- extendedWaitUntil:
+    visible:
+      text: "Coffee"
+    timeout: 8000
+
+# Item 2: Tacos $8.00
+- tapOn: "+ Add Item"
+- extendedWaitUntil:
+    visible:
+      text: "Save"
+    timeout: 5000
+- tapOn:
+    id: "input-item-name"
+- eraseText: 20
+- inputText: "Tacos"
+- tapOn:
+    id: "input-item-price"
+- eraseText: 10
+- inputText: "8.00"
+- hideKeyboard
+- tapOn: "Save"
+- extendedWaitUntil:
+    visible:
+      text: "Tacos"
+    timeout: 8000
+- takeScreenshot: "sim01-menu-ready"
+
+# Go sell
+- tapOn: "Start Selling"
+- extendedWaitUntil:
+    visible:
+      text: "Coffee"
+    timeout: 5000
+- takeScreenshot: "sim01-order-with-items"
+
+# Quick sale: tap Coffee
+- tapOn: "Coffee"
+- takeScreenshot: "sim01-coffee-added"
+
+# Charge
+- tapOn:
+    text: "Charge.*"
+- extendedWaitUntil:
+    visible:
+      text: "No Tip"
+    timeout: 8000
+- takeScreenshot: "sim01-payment-screen"
+
+# Skip tip
+- tapOn: "No Tip"
+
+# Cash payment
+- tapOn:
+    text: "Cash"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      text: "Exact Cash"
+    timeout: 5000
+- takeScreenshot: "sim01-cash-modal"
+- tapOn: "Exact Cash"
+
+# Receipt
+- extendedWaitUntil:
+    visible:
+      text: "Payment Complete"
+    timeout: 10000
+- takeScreenshot: "sim01-receipt"
+
+# New order
+- tapOn: "New Order"
+- extendedWaitUntil:
+    visible:
+      text: "Coffee"
+    timeout: 5000
+- takeScreenshot: "sim01-done"

@@ -1,30 +1,93 @@
 {
   "expo": {
-    "name": "ospos",
+    "name": "OSPOS",
     "slug": "ospos",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/brand/icon-app.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "ospos",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/brand/splash-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#09090B"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ospos.app",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.proximity-reader.payment.acceptance": true
+      },
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "OSPOS uses Bluetooth to connect to card readers and receipt printers.",
+        "NSBluetoothPeripheralUsageDescription": "OSPOS uses Bluetooth to connect to card readers and receipt printers.",
+        "NSCameraUsageDescription": "OSPOS uses the camera to take photos of menu items and dispute evidence.",
+        "NSLocationWhenInUseUsageDescription": "OSPOS uses location for Stripe Terminal reader discovery.",
+        "NFCReaderUsageDescription": "OSPOS uses NFC for Tap to Pay card payments.",
+        "NSPhotoLibraryUsageDescription": "OSPOS accesses photos for menu item images and dispute evidence."
+      }
     },
     "android": {
+      "package": "com.ospos.app",
+      "versionCode": 1,
+      "minSdkVersion": 26,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#09090B",
+        "foregroundImage": "./assets/brand/icon-app-foreground.png"
       },
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.NFC",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-sharing",
+      "expo-image-picker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/brand/icon-app.png",
+          "color": "#34c759"
+        }
+      ],
+      [
+        "@stripe/stripe-terminal-react-native",
+        {
+          "tapToPayEnabled": true
+        }
+      ],
+      "react-native-ble-plx",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "phil-zamarripa"
+        }
+      ],
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "11e30bb6-7b87-4ce3-b53a-dbc510dc8220"
+      }
+    },
+    "owner": "pzapzap"
   }
 }

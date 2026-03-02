@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSPOS — Free Point of Sale for Your Phone</title>
+  <meta name="description" content="Free, open source point of sale app. Take orders, accept card payments, see your sales. No monthly fees.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0c;
+      --surface: #161618;
+      --border: #2a2a2e;
+      --text: #f0f0f0;
+      --text-secondary: #8e8e93;
+      --text-muted: #5a5a5e;
+      --primary: #34c759;
+      --primary-dark: #2aa048;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 80px 0 60px;
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 span {
+      color: var(--primary);
+    }
+
+    .hero p {
+      font-size: 20px;
+      color: var(--text-secondary);
+      max-width: 500px;
+      margin: 0 auto 40px;
+    }
+
+    .download-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .download-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .download-btn:hover { opacity: 0.85; }
+
+    .download-btn.primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .download-btn.secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* Features */
+    .features {
+      padding: 60px 0;
+    }
+
+    .features h2 {
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+    }
+
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .feature h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .feature p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Pricing */
+    .pricing {
+      padding: 60px 0;
+      text-align: center;
+    }
+
+    .pricing h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .pricing .subtitle {
+      color: var(--text-secondary);
+      font-size: 17px;
+      margin-bottom: 40px;
+    }
+
+    .pricing-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .pricing-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: left;
+    }
+
+    .pricing-card.highlight {
+      border-color: var(--primary);
+    }
+
+    .pricing-card h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .pricing-card .price {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    .pricing-card .price span {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .pricing-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .pricing-card li {
+      font-size: 14px;
+      color: var(--text-secondary);
+      padding: 4px 0;
+    }
+
+    .pricing-card li::before {
+      content: '✓ ';
+      color: var(--primary);
+    }
+
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    footer p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 36px; }
+      .hero p { font-size: 17px; }
+      .pricing-cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <section class="hero">
+      <h1><span>OSPOS</span></h1>
+      <p>Free point of sale for your phone. Take orders, accept card payments, see your sales. No monthly fees. Open source.</p>
+      <div class="download-buttons">
+        <a href="#" class="download-btn primary">App Store</a>
+        <a href="#" class="download-btn primary">Google Play</a>
+        <a href="https://github.com/ospos/ospos" class="download-btn secondary">GitHub</a>
+      </div>
+    </section>
+
+    <section class="features">
+      <h2>What OSPOS does</h2>
+      <div class="feature-grid">
+        <div class="feature">
+          <h3>Build your menu</h3>
+          <p>Add items with names, prices, and photos. Edit or remove anytime.</p>
+        </div>
+        <div class="feature">
+          <h3>Take orders fast</h3>
+          <p>Tap items to build an order. Haptic feedback on every tap. Designed for speed.</p>
+        </div>
+        <div class="feature">
+          <h3>Accept payments</h3>
+          <p>Cash or card. Tap to Pay on iPhone and Android, or connect a Bluetooth reader.</p>
+        </div>
+        <div class="feature">
+          <h3>See your sales</h3>
+          <p>Daily summary, transaction history, CSV export. All your data on your phone.</p>
+        </div>
+        <div class="feature">
+          <h3>Send receipts</h3>
+          <p>Text, email, or print to a Bluetooth thermal printer.</p>
+        </div>
+        <div class="feature">
+          <h3>Works offline</h3>
+          <p>Cash transactions work without internet. Card payments sync when you're back online.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pricing">
+      <h2>Simple pricing</h2>
+      <p class="subtitle">No monthly fees. No hidden costs.</p>
+      <div class="pricing-cards">
+        <div class="pricing-card">
+          <h3>Free</h3>
+          <div class="price">$0 <span>forever</span></div>
+          <ul>
+            <li>Cash payments</li>
+            <li>Unlimited items</li>
+            <li>Daily sales summary</li>
+            <li>CSV export</li>
+            <li>Auto-backup</li>
+            <li>Works offline</li>
+          </ul>
+        </div>
+        <div class="pricing-card highlight">
+          <h3>Card Payments</h3>
+          <div class="price">1% <span>per transaction</span></div>
+          <ul>
+            <li>Everything in Free</li>
+            <li>Tap to Pay</li>
+            <li>Bluetooth reader</li>
+            <li>SMS + email receipts</li>
+            <li>Cloud backup</li>
+            <li>Refund management</li>
+            <li>Dispute handling</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>OSPOS is open source software, MIT licensed.</p>
+      <div class="footer-links">
+        <a href="https://github.com/ospos/ospos">GitHub</a>
+        <a href="mailto:hello@ospos.app">Contact</a>
+        <a href="https://ospos.app/privacy">Privacy</a>
+      </div>
+    </footer>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,57 @@
+appId: com.ospos.app
+name: "Sim 3 — Single item with 20% tip"
+tags:
+  - simulation
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      text: "Order"
+    timeout: 30000
+- tapOn: "Order"
+- extendedWaitUntil:
+    visible:
+      text: "Coffee"
+    timeout: 10000
+
+# Order one Tacos
+- tapOn: "Tacos"
+- takeScreenshot: "sim03-tacos-order"
+
+# Charge $8.00
+- tapOn:
+    text: "Charge.*"
+- extendedWaitUntil:
+    visible:
+      text: "No Tip"
+    timeout: 8000
+
+# Select 20% tip ($1.60)
+- tapOn: "20%"
+- takeScreenshot: "sim03-tip-selected"
+
+# Cash payment — exact cash
+- tapOn:
+    text: "Cash"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      text: "Exact Cash"
+    timeout: 5000
+- takeScreenshot: "sim03-cash-with-tip"
+- tapOn: "Exact Cash"
+
+# Receipt
+- extendedWaitUntil:
+    visible:
+      text: "Payment Complete"
+    timeout: 10000
+- takeScreenshot: "sim03-receipt"
+
+# Back to order
+- tapOn: "New Order"
+- extendedWaitUntil:
+    visible:
+      text: "Coffee"
+    timeout: 5000
+- takeScreenshot: "sim03-done"

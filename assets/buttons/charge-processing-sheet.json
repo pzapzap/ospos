@@ -1,0 +1,47 @@
+{ "frames": [
+   {
+    "filename": "charge-processing 0.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 200, "h": 56 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 200, "h": 56 },
+    "sourceSize": { "w": 200, "h": 56 },
+    "duration": 150
+   },
+   {
+    "filename": "charge-processing 1.aseprite",
+    "frame": { "x": 200, "y": 0, "w": 200, "h": 56 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 200, "h": 56 },
+    "sourceSize": { "w": 200, "h": 56 },
+    "duration": 150
+   },
+   {
+    "filename": "charge-processing 2.aseprite",
+    "frame": { "x": 400, "y": 0, "w": 200, "h": 56 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 200, "h": 56 },
+    "sourceSize": { "w": 200, "h": 56 },
+    "duration": 150
+   },
+   {
+    "filename": "charge-processing 3.aseprite",
+    "frame": { "x": 600, "y": 0, "w": 200, "h": 56 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 200, "h": 56 },
+    "sourceSize": { "w": 200, "h": 56 },
+    "duration": 150
+   }
+ ],
+ "meta": {
+  "app": "http://www.aseprite.org/",
+  "version": "1.x-dev",
+  "image": "charge-processing-sheet.png",
+  "format": "RGBA8888",
+  "size": { "w": 800, "h": 56 },
+  "scale": "1"
+ }
+}

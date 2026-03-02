@@ -1,0 +1,40 @@
+{
+  "name": "ospos-server",
+  "version": "1.0.0",
+  "description": "OSPOS backend API server",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "migrate": "tsx src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "bcrypt": "5.1.1",
+    "cors": "2.8.5",
+    "dotenv": "^17.3.1",
+    "expo-server-sdk": "3.13.0",
+    "express": "4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "8.0.0",
+    "jsonwebtoken": "9.0.2",
+    "multer": "1.4.5-lts.1",
+    "pg": "8.13.1",
+    "sharp": "0.33.2",
+    "stripe": "17.5.0",
+    "twilio": "^5.4.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "5.0.2",
+    "@types/cors": "2.8.17",
+    "@types/express": "5.0.0",
+    "@types/jsonwebtoken": "9.0.7",
+    "@types/multer": "1.4.12",
+    "@types/node": "22.10.2",
+    "@types/pg": "8.11.10",
+    "@types/twilio": "^3.19.2",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}

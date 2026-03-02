@@ -1,0 +1,74 @@
+appId: com.ospos.app
+name: "Full E2E - Onboarding to Cash Payment"
+tags:
+  - e2e
+---
+# Fresh install -> onboarding -> add menu item -> take order -> cash payment -> receipt -> verify in summary
+
+# 1. Fresh start
+- launchApp:
+    clearState: true
+
+# 2. Tier selection
+- assertVisible: "How do you want to get paid?"
+- tapOn: "Free — Cash Only"
+
+# 3. Lands on Order tab - go to Menu to add items
+- assertVisible: "Edit Menu"
+- tapOn: "Menu"
+- assertVisible: "Your Menu"
+
+# 4. Add a menu item
+- tapOn: "+ Add Item"
+- tapOn:
+    text: "Item Name"
+    index: 1
+- inputText: "Fish Tacos"
+- tapOn:
+    text: "0.00"
+- inputText: "12.00"
+- tapOn: "Save"
+- assertVisible: "Fish Tacos"
+- assertVisible: "$12.00"
+
+# 5. Go to Order and add item
+- tapOn: "Order"
+- assertVisible: "Edit Menu"
+- tapOn: "Fish Tacos"
+
+# 6. Verify charge button shows correct amount
+- assertVisible:
+    text: "Charge.*12.*"
+    regex: true
+
+# 7. Tap Charge
+- tapOn:
+    text: "Charge.*"
+    regex: true
+
+# 8. Payment screen
+- assertVisible: "Add a tip?"
+- tapOn: "No Tip"
+- tapOn: "Cash"
+
+# 9. Cash modal
+- assertVisible: "Cash Tendered"
+- tapOn: "Exact Cash"
+- tapOn: "Confirm Payment"
+
+# 10. Receipt
+- assertVisible: "Payment Complete"
+- assertVisible: "Fish Tacos"
+- tapOn: "New Order"
+
+# 11. Verify in Summary
+- tapOn: "Summary"
+- assertVisible: "Today's Sales"
+
+# 12. Check Settings
+- tapOn: "Settings"
+- assertVisible: "Settings"
+- assertVisible: "Business Name"
+
+# Take a screenshot for the record
+- takeScreenshot: "full-e2e-complete"

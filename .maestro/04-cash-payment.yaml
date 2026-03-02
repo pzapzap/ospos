@@ -1,0 +1,49 @@
+appId: com.ospos.app
+name: "Cash Payment - Full Flow"
+---
+- launchApp
+
+# Go to Order tab
+- tapOn: "Order"
+
+# Add item to order
+- tapOn: "Tacos"
+
+# Tap Charge button
+- tapOn:
+    text: "Charge.*"
+    regex: true
+
+# Should be on Payment screen
+- assertVisible: "Total"
+- assertVisible: "Add a tip?"
+- assertVisible: "No Tip"
+- assertVisible: "Cash"
+
+# Select no tip (default)
+- tapOn: "No Tip"
+
+# Tap Cash payment
+- tapOn: "Cash"
+
+# Cash modal should appear
+- assertVisible: "Cash Tendered"
+- assertVisible: "Exact Cash"
+
+# Tap Exact Cash for simplicity
+- tapOn: "Exact Cash"
+
+# Tap Confirm Payment
+- tapOn: "Confirm Payment"
+
+# Should land on Receipt screen
+- assertVisible: "Payment Complete"
+- assertVisible: "Cash"
+- assertVisible: "Tacos"
+- assertVisible: "New Order"
+
+# Go back to order screen
+- tapOn: "New Order"
+
+# Should be back on empty order
+- assertVisible: "Tap items to build an order"

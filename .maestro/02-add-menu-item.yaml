@@ -1,0 +1,44 @@
+appId: com.ospos.app
+name: "Menu Builder - Add Item"
+---
+- launchApp
+# Navigate to Menu tab
+- tapOn: "Menu"
+- assertVisible: "Your Menu"
+
+# Tap Add Item button
+- tapOn: "+ Add Item"
+
+# Fill in item name
+- assertVisible: "Item Name"
+- tapOn:
+    text: "Item Name"
+    index: 1
+- inputText: "Tacos"
+
+# Fill in price
+- tapOn:
+    text: "0.00"
+- inputText: "5.99"
+
+# Save the item
+- tapOn: "Save"
+
+# Verify item appears in the menu
+- assertVisible: "Tacos"
+- assertVisible: "$5.99"
+
+# Add a second item
+- tapOn: "+ Add Item"
+- tapOn:
+    text: "Item Name"
+    index: 1
+- inputText: "Burrito"
+- tapOn:
+    text: "0.00"
+- inputText: "8.50"
+- tapOn: "Save"
+
+# Verify both items exist
+- assertVisible: "Tacos"
+- assertVisible: "Burrito"

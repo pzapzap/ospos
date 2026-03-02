@@ -1,0 +1,37 @@
+appId: com.ospos.app
+name: "Screenshot all tabs"
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      text: "How do you want to get paid?"
+    timeout: 30000
+- takeScreenshot: "ss-01-onboarding"
+- tapOn:
+    text: "Free \u2014 Cash Only"
+- extendedWaitUntil:
+    visible:
+      text: "Order"
+    timeout: 15000
+- takeScreenshot: "ss-02-order-empty"
+- tapOn: "Menu"
+- extendedWaitUntil:
+    visible:
+      text: "Edit Menu"
+    timeout: 5000
+- takeScreenshot: "ss-03-menu-empty"
+- tapOn: "Summary"
+- extendedWaitUntil:
+    visible:
+      text: "Today"
+    timeout: 5000
+- takeScreenshot: "ss-04-summary"
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible:
+      text: "Settings"
+    timeout: 5000
+- takeScreenshot: "ss-05-settings"
+- tapOn: "Order"
+- takeScreenshot: "ss-06-order-final"

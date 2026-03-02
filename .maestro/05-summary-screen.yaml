@@ -1,0 +1,12 @@
+appId: com.ospos.app
+name: "Summary Screen - View Sales"
+---
+- launchApp
+
+# Navigate to Summary tab
+- tapOn: "Summary"
+
+# Verify summary screen loads
+- assertVisible: "Today's Sales"
+- assertVisible: "Share"
+- assertVisible: "Export CSV"

@@ -1,0 +1,26 @@
+appId: com.ospos.app
+name: "Onboarding - Free Tier Selection"
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      text: "How do you want to get paid?"
+    timeout: 30000
+- takeScreenshot: "01-onboarding-screen"
+- tapOn:
+    text: "Free \u2014 Cash Only"
+- takeScreenshot: "01-after-tier-tap"
+- extendedWaitUntil:
+    visible:
+      text: "Order"
+    timeout: 15000
+- takeScreenshot: "01-main-app-order-tab"
+- tapOn: "Menu"
+- takeScreenshot: "01-menu-tab"
+- tapOn: "Summary"
+- takeScreenshot: "01-summary-tab"
+- tapOn: "Settings"
+- takeScreenshot: "01-settings-tab"
+- tapOn: "Order"
+- takeScreenshot: "01-onboarding-complete"

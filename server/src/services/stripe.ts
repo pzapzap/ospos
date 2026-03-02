@@ -1,0 +1,214 @@
+import Stripe from 'stripe';
+import fs from 'fs';
+import { config } from '../config';
+
+// Pin Stripe API version explicitly per design doc
+const stripe = new Stripe(config.stripe.secretKey, {
+  apiVersion: '2024-12-18.acacia' as Stripe.LatestApiVersion,
+});
+
+// ─── Account Management ──────────────────────────────────────────────────────
+
+export async function createConnectedAccount(
+  email: string
+): Promise<Stripe.Account> {
+  try {
+    return await stripe.accounts.create({
+      email,
+      controller: {
+        losses: { payments: 'application' },
+        fees: { payer: 'application' },
+        stripe_dashboard: { type: 'express' },
+      },
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+    });
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Create account error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
+export async function createAccountLink(
+  accountId: string,
+  refreshUrl: string,
+  returnUrl: string
+): Promise<Stripe.AccountLink> {
+  try {
+    return await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
+      type: 'account_onboarding',
+    });
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Account link error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
+export async function getAccountStatus(
+  accountId: string
+): Promise<{
+  charges_enabled: boolean;
+  details_submitted: boolean;
+  payouts_enabled: boolean;
+}> {
+  try {
+    const account = await stripe.accounts.retrieve(accountId);
+    return {
+      charges_enabled: account.charges_enabled ?? false,
+      details_submitted: account.details_submitted ?? false,
+      payouts_enabled: account.payouts_enabled ?? false,
+    };
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Account status error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
+// ─── Terminal ────────────────────────────────────────────────────────────────
+
+export async function createConnectionToken(stripeAccountId?: string): Promise<{ secret: string }> {
+  try {
+    const token = await stripe.terminal.connectionTokens.create(
+      {},
+      stripeAccountId ? { stripeAccount: stripeAccountId } : undefined
+    );
+    return { secret: token.secret };
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Connection token error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+export async function createPaymentIntent(
+  amount: number,
+  currency: string,
+  stripeAccountId: string,
+  tipAmount?: number,
+  idempotencyKey?: string
+): Promise<{ clientSecret: string; paymentIntentId: string }> {
+  try {
+    const totalAmount = tipAmount ? amount + tipAmount : amount;
+    const platformFeePercent = parseFloat(process.env.PLATFORM_FEE_PERCENT ?? '1') / 100;
+    const applicationFee = Math.round(totalAmount * platformFeePercent);
+
+    // Direct charge on connected account — required for Terminal + Connect
+    // The Terminal SDK operates under the connected account's context,
+    // so the PI must also live on the connected account.
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount: totalAmount,
+        currency,
+        application_fee_amount: applicationFee,
+        payment_method_types: ['card_present'],
+        capture_method: 'automatic',
+      },
+      {
+        stripeAccount: stripeAccountId,
+        ...(idempotencyKey ? { idempotencyKey } : {}),
+      }
+    );
+
+    return {
+      clientSecret: paymentIntent.client_secret!,
+      paymentIntentId: paymentIntent.id,
+    };
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error(
+      '[STRIPE] Create payment intent error:',
+      stripeErr.code, stripeErr.decline_code, stripeErr.message
+    );
+    throw error;
+  }
+}
+
+export async function createRefund(
+  paymentIntentId: string,
+  amount?: number,
+  stripeAccountId?: string
+): Promise<Stripe.Refund> {
+  try {
+    const params: Stripe.RefundCreateParams = {
+      payment_intent: paymentIntentId,
+    };
+    if (amount) {
+      params.amount = amount;
+    }
+    // Direct charges: refund on the connected account
+    // Stripe automatically refunds application fee proportionally
+    return await stripe.refunds.create(
+      params,
+      stripeAccountId ? { stripeAccount: stripeAccountId } : undefined
+    );
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Refund error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
+// ─── Disputes ────────────────────────────────────────────────────────────────
+
+export async function submitDisputeEvidence(
+  disputeId: string,
+  evidence: {
+    uncategorized_text?: string;
+    uncategorized_file?: string;
+  }
+): Promise<Stripe.Dispute> {
+  try {
+    return await stripe.disputes.update(disputeId, {
+      evidence,
+    });
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Submit evidence error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
+export async function uploadFile(
+  filePath: string,
+  purpose: Stripe.FileCreateParams.Purpose
+): Promise<Stripe.File> {
+  try {
+    return await stripe.files.create({
+      purpose,
+      file: {
+        data: fs.readFileSync(filePath),
+        name: 'evidence.jpg',
+        type: 'application/octet-stream',
+      },
+    });
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] File upload error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
+// ─── Webhooks ────────────────────────────────────────────────────────────────
+
+export function constructWebhookEvent(
+  payload: string | Buffer,
+  signature: string
+): Stripe.Event {
+  return stripe.webhooks.constructEvent(
+    payload,
+    signature,
+    config.stripe.webhookSecret
+  );
+}
+
+export { stripe };

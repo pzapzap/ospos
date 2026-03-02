@@ -1,0 +1,60 @@
+appId: com.ospos.app
+name: "Sim 2 — Multi-item order, cash with change"
+tags:
+  - simulation
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      text: "Order"
+    timeout: 30000
+- tapOn: "Order"
+- extendedWaitUntil:
+    visible:
+      text: "Coffee"
+    timeout: 10000
+
+# Add Coffee + Tacos + Coffee again (2x coffee)
+- tapOn: "Coffee"
+- tapOn: "Tacos"
+- tapOn: "Coffee"
+- takeScreenshot: "sim02-multi-item-order"
+
+# Charge $17.00 (2x Coffee $9 + Tacos $8)
+- tapOn:
+    text: "Charge.*"
+- extendedWaitUntil:
+    visible:
+      text: "No Tip"
+    timeout: 8000
+- tapOn: "No Tip"
+- takeScreenshot: "sim02-payment-screen"
+
+# Cash payment — use $20 quick amount
+- tapOn:
+    text: "Cash"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      text: "Exact Cash"
+    timeout: 5000
+- tapOn: "Cash Tendered"
+- inputText: "20"
+- hideKeyboard
+- takeScreenshot: "sim02-cash-with-change"
+- tapOn: "Confirm Payment"
+
+# Receipt
+- extendedWaitUntil:
+    visible:
+      text: "Payment Complete"
+    timeout: 10000
+- takeScreenshot: "sim02-receipt"
+
+# Back to order
+- tapOn: "New Order"
+- extendedWaitUntil:
+    visible:
+      text: "Coffee"
+    timeout: 5000
+- takeScreenshot: "sim02-done"

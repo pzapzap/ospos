@@ -1,0 +1,53 @@
+appId: com.ospos.app
+name: "Order Flow - Add Items and Verify Total"
+---
+- launchApp
+
+# Make sure we have menu items first - go to Menu tab
+- tapOn: "Menu"
+- assertVisible: "Your Menu"
+
+# Add item if menu is empty
+- runFlow:
+    when:
+      visible: "Add your first item to get started."
+    commands:
+      - tapOn: "+ Add Item"
+      - tapOn:
+          text: "Item Name"
+          index: 1
+      - inputText: "Tacos"
+      - tapOn:
+          text: "0.00"
+      - inputText: "5.99"
+      - tapOn: "Save"
+      - assertVisible: "Tacos"
+
+# Go to Order tab
+- tapOn: "Order"
+
+# Verify order screen loads
+- assertVisible: "Edit Menu"
+- assertVisible: "Tap items to build an order"
+
+# Tap on Tacos item to add to order
+- tapOn: "Tacos"
+
+# Order panel should now show the item and total
+- assertVisible: "Tacos"
+# Charge button should show the total
+- assertVisible:
+    text: "Charge.*"
+    regex: true
+
+# Tap Tacos again to add a second one
+- tapOn:
+    text: "Tacos"
+    index: 0
+
+# Clear button should be visible since we have items
+- assertVisible: "Clear"
+
+# Tap Clear to reset
+- tapOn: "Clear"
+- assertVisible: "Tap items to build an order"

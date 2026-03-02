@@ -1,0 +1,26 @@
+appId: com.ospos.app
+name: "Settings Screen - Verify All Sections"
+---
+- launchApp
+
+# Navigate to Settings tab
+- tapOn: "Settings"
+
+# Verify settings screen loads with all sections
+- assertVisible: "Settings"
+- assertVisible: "Business Name"
+- assertVisible: "Tax Rate (%)"
+- assertVisible: "Currency"
+- assertVisible: "Receipt Footer"
+- assertVisible: "Auto-Backup (Weekly)"
+- assertVisible: "Back Up Now"
+
+# Scroll down to see more
+- scrollUntilVisible:
+    element: "About"
+    direction: DOWN
+
+- assertVisible: "Help & Support"
+- assertVisible: "About"
+- assertVisible: "OSPOS v1.0.0"
+- assertVisible: "GitHub"
