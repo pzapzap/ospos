@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   Text,
   SafeAreaView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, typography, spacing, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
@@ -24,6 +27,8 @@ interface OrderScreenProps {
 export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) {
   const { order, orderDispatch, settings } = useApp();
   const [menuItems, setMenuItems] = useState<Item[]>([]);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const navigatingRef = React.useRef(false);
 
   // Derive charge state — no need for separate state + effect
   const chargeState: ChargeButtonState = order.total > 0 ? 'ready' : 'disabled';
@@ -34,6 +39,8 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
       setMenuItems(items);
     } catch (e) {
       if (__DEV__) console.warn('[OrderScreen] Failed to load items:', e);
+    } finally {
+      setMenuLoading(false);
     }
   }, []);
 
@@ -55,12 +62,22 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
   }, [orderDispatch]);
 
   const handleClear = useCallback(() => {
-    orderDispatch({ type: 'CLEAR_ORDER' });
+    Alert.alert(
+      'Clear Order',
+      'Remove all items from the current order?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear', style: 'destructive', onPress: () => orderDispatch({ type: 'CLEAR_ORDER' }) },
+      ]
+    );
   }, [orderDispatch]);
 
   const handleCharge = useCallback(() => {
-    if (chargeState !== 'ready') return;
+    if (chargeState !== 'ready' || navigatingRef.current) return;
+    navigatingRef.current = true;
     onCharge();
+    // Reset after short delay to allow re-navigation if user comes back
+    setTimeout(() => { navigatingRef.current = false; }, 1000);
   }, [chargeState, onCharge]);
 
   const renderItemButton = useCallback(({ item }: { item: Item }) => (
@@ -91,8 +108,21 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
           keyExtractor={(item) => item.id}
           renderItem={renderItemButton}
           numColumns={3}
-          contentContainerStyle={styles.grid}
+          contentContainerStyle={menuItems.length === 0 ? styles.gridEmpty : styles.grid}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            menuLoading ? (
+              <ActivityIndicator size="large" color={colors.primary} />
+            ) : (
+              <View style={styles.emptyGrid}>
+                <Ionicons name="restaurant-outline" size={40} color={colors.textMuted} />
+                <Text style={styles.emptyGridText}>No menu items yet</Text>
+                <TouchableOpacity onPress={onMenuEdit}>
+                  <Text style={styles.emptyGridLink}>Tap Edit Menu to add items</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          }
         />
       </View>
 
@@ -153,6 +183,23 @@ const styles = StyleSheet.create({
   grid: {
     paddingHorizontal: spacing.sm,
     paddingBottom: spacing.sm,
+  },
+  gridEmpty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyGrid: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyGridText: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  emptyGridLink: {
+    ...typography.body,
+    color: colors.primary,
   },
   panelSection: {
     flex: 4, // 40%

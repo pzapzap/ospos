@@ -22,8 +22,8 @@ export default function DaySummaryCard({
   currency,
 }: DaySummaryCardProps) {
   return (
-    <View style={styles.card}>
-      <View style={styles.mainStat}>
+    <View style={styles.card} accessibilityRole="summary">
+      <View style={styles.mainStat} accessibilityLabel={`${strings.summary.totalSales}: ${formatCurrency(totalSales, currency)}`}>
         <Text style={styles.mainLabel}>{strings.summary.totalSales}</Text>
         <Text style={styles.mainValue}>
           {formatCurrency(totalSales, currency)}
@@ -31,23 +31,23 @@ export default function DaySummaryCard({
       </View>
 
       <View style={styles.statsGrid}>
-        <View style={styles.stat}>
+        <View style={styles.stat} accessibilityLabel={`${strings.summary.transactions}: ${transactionCount}`}>
           <Text style={styles.statValue}>{transactionCount}</Text>
           <Text style={styles.statLabel}>{strings.summary.transactions}</Text>
         </View>
-        <View style={styles.stat}>
+        <View style={styles.stat} accessibilityLabel={`${strings.summary.cashTotal}: ${formatCurrency(cashTotal, currency)}`}>
           <Text style={styles.statValue}>
             {formatCurrency(cashTotal, currency)}
           </Text>
           <Text style={styles.statLabel}>{strings.summary.cashTotal}</Text>
         </View>
-        <View style={styles.stat}>
+        <View style={styles.stat} accessibilityLabel={`${strings.summary.cardTotal}: ${formatCurrency(cardTotal, currency)}`}>
           <Text style={styles.statValue}>
             {formatCurrency(cardTotal, currency)}
           </Text>
           <Text style={styles.statLabel}>{strings.summary.cardTotal}</Text>
         </View>
-        <View style={styles.stat}>
+        <View style={styles.stat} accessibilityLabel={`${strings.summary.average}: ${formatCurrency(averageValue, currency)}`}>
           <Text style={styles.statValue}>
             {formatCurrency(averageValue, currency)}
           </Text>

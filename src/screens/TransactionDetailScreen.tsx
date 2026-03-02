@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency, getCurrencyDecimals } from '../utils/currency';
 import { useApp } from '../state/AppContext';
 import { getOrderWithItems, type OrderWithItems } from '../db/queries';
 import { issueRefund } from '../services/api';
@@ -63,7 +63,7 @@ export default function TransactionDetailScreen({
 
   if (!order) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </SafeAreaView>
     );
@@ -74,10 +74,12 @@ export default function TransactionDetailScreen({
   const formattedDate = new Date(order.created_at).toLocaleString();
 
   const handleRefund = async () => {
-    if (!order.stripe_payment_id) return;
+    if (!order.stripe_payment_id || processing) return;
 
-    // All money values (order.total, order.refund_amount) are integer cents
-    const partialCents = Math.round(parseFloat(refundAmount) * 100);
+    // All money values (order.total, order.refund_amount) are integer smallest-unit
+    const decimals = getCurrencyDecimals(settings.currency);
+    const multiplier = decimals === 0 ? 1 : Math.pow(10, decimals);
+    const partialCents = Math.round(parseFloat(refundAmount) * multiplier);
     const amount = isFullRefund ? undefined : partialCents;
 
     if (!isFullRefund && (!partialCents || partialCents <= 0)) {

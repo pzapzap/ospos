@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
-import { formatCurrency, parseCurrencyInput } from '../utils/currency';
+import { formatCurrency, parseCurrencyInput, getCurrencyDecimals } from '../utils/currency';
 
 interface CashPaymentModalProps {
   visible: boolean;
@@ -29,34 +29,40 @@ export default function CashPaymentModal({
   onClose,
 }: CashPaymentModalProps) {
   const [cashInput, setCashInput] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Reset input when modal opens
   useEffect(() => {
     if (visible) {
       setCashInput('');
+      setSubmitting(false);
     }
   }, [visible]);
 
-  const cashTendered = parseCurrencyInput(cashInput);
+  const decimals = getCurrencyDecimals(currency);
+  const cashTendered = parseCurrencyInput(cashInput, currency);
   const change = cashTendered > 0 ? cashTendered - total : 0;
   const canConfirm = cashTendered >= total;
 
   const handleExactCash = () => {
+    if (submitting) return;
+    setSubmitting(true);
     onConfirm(total);
   };
 
   const handleConfirm = () => {
-    if (canConfirm) {
-      onConfirm(cashTendered);
-    }
+    if (!canConfirm || submitting) return;
+    setSubmitting(true);
+    onConfirm(cashTendered);
   };
 
-  // Quick cash buttons (total is in cents — round up to nearest $1, $5, $10, $20)
+  // Quick cash buttons — currency-aware denominations
+  const unit = decimals === 0 ? 1 : 100; // 1 for JPY/KRW, 100 for USD/EUR
   const quickAmounts = [
-    Math.ceil(total / 100) * 100,       // next dollar
-    Math.ceil(total / 500) * 500,       // next $5
-    Math.ceil(total / 1000) * 1000,     // next $10
-    Math.ceil(total / 2000) * 2000,     // next $20
+    Math.ceil(total / (1 * unit)) * (1 * unit),
+    Math.ceil(total / (5 * unit)) * (5 * unit),
+    Math.ceil(total / (10 * unit)) * (10 * unit),
+    Math.ceil(total / (20 * unit)) * (20 * unit),
   ].filter((v, i, a) => a.indexOf(v) === i && v >= total);
 
   return (
@@ -74,9 +80,10 @@ export default function CashPaymentModal({
           </View>
 
           <TouchableOpacity
-            style={styles.exactCashButton}
+            style={[styles.exactCashButton, submitting && styles.confirmDisabled]}
             onPress={handleExactCash}
             activeOpacity={0.7}
+            disabled={submitting}
             accessibilityLabel="Pay exact amount"
             accessibilityRole="button"
           >
@@ -101,7 +108,7 @@ export default function CashPaymentModal({
                 <TouchableOpacity
                   key={amount}
                   style={styles.quickButton}
-                  onPress={() => setCashInput((amount / 100).toFixed(2))}
+                  onPress={() => setCashInput(decimals === 0 ? String(amount) : (amount / 100).toFixed(decimals))}
                 >
                   <Text style={styles.quickButtonText}>
                     {formatCurrency(amount, currency)}
@@ -125,9 +132,9 @@ export default function CashPaymentModal({
               <Text style={styles.cancelText}>{strings.menuBuilder.cancel}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.confirmButton, !canConfirm && cashInput.length > 0 && styles.confirmDisabled]}
+              style={[styles.confirmButton, ((!canConfirm && cashInput.length > 0) || submitting) && styles.confirmDisabled]}
               onPress={handleConfirm}
-              disabled={!canConfirm && cashInput.length > 0}
+              disabled={(!canConfirm && cashInput.length > 0) || submitting}
             >
               <Text style={styles.confirmText}>{strings.payment.confirm}</Text>
             </TouchableOpacity>

@@ -9,6 +9,7 @@ import {
   Share,
   Alert,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -60,6 +61,8 @@ export default function SummaryScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedRange, setSelectedRange] = useState(0); // index into DATE_RANGE_OPTIONS
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const isPaidTier = settings.tier === 'paid';
   const today = formatDateStr(new Date());
@@ -78,6 +81,7 @@ export default function SummaryScreen() {
   }, [isPaidTier, selectedRange, today]);
 
   const loadData = useCallback(async () => {
+    setDataLoading(true);
     try {
       const range = getDateRange();
       const [rangeStats, rangeOrders] = await Promise.all([
@@ -88,6 +92,9 @@ export default function SummaryScreen() {
       setOrders(rangeOrders);
     } catch (e) {
       if (__DEV__) console.warn('[SummaryScreen] Failed to load data:', e);
+      Alert.alert('Load Failed', 'Could not load sales data. Pull down to retry.');
+    } finally {
+      setDataLoading(false);
     }
   }, [getDateRange]);
 
@@ -107,7 +114,8 @@ export default function SummaryScreen() {
         stats.cashTotal,
         stats.cardTotal,
         stats.averageValue,
-        getCurrencySymbol(settings.currency)
+        getCurrencySymbol(settings.currency),
+        settings.currency
       );
       await Share.share({ message: text });
     } catch {
@@ -116,13 +124,16 @@ export default function SummaryScreen() {
   }, [getDateRange, stats, settings.currency]);
 
   const handleExportCSV = useCallback(async () => {
+    setExporting(true);
     try {
       const range = getDateRange();
-      await shareCSV(range.start, range.end !== range.start ? range.end : undefined);
+      await shareCSV(range.start, range.end !== range.start ? range.end : undefined, settings.currency);
     } catch {
       Alert.alert(strings.errors.generic);
+    } finally {
+      setExporting(false);
     }
-  }, [getDateRange]);
+  }, [getDateRange, settings.currency]);
 
   const range = getDateRange();
   const dateLabel = range.start === range.end
@@ -144,6 +155,8 @@ export default function SummaryScreen() {
         style={styles.orderRow}
         onPress={() => navigation.navigate('TransactionDetail', { orderId: item.id })}
         activeOpacity={0.7}
+        accessibilityLabel={`${item.payment_method === 'cash' ? 'Cash' : 'Card'} transaction, ${formatCurrency(item.total, settings.currency)}, ${showDate ? `${date} ${time}` : time}`}
+        accessibilityRole="button"
       >
         <View style={{ flex: 1 }}>
           <Text style={styles.orderTime}>
@@ -183,6 +196,8 @@ export default function SummaryScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderOrder}
         contentContainerStyle={styles.list}
+        refreshing={dataLoading}
+        onRefresh={loadData}
         ListHeaderComponent={
           <DaySummaryCard
             totalSales={stats.totalSales}
@@ -194,10 +209,14 @@ export default function SummaryScreen() {
           />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="analytics-outline" size={48} color={colors.textMuted} style={{ marginBottom: spacing.md }} />
-            <Text style={styles.emptyText}>{strings.summary.noTransactions}</Text>
-          </View>
+          dataLoading ? (
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xxxl }} />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="analytics-outline" size={48} color={colors.textMuted} style={{ marginBottom: spacing.md }} />
+              <Text style={styles.emptyText}>{strings.summary.noTransactions}</Text>
+            </View>
+          )
         }
       />
 
@@ -213,15 +232,24 @@ export default function SummaryScreen() {
           style={styles.exportButton}
           onPress={handleExportCSV}
           activeOpacity={0.7}
+          disabled={exporting}
         >
-          <Text style={styles.exportButtonText}>{strings.summary.exportCsv}</Text>
+          {exporting ? (
+            <ActivityIndicator color={colors.black} size="small" />
+          ) : (
+            <Text style={styles.exportButtonText}>{strings.summary.exportCsv}</Text>
+          )}
         </TouchableOpacity>
       </View>
 
       {/* Date Range Picker Modal (paid tier) */}
       <Modal visible={showDatePicker} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modal}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowDatePicker(false)}
+        >
+          <View style={styles.modal} onStartShouldSetResponder={() => true}>
             <Text style={styles.modalTitle}>Select Date Range</Text>
             {DATE_RANGE_OPTIONS.map((option, index) => (
               <TouchableOpacity
@@ -252,7 +280,7 @@ export default function SummaryScreen() {
               <Text style={styles.modalCloseText}>Cancel</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );

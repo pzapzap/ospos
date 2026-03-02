@@ -72,6 +72,30 @@ export async function getAccountStatus(
   }
 }
 
+export async function getAccountDetails(accountId: string): Promise<{
+  business_name: string | null;
+  default_currency: string | null;
+  support_address_zip: string | null;
+  support_address_state: string | null;
+  support_address_country: string | null;
+}> {
+  try {
+    const account = await stripe.accounts.retrieve(accountId);
+    const addr = account.business_profile?.support_address;
+    return {
+      business_name: account.business_profile?.name ?? account.company?.name ?? null,
+      default_currency: account.default_currency ?? null,
+      support_address_zip: addr?.postal_code ?? null,
+      support_address_state: addr?.state ?? null,
+      support_address_country: addr?.country ?? null,
+    };
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Account details error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
 // ─── Terminal ────────────────────────────────────────────────────────────────
 
 export async function createConnectionToken(stripeAccountId?: string): Promise<{ secret: string }> {
@@ -99,7 +123,11 @@ export async function createPaymentIntent(
 ): Promise<{ clientSecret: string; paymentIntentId: string }> {
   try {
     const totalAmount = tipAmount ? amount + tipAmount : amount;
-    const platformFeePercent = parseFloat(process.env.PLATFORM_FEE_PERCENT ?? '1') / 100;
+    const rawPercent = parseFloat(process.env.PLATFORM_FEE_PERCENT ?? '1');
+    if (isNaN(rawPercent) || rawPercent < 0 || rawPercent > 50) {
+      throw new Error('PLATFORM_FEE_PERCENT must be between 0 and 50');
+    }
+    const platformFeePercent = rawPercent / 100;
     const applicationFee = Math.round(totalAmount * platformFeePercent);
 
     // Direct charge on connected account — required for Terminal + Connect
@@ -119,8 +147,12 @@ export async function createPaymentIntent(
       }
     );
 
+    if (!paymentIntent.client_secret) {
+      throw new Error('PaymentIntent created without client_secret');
+    }
+
     return {
-      clientSecret: paymentIntent.client_secret!,
+      clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
     };
   } catch (error) {
@@ -165,12 +197,15 @@ export async function submitDisputeEvidence(
   evidence: {
     uncategorized_text?: string;
     uncategorized_file?: string;
-  }
+  },
+  stripeAccountId?: string
 ): Promise<Stripe.Dispute> {
   try {
-    return await stripe.disputes.update(disputeId, {
-      evidence,
-    });
+    return await stripe.disputes.update(
+      disputeId,
+      { evidence },
+      stripeAccountId ? { stripeAccount: stripeAccountId } : undefined
+    );
   } catch (error) {
     const stripeErr = error as Stripe.errors.StripeError;
     console.error('[STRIPE] Submit evidence error:', stripeErr.code, stripeErr.message);
@@ -180,17 +215,26 @@ export async function submitDisputeEvidence(
 
 export async function uploadFile(
   filePath: string,
-  purpose: Stripe.FileCreateParams.Purpose
+  purpose: Stripe.FileCreateParams.Purpose,
+  stripeAccountId?: string
 ): Promise<Stripe.File> {
   try {
-    return await stripe.files.create({
-      purpose,
-      file: {
-        data: fs.readFileSync(filePath),
-        name: 'evidence.jpg',
-        type: 'application/octet-stream',
+    // Guard against path traversal — only allow files from temp directory
+    const os = await import('os');
+    if (!filePath.startsWith(os.tmpdir())) {
+      throw new Error('Invalid file path');
+    }
+    return await stripe.files.create(
+      {
+        purpose,
+        file: {
+          data: fs.readFileSync(filePath),
+          name: 'evidence.jpg',
+          type: 'application/octet-stream',
+        },
       },
-    });
+      stripeAccountId ? { stripeAccount: stripeAccountId } : undefined
+    );
   } catch (error) {
     const stripeErr = error as Stripe.errors.StripeError;
     console.error('[STRIPE] File upload error:', stripeErr.code, stripeErr.message);

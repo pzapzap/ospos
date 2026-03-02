@@ -55,6 +55,12 @@ export default function DisputesScreen({ onBack }: DisputesScreenProps) {
   );
 
   const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Camera Access Required', 'Please enable camera access in Settings to take evidence photos.');
+      return;
+    }
+
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       quality: 0.7,
@@ -142,7 +148,28 @@ export default function DisputesScreen({ onBack }: DisputesScreenProps) {
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
           <TouchableOpacity
-            onPress={() => setSelectedDispute(null)}
+            onPress={() => {
+              if (evidenceText.trim() || evidenceImageUri) {
+                Alert.alert(
+                  'Discard Evidence?',
+                  'You have unsaved evidence. Going back will discard it.',
+                  [
+                    { text: 'Stay', style: 'cancel' },
+                    {
+                      text: 'Discard',
+                      style: 'destructive',
+                      onPress: () => {
+                        setSelectedDispute(null);
+                        setEvidenceText('');
+                        setEvidenceImageUri(null);
+                      },
+                    },
+                  ]
+                );
+              } else {
+                setSelectedDispute(null);
+              }
+            }}
             style={styles.backButton}
           >
             <Text style={styles.backText}>← Back to list</Text>

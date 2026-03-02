@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Reader } from '@stripe/stripe-terminal-react-native';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency, getCurrencyDecimals } from '../utils/currency';
 import { useApp } from '../state/AppContext';
 import { createOrder } from '../db/queries';
 import { createPaymentIntent } from '../services/api';
@@ -28,8 +28,8 @@ interface PaymentScreenProps {
 }
 
 const TERMINAL_LOCATION_ID = process.env.EXPO_PUBLIC_STRIPE_LOCATION_ID ?? '';
-if (!TERMINAL_LOCATION_ID && !__DEV__) {
-  console.warn('[OSPOS] No EXPO_PUBLIC_STRIPE_LOCATION_ID configured — Tap to Pay may fail');
+if (!TERMINAL_LOCATION_ID && __DEV__) {
+  if (__DEV__) console.warn('[OSPOS] No EXPO_PUBLIC_STRIPE_LOCATION_ID configured — Tap to Pay may fail');
 }
 
 const TIP_OPTIONS = [
@@ -100,9 +100,9 @@ function CardButton({
   // Initialize the Terminal SDK on mount
   useEffect(() => {
     if (!isInitialized) {
-      initialize().catch((err) =>
-        console.warn('[OSPOS] Terminal init error:', err)
-      );
+      initialize().catch((err) => {
+        if (__DEV__) console.warn('[OSPOS] Terminal init error:', err);
+      });
     }
   }, [initialize, isInitialized]);
 
@@ -134,7 +134,7 @@ function CardButton({
         } else if (attempts >= 16) {
           clearInterval(poll);
           readerResolverRef.current = null;
-          console.warn('[OSPOS] Reader discovery timed out');
+          if (__DEV__) console.warn('[OSPOS] Reader discovery timed out');
           resolve([]);
         }
       }, 500);
@@ -196,10 +196,12 @@ function CardButton({
               simulated: true,
               locationId: TERMINAL_LOCATION_ID || undefined,
             }).then(({ error }) => {
-              if (error) console.warn('[OSPOS] Discovery error:', error.code, error.message);
-              else console.log('[OSPOS] Discovery completed');
+              if (__DEV__) {
+                if (error && __DEV__) console.warn('[OSPOS] Discovery error:', error.code, error.message);
+                else if (__DEV__) console.log('[OSPOS] Discovery completed');
+              }
             }).catch((e) => {
-              console.warn('[OSPOS] Discovery threw:', e);
+              if (__DEV__) console.warn('[OSPOS] Discovery threw:', e);
             });
           }, 100);
 
@@ -224,7 +226,7 @@ function CardButton({
             }
           }
         } catch (e) {
-          console.warn('[OSPOS] Simulated reader error:', e instanceof Error ? e.message : e);
+          if (__DEV__) console.warn('[OSPOS] Simulated reader error:', e instanceof Error ? e.message : e);
         }
       } else if (!connected) {
         // Production: try Tap to Pay first
@@ -241,7 +243,7 @@ function CardButton({
               simulated: false,
               locationId: TERMINAL_LOCATION_ID || undefined,
             }).then(({ error }) => {
-              if (error) console.warn('[OSPOS] Tap discovery error:', error.message);
+              if (error && __DEV__) console.warn('[OSPOS] Tap discovery error:', error.message);
             });
 
             {
@@ -265,7 +267,7 @@ function CardButton({
             }
           }
         } catch (e) {
-          console.warn('[OSPOS] Tap to Pay not available:', e instanceof Error ? e.message : e);
+          if (__DEV__) console.warn('[OSPOS] Tap to Pay not available:', e instanceof Error ? e.message : e);
         }
 
         // Fallback: real Bluetooth reader
@@ -278,7 +280,7 @@ function CardButton({
               discoveryMethod: 'bluetoothScan',
               simulated: false,
             }).then(({ error }) => {
-              if (error) console.warn('[OSPOS] BT discovery error:', error.message);
+              if (error && __DEV__) console.warn('[OSPOS] BT discovery error:', error.message);
             });
 
             {
@@ -308,7 +310,7 @@ function CardButton({
         throw new Error(
           isTestMode
             ? 'Could not connect simulated reader. Please try again.'
-            : 'No card reader available. Enable Tap to Pay or pair a Bluetooth reader in Settings.'
+            : 'Reader search timed out. Make sure Tap to Pay is enabled or your Bluetooth reader is nearby and powered on.'
         );
       }
 
@@ -478,9 +480,11 @@ export default function PaymentScreen({ onPaymentComplete, onBack }: PaymentScre
   };
 
   const handleCustomTipConfirm = () => {
-    const amountDollars = parseFloat(customTipInput);
-    if (isNaN(amountDollars) || amountDollars < 0) return;
-    const amountCents = Math.round(amountDollars * 100);
+    const amountDisplay = parseFloat(customTipInput);
+    if (isNaN(amountDisplay) || amountDisplay < 0) return;
+    const decimals = getCurrencyDecimals(settings.currency);
+    const multiplier = decimals === 0 ? 1 : Math.pow(10, decimals);
+    const amountCents = Math.round(amountDisplay * multiplier);
     const maxTipCents = order.subtotal * 2; // subtotal is already cents
     if (amountCents > maxTipCents) {
       Alert.alert('Tip too large', `Maximum tip is ${formatCurrency(maxTipCents, settings.currency)}`);
@@ -565,6 +569,8 @@ export default function PaymentScreen({ onPaymentComplete, onBack }: PaymentScre
                   selectedTip === index && !showCustomTip && styles.tipButtonSelected,
                 ]}
                 onPress={() => handleTipSelect(index)}
+                accessibilityLabel={opt.isCustom ? 'Custom tip amount' : opt.percent ? `${opt.percent}% tip, ${formatCurrency(opt.value, settings.currency)}` : 'No tip'}
+                accessibilityRole="button"
               >
                 <Text
                   style={[
@@ -592,6 +598,7 @@ export default function PaymentScreen({ onPaymentComplete, onBack }: PaymentScre
                 placeholderTextColor={colors.textMuted}
                 keyboardType="decimal-pad"
                 autoFocus
+                accessibilityLabel="Custom tip amount"
               />
               <TouchableOpacity
                 style={styles.customTipConfirm}

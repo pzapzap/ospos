@@ -29,7 +29,7 @@ export const colors = {
   // Text hierarchy
   text: '#FAFAFA',
   textSecondary: '#A1A1AA',
-  textMuted: '#71717A',
+  textMuted: '#8E8E93',
 
   // Primary action — cyan
   primary: '#22D3EE',

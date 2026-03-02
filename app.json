@@ -19,9 +19,8 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "entitlements": {
-        "com.apple.developer.proximity-reader.payment.acceptance": true
-      },
+      "_entitlements_tapToPay": "Re-enable once Apple approves Tap to Pay entitlement",
+      "entitlements": {},
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "OSPOS uses Bluetooth to connect to card readers and receipt printers.",
         "NSBluetoothPeripheralUsageDescription": "OSPOS uses Bluetooth to connect to card readers and receipt printers.",
@@ -48,8 +47,7 @@
         "android.permission.CAMERA",
         "android.permission.NFC",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -81,7 +79,8 @@
           "organization": "phil-zamarripa"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-localization"
     ],
     "extra": {
       "eas": {

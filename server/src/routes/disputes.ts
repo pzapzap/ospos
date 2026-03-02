@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { authMiddleware } from '../middleware/auth';
+import { findUserById } from '../db/queries/users';
 import {
   getDisputesByUser,
   getDisputeById,
@@ -48,7 +49,7 @@ router.post(
 
       const { dispute_id, description } = req.body;
 
-      if (!dispute_id) {
+      if (!dispute_id || typeof dispute_id !== 'string') {
         res.status(400).json({ error: 'dispute_id is required' });
         return;
       }
@@ -63,6 +64,10 @@ router.post(
         res.status(404).json({ error: 'Dispute not found' });
         return;
       }
+
+      // Direct charges: evidence must be submitted on the connected account
+      const user = await findUserById(req.user.userId);
+      const stripeAccountId = user?.stripe_account_id;
 
       let fileId: string | undefined;
 
@@ -89,7 +94,7 @@ router.post(
         }
 
         // Upload to Stripe
-        const stripeFile = await uploadFile(finalPath, 'dispute_evidence');
+        const stripeFile = await uploadFile(finalPath, 'dispute_evidence', stripeAccountId ?? undefined);
         fileId = stripeFile.id;
 
         // Clean up temp files
@@ -104,7 +109,7 @@ router.post(
       if (description) evidence.uncategorized_text = description;
       if (fileId) evidence.uncategorized_file = fileId;
 
-      await submitDisputeEvidence(dispute.stripe_dispute_id, evidence);
+      await submitDisputeEvidence(dispute.stripe_dispute_id, evidence, stripeAccountId ?? undefined);
       await markEvidenceSubmitted(dispute_id);
 
       res.json({ success: true });

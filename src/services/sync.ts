@@ -78,7 +78,7 @@ export async function processSyncQueue(): Promise<void> {
         }
       }
     } catch (error) {
-      console.warn('[SYNC] Network failure:', error instanceof Error ? error.message : error);
+      if (__DEV__) console.warn('[SYNC] Network failure:', error instanceof Error ? error.message : error);
       for (const record of records) {
         const newRetries = record.retries + 1;
         const backoffMs = Math.min(Math.pow(2, newRetries) * 1000, 30000);
@@ -91,7 +91,7 @@ export async function processSyncQueue(): Promise<void> {
       }
     }
   } catch (error) {
-    console.warn('[SYNC] Processing error:', error instanceof Error ? error.message : error);
+    if (__DEV__) console.warn('[SYNC] Processing error:', error instanceof Error ? error.message : error);
   }
 }
 

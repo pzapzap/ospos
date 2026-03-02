@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { register, login } from '../services/api';
+import { validateEmail } from '../utils/validation';
 
 interface AccountCreationScreenProps {
   onAccountCreated: () => void;
@@ -31,6 +32,11 @@ export default function AccountCreationScreen({
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Email and password are required');
+      return;
+    }
+
+    if (!validateEmail(email.trim())) {
+      Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
 
@@ -118,19 +124,19 @@ export default function AccountCreationScreen({
           </View>
 
           <TouchableOpacity
-            style={styles.oauthButton}
+            style={[styles.oauthButton, styles.oauthDisabled]}
             onPress={() => Alert.alert('Coming Soon', 'Sign in with Apple will be available soon.')}
             activeOpacity={0.7}
           >
-            <Text style={styles.oauthButtonText}>Sign in with Apple</Text>
+            <Text style={[styles.oauthButtonText, styles.oauthDisabledText]}>Sign in with Apple (Coming Soon)</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.oauthButton}
+            style={[styles.oauthButton, styles.oauthDisabled]}
             onPress={() => Alert.alert('Coming Soon', 'Sign in with Google will be available soon.')}
             activeOpacity={0.7}
           >
-            <Text style={styles.oauthButtonText}>Sign in with Google</Text>
+            <Text style={[styles.oauthButtonText, styles.oauthDisabledText]}>Sign in with Google (Coming Soon)</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -232,6 +238,13 @@ const styles = StyleSheet.create({
   oauthButtonText: {
     ...typography.bodyBold,
     color: colors.text,
+  },
+  oauthDisabled: {
+    opacity: 0.5,
+    borderStyle: 'dashed' as const,
+  },
+  oauthDisabledText: {
+    color: colors.textSecondary,
   },
   toggleButton: {
     paddingVertical: spacing.lg,

@@ -23,7 +23,6 @@ export interface Order {
   total: number;
   payment_method: 'cash' | 'card';
   stripe_payment_id: string | null;
-  card_last4: string | null;
   refund_status: 'none' | 'partial' | 'full';
   refund_amount: number;
   status: 'completed' | 'refunded';
@@ -151,7 +150,6 @@ export interface CreateOrderInput {
   total: number;
   paymentMethod: 'cash' | 'card';
   stripePaymentId?: string;
-  cardLast4?: string;
   items: Array<{
     itemId: string;
     itemName: string;
@@ -169,8 +167,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   await db.execAsync('BEGIN TRANSACTION');
   try {
     await db.runAsync(
-      `INSERT INTO orders (id, subtotal, tax_rate, tax_amount, tip_amount, total, payment_method, stripe_payment_id, card_last4, refund_status, refund_amount, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', 0, 'completed', ?)`,
+      `INSERT INTO orders (id, subtotal, tax_rate, tax_amount, tip_amount, total, payment_method, stripe_payment_id, refund_status, refund_amount, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'none', 0, 'completed', ?)`,
       [
         orderId,
         input.subtotal,
@@ -180,7 +178,6 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         input.total,
         input.paymentMethod,
         input.stripePaymentId ?? null,
-        input.cardLast4 ?? null,
         now,
       ]
     );
@@ -366,6 +363,26 @@ export async function getAllSettings(): Promise<Record<string, string>> {
     settings[row.key] = row.value ?? '';
   }
   return settings;
+}
+
+export async function batchSetSettings(settings: Record<string, string>): Promise<void> {
+  const db = getDatabase();
+  const entries = Object.entries(settings);
+  if (entries.length === 0) return;
+
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    for (const [key, value] of entries) {
+      await db.runAsync(
+        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+        [key, value]
+      );
+    }
+    await db.execAsync('COMMIT');
+  } catch (error) {
+    await db.execAsync('ROLLBACK');
+    throw error;
+  }
 }
 
 // ─── Export ──────────────────────────────────────────────────────────────────

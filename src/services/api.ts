@@ -76,12 +76,6 @@ async function request<T>(options: RequestOptions): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Check for test mode header
-  const testMode = await AsyncStorage.getItem('ospos_test_mode');
-  if (testMode === 'on') {
-    headers['X-Stripe-Test-Mode'] = 'true';
-  }
-
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
@@ -183,6 +177,21 @@ export async function getAccountStatus(): Promise<{
   return request({
     method: 'GET',
     path: '/stripe/account-status',
+  });
+}
+
+export interface AccountDetails {
+  business_name: string | null;
+  default_currency: string | null;
+  support_address_zip: string | null;
+  support_address_state: string | null;
+  support_address_country: string | null;
+}
+
+export async function getAccountDetails(): Promise<AccountDetails> {
+  return request({
+    method: 'GET',
+    path: '/stripe/account-details',
   });
 }
 

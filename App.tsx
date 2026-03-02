@@ -22,12 +22,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppProvider, useApp } from './src/state/AppContext';
 import { StripeTerminalProvider } from './src/services/terminal';
 import { fetchConnectionToken } from './src/services/terminal';
+import { clearToken } from './src/services/api';
 import { colors, typography, spacing } from './src/constants/theme';
 import { strings } from './src/constants/strings';
 
-import TierSelectionScreen, { TIER_KEY } from './src/screens/TierSelectionScreen';
-import AccountCreationScreen from './src/screens/AccountCreationScreen';
-import StripeOnboardingScreen from './src/screens/StripeOnboardingScreen';
+import { OnboardingProvider } from './src/state/OnboardingContext';
+import OnboardingNavigator from './src/navigation/OnboardingNavigator';
+import { setSetting } from './src/db/queries';
 import MenuBuilderScreen from './src/screens/MenuBuilderScreen';
 import OrderScreen from './src/screens/OrderScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
@@ -194,8 +195,8 @@ function SettingsStackNavigator() {
                   {
                     text: 'Continue',
                     onPress: async () => {
-                      await AsyncStorage.removeItem(TIER_KEY);
-                      await AsyncStorage.removeItem('ospos_auth_token');
+                      await AsyncStorage.removeItem('onboardingComplete');
+                      await clearToken();
                       Alert.alert('Restart Required', 'Please restart the app to begin card payment setup.');
                     },
                   },
@@ -214,9 +215,10 @@ function SettingsStackNavigator() {
   );
 }
 
-function MainTabs() {
+function MainTabs({ initialTab }: { initialTab?: string }) {
   return (
     <Tab.Navigator
+      initialRouteName={initialTab}
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
@@ -273,26 +275,37 @@ function MainTabs() {
 
 // ─── App content ────────────────────────────────────────────────────────────
 
-type OnboardingStep = 'tier' | 'account' | 'stripe' | 'done';
-
 function AppContent() {
-  const { dbReady, dbStatus, updateSetting, settings } = useApp();
-  const [tierValue, setTierValue] = useState<string | null>(null);
-  const [tierChecked, setTierChecked] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('tier');
+  const { dbReady } = useApp();
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
+  const [initialTab, setInitialTab] = useState<string | undefined>();
 
   useEffect(() => {
+    if (!dbReady) return;
     (async () => {
-      const tier = await AsyncStorage.getItem(TIER_KEY);
-      setTierValue(tier);
-      if (tier) {
-        setOnboardingStep('done');
+      const value = await AsyncStorage.getItem('onboardingComplete');
+      if (value === 'true') {
+        setOnboardingComplete(true);
+        return;
       }
-      setTierChecked(true);
+      // Migration: existing users who completed old onboarding
+      const oldTier = await AsyncStorage.getItem('ospos_tier_selected');
+      if (oldTier) {
+        try {
+          await setSetting('tier', oldTier);
+          await AsyncStorage.setItem('onboardingComplete', 'true');
+          await AsyncStorage.removeItem('ospos_tier_selected');
+        } catch {
+          await AsyncStorage.setItem('onboardingComplete', 'true');
+        }
+        setOnboardingComplete(true);
+        return;
+      }
+      setOnboardingComplete(false);
     })();
-  }, []);
+  }, [dbReady]);
 
-  if (!dbReady || !tierChecked) {
+  if (!dbReady || onboardingComplete === null) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -300,43 +313,17 @@ function AppContent() {
     );
   }
 
-  if (onboardingStep !== 'done') {
-    switch (onboardingStep) {
-      case 'tier':
-        return (
-          <TierSelectionScreen
-            onTierSelected={(tier) => {
-              if (tier === 'free') {
-                updateSetting('tier', 'free');
-                setTierValue('free');
-                setOnboardingStep('done');
-              } else {
-                setOnboardingStep('account');
-              }
-            }}
-          />
-        );
-      case 'account':
-        return (
-          <AccountCreationScreen
-            onAccountCreated={() => setOnboardingStep('stripe')}
-            onBack={() => setOnboardingStep('tier')}
-          />
-        );
-      case 'stripe':
-        return (
-          <StripeOnboardingScreen
-            onComplete={(verified) => {
-              updateSetting('tier', 'paid');
-              updateSetting('stripeVerified', verified ? 'true' : 'pending');
-              AsyncStorage.setItem(TIER_KEY, 'paid');
-              setTierValue('paid');
-              setOnboardingStep('done');
-            }}
-            onBack={() => setOnboardingStep('account')}
-          />
-        );
-    }
+  if (!onboardingComplete) {
+    return (
+      <OnboardingProvider onComplete={(options) => {
+        setInitialTab(options?.initialTab);
+        setOnboardingComplete(true);
+      }}>
+        <NavigationContainer>
+          <OnboardingNavigator />
+        </NavigationContainer>
+      </OnboardingProvider>
+    );
   }
 
   return (
@@ -345,7 +332,7 @@ function AppContent() {
       tokenProvider={fetchConnectionToken}
     >
       <NavigationContainer>
-        <MainTabs />
+        <MainTabs initialTab={initialTab} />
       </NavigationContainer>
     </StripeTerminalProvider>
   );

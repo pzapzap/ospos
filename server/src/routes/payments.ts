@@ -24,21 +24,21 @@ router.post('/create-intent', async (req: Request, res: Response): Promise<void>
   try {
     if (!req.user) { res.status(401).json({ error: 'Unauthorized' }); return; }
 
-    const { amount, currency, tip_amount, idempotency_key } = req.body;
+    const { amount, currency, tip_amount } = req.body;
 
     if (!amount || !currency) {
       res.status(400).json({ error: 'Amount and currency are required' });
       return;
     }
 
-    if (typeof amount !== 'number' || amount <= 0 || amount > 99_999_999) {
-      res.status(400).json({ error: 'Amount must be a positive number (in cents), max 999,999.99' });
+    if (typeof amount !== 'number' || !Number.isInteger(amount) || amount < 50 || amount > 99_999_999) {
+      res.status(400).json({ error: 'Amount must be an integer (in cents), min 50, max 99999999' });
       return;
     }
 
     if (tip_amount !== undefined) {
-      if (typeof tip_amount !== 'number' || tip_amount < 0 || tip_amount > 1_000_000) {
-        res.status(400).json({ error: 'tip_amount must be a non-negative number' });
+      if (typeof tip_amount !== 'number' || !Number.isInteger(tip_amount) || tip_amount < 0 || tip_amount > amount * 2) {
+        res.status(400).json({ error: 'tip_amount must be a non-negative integer, max 2x the order amount' });
         return;
       }
     }
@@ -54,12 +54,15 @@ router.post('/create-intent', async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Generate idempotency key server-side to prevent replay attacks
+    const idempotencyKey = `pi_${req.user.userId}_${amount}_${Date.now()}`;
+
     const result = await createPaymentIntent(
       amount,
       currency.toLowerCase(),
       user.stripe_account_id,
       tip_amount,
-      idempotency_key
+      idempotencyKey
     );
 
     res.json(result);
@@ -76,8 +79,8 @@ router.post('/refund', async (req: Request, res: Response): Promise<void> => {
 
     const { paymentIntentId, amount } = req.body;
 
-    if (!paymentIntentId || typeof paymentIntentId !== 'string') {
-      res.status(400).json({ error: 'paymentIntentId is required' });
+    if (!paymentIntentId || typeof paymentIntentId !== 'string' || !/^pi_[a-zA-Z0-9]+$/.test(paymentIntentId)) {
+      res.status(400).json({ error: 'Invalid paymentIntentId' });
       return;
     }
 

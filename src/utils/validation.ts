@@ -13,7 +13,7 @@ export function validatePrice(price: string): { valid: boolean; parsed: number; 
   const parsed = parseFloat(price);
   if (!price.trim() || isNaN(parsed)) return { valid: false, parsed: 0, error: 'Price must be a number' };
   if (parsed <= 0) return { valid: false, parsed: 0, error: 'Price must be greater than zero' };
-  if (parsed > 999999.99) return { valid: false, parsed: 0, error: 'Price cannot exceed $999,999.99' };
+  if (parsed > 999999.99) return { valid: false, parsed: 0, error: 'Price cannot exceed 999,999.99' };
   return { valid: true, parsed: Math.round(parsed * 100) };
 }
 

@@ -9,23 +9,24 @@ import {
   Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
-import { startOnboarding, getAccountStatus } from '../services/api';
+import { startOnboarding, getAccountStatus, getAccountDetails } from '../services/api';
+import { useOnboarding } from '../state/OnboardingContext';
+import { lookupTaxRateByState } from '../utils/taxLookup';
+import type { OnboardingStackParamList } from '../navigation/OnboardingNavigator';
+
+type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'StripeOnboarding'>;
 
 const API_MODE = process.env.EXPO_PUBLIC_API_MODE ?? (__DEV__ ? 'mock' : 'production');
 const API_BASE_URL = API_MODE === 'mock'
   ? (process.env.EXPO_PUBLIC_MOCK_API_URL ?? 'http://localhost:3000')
   : (process.env.EXPO_PUBLIC_API_URL ?? 'https://api.ospos.app');
 
-interface StripeOnboardingScreenProps {
-  onComplete: (verified: boolean) => void;
-  onBack: () => void;
-}
-
-export default function StripeOnboardingScreen({
-  onComplete,
-  onBack,
-}: StripeOnboardingScreenProps) {
+export default function StripeOnboardingScreen() {
+  const navigation = useNavigation<Nav>();
+  const { dispatch } = useOnboarding();
   const mountedRef = useRef(true);
   const [loading, setLoading] = useState(true);
   const [onboardingUrl, setOnboardingUrl] = useState<string | null>(null);
@@ -38,7 +39,10 @@ export default function StripeOnboardingScreen({
           `${API_BASE_URL}/stripe/return`,
           `${API_BASE_URL}/stripe/refresh`
         );
-        if (mountedRef.current) setOnboardingUrl(result.url);
+        if (mountedRef.current) {
+          dispatch({ type: 'SET_STRIPE_ACCOUNT_ID', payload: result.stripeAccountId });
+          setOnboardingUrl(result.url);
+        }
       } catch (err) {
         if (mountedRef.current) setError(err instanceof Error ? err.message : 'Failed to start onboarding');
       } finally {
@@ -46,23 +50,44 @@ export default function StripeOnboardingScreen({
       }
     })();
     return () => { mountedRef.current = false; };
-  }, []);
+  }, [dispatch]);
+
+  const prefillAndNavigate = async () => {
+    try {
+      const details = await getAccountDetails();
+      if (details.business_name) {
+        dispatch({ type: 'SET_BUSINESS_NAME', payload: details.business_name });
+      }
+      if (details.default_currency) {
+        dispatch({ type: 'SET_CURRENCY', payload: details.default_currency.toUpperCase() });
+      }
+      if (details.support_address_country === 'US' && details.support_address_state) {
+        const rate = lookupTaxRateByState(details.support_address_state);
+        if (rate) {
+          dispatch({ type: 'SET_TAX_RATE', payload: rate });
+        }
+      }
+    } catch {
+      // Pre-fill is best-effort — continue to BusinessName even if it fails
+    }
+    navigation.navigate('BusinessName');
+  };
 
   const handleDeepLink = async (url: string) => {
     if (url.startsWith('ospos://stripe/return')) {
       try {
         const status = await getAccountStatus();
         if (status.charges_enabled) {
-          onComplete(true);
+          await prefillAndNavigate();
         } else {
           Alert.alert(
             'Verification Pending',
             'Card payments will be available once Stripe verifies your account. You can use cash payments in the meantime.',
-            [{ text: 'OK', onPress: () => onComplete(false) }]
+            [{ text: 'OK', onPress: () => prefillAndNavigate() }]
           );
         }
       } catch {
-        onComplete(false);
+        await prefillAndNavigate();
       }
     } else if (url.startsWith('ospos://stripe/refresh')) {
       if (!mountedRef.current) return;
@@ -115,7 +140,7 @@ export default function StripeOnboardingScreen({
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={onBack}>
+          <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
             <Text style={styles.retryText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -130,7 +155,7 @@ export default function StripeOnboardingScreen({
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>← Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Connect Payments</Text>
@@ -138,6 +163,7 @@ export default function StripeOnboardingScreen({
       </View>
       <WebView
         source={{ uri: onboardingUrl }}
+        originWhitelist={['https://*', 'ospos://*']}
         onShouldStartLoadWithRequest={handleShouldStartLoad}
         onMessage={(event) => {
           const msg = event.nativeEvent.data;
@@ -154,6 +180,14 @@ export default function StripeOnboardingScreen({
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         )}
+        onError={() => {
+          if (mountedRef.current) setError('Failed to load Stripe onboarding page. Check your connection and try again.');
+        }}
+        onHttpError={(event) => {
+          if (mountedRef.current && event.nativeEvent.statusCode >= 500) {
+            setError('Stripe is temporarily unavailable. Please try again later.');
+          }
+        }}
       />
     </SafeAreaView>
   );

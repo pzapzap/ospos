@@ -18,9 +18,10 @@ export async function fetchConnectionToken(): Promise<string> {
   try {
     const result = await getConnectionToken();
     if (__DEV__) console.log('[OSPOS] Connection token fetched:', result.secret ? 'ok' : 'EMPTY');
+    if (!result.secret) throw new Error('Empty connection token');
     return result.secret;
   } catch (err) {
-    console.warn('[OSPOS] Connection token FAILED:', err instanceof Error ? err.message : err);
-    return '';
+    if (__DEV__) console.warn('[OSPOS] Connection token FAILED:', err instanceof Error ? err.message : err);
+    throw err;
   }
 }

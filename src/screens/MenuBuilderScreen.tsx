@@ -83,40 +83,70 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
 
   const handleDelete = async () => {
     if (!editingItem) return;
-    try {
-      await softDeleteItem(editingItem.id);
-      setModalVisible(false);
-      setEditingItem(null);
-      await loadItems();
-    } catch {
-      Alert.alert(strings.errors.generic);
-    }
+    Alert.alert(
+      'Delete Item',
+      `Remove "${editingItem.name}" from your menu?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await softDeleteItem(editingItem.id);
+              setModalVisible(false);
+              setEditingItem(null);
+              await loadItems();
+            } catch {
+              Alert.alert(strings.errors.generic);
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const handleSwipeDelete = async (itemId: string) => {
-    try {
-      await softDeleteItem(itemId);
-      await loadItems();
-    } catch {
-      Alert.alert(strings.errors.generic);
-    }
+  const handleSwipeDelete = async (itemId: string, itemName: string) => {
+    Alert.alert(
+      'Delete Item',
+      `Remove "${itemName}" from your menu?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await softDeleteItem(itemId);
+              await loadItems();
+            } catch {
+              Alert.alert(strings.errors.generic);
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const renderRightActions = (itemId: string) => (
+  const renderRightActions = (itemId: string, itemName: string) => (
     <TouchableOpacity
       style={styles.swipeDelete}
-      onPress={() => handleSwipeDelete(itemId)}
+      onPress={() => handleSwipeDelete(itemId, itemName)}
+      accessibilityLabel={`Delete ${itemName}`}
+      accessibilityRole="button"
     >
       <Text style={styles.swipeDeleteText}>{strings.menuBuilder.delete}</Text>
     </TouchableOpacity>
   );
 
   const renderItem = ({ item }: { item: Item }) => (
-    <Swipeable renderRightActions={() => renderRightActions(item.id)}>
+    <Swipeable renderRightActions={() => renderRightActions(item.id, item.name)}>
       <TouchableOpacity
         style={styles.itemRow}
         onPress={() => handleEditItem(item)}
         activeOpacity={0.7}
+        accessibilityLabel={`${item.name}, ${formatCurrency(item.price, settings.currency)}. Tap to edit, swipe left to delete`}
+        accessibilityRole="button"
       >
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemPrice}>

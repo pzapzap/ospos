@@ -50,7 +50,6 @@ router.post('/register', authLimiter, async (req: Request, res: Response): Promi
     const token = generateToken({
       userId: user.id,
       email: user.email,
-      stripeAccountId: user.stripe_account_id,
     });
 
     res.status(201).json({ token, userId: user.id });
@@ -90,7 +89,6 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
     const token = generateToken({
       userId: user.id,
       email: user.email,
-      stripeAccountId: user.stripe_account_id,
     });
 
     res.json({ token, userId: user.id });

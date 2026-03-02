@@ -9,6 +9,8 @@ import {
 
 const router = Router();
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 router.use(authMiddleware);
 
 // POST /sync/push
@@ -51,9 +53,15 @@ router.post('/push', async (req: Request, res: Response): Promise<void> => {
         }
 
         if (record.table_name === 'orders') {
+          const id = payload.id;
+          if (typeof id !== 'string' || !UUID_REGEX.test(id)) continue;
           await upsertSyncedOrder(req.user.userId, payload as Parameters<typeof upsertSyncedOrder>[1]);
           synced.push(record.id);
         } else if (record.table_name === 'order_items') {
+          const id = payload.id;
+          const orderId = payload.order_id;
+          if (typeof id !== 'string' || !UUID_REGEX.test(id)) continue;
+          if (typeof orderId !== 'string' || !UUID_REGEX.test(orderId)) continue;
           await upsertSyncedOrderItem(payload as Parameters<typeof upsertSyncedOrderItem>[0]);
           synced.push(record.id);
         }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,17 +10,18 @@ import {
   Switch,
   Alert,
   Linking,
-  Modal,
-  FlatList,
+  Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearToken } from '../services/api';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
 import { SUPPORTED_CURRENCIES } from '../utils/currency';
-import { validateTaxRate, MAX_BUSINESS_NAME_LENGTH, MAX_RECEIPT_FOOTER_LENGTH } from '../utils/validation';
+import { MAX_BUSINESS_NAME_LENGTH, MAX_RECEIPT_FOOTER_LENGTH } from '../utils/validation';
 import { performBackup, recordBackupTime } from '../utils/backup';
 import { getSyncHealth, forceRetryFailed } from '../services/sync';
 import {
@@ -30,6 +31,8 @@ import {
   isPrinterConnected,
   type PrinterInfo,
 } from '../services/printer';
+import CurrencyPickerModal from '../components/CurrencyPickerModal';
+import TaxRateModal from '../components/TaxRateModal';
 
 interface SettingsScreenProps {
   onDisputesTap?: () => void;
@@ -39,6 +42,21 @@ interface SettingsScreenProps {
 export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScreenProps) {
   const { settings, updateSetting, isTestMode } = useApp();
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [showTaxRateModal, setShowTaxRateModal] = useState(false);
+  const [localBusinessName, setLocalBusinessName] = useState(settings.businessName);
+  const [localReceiptFooter, setLocalReceiptFooter] = useState(settings.receiptFooter);
+  const businessNameSyncedRef = useRef(settings.businessName);
+  const receiptFooterSyncedRef = useRef(settings.receiptFooter);
+
+  // Keep local state in sync if settings change externally
+  if (settings.businessName !== businessNameSyncedRef.current) {
+    businessNameSyncedRef.current = settings.businessName;
+    setLocalBusinessName(settings.businessName);
+  }
+  if (settings.receiptFooter !== receiptFooterSyncedRef.current) {
+    receiptFooterSyncedRef.current = settings.receiptFooter;
+    setLocalReceiptFooter(settings.receiptFooter);
+  }
   const [syncHealth, setSyncHealth] = useState<{
     pendingCount: number;
     failedCount: number;
@@ -75,7 +93,6 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScr
 
   const handleTestModeToggle = (value: boolean) => {
     if (!value && isTestMode) {
-      // Exiting test mode requires confirmation
       Alert.alert(
         'Exit Test Mode',
         'Exit Test Mode and process real payments?',
@@ -125,9 +142,11 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScr
     (c) => c.code === settings.currency
   );
 
+  const taxDisplay = settings.taxRate === '0' || settings.taxRate === '' ? '0%' : `${settings.taxRate}%`;
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>{strings.settings.title}</Text>
 
         {/* Business Name */}
@@ -135,31 +154,30 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScr
           <Text style={styles.label}>{strings.settings.businessName}</Text>
           <TextInput
             style={styles.input}
-            value={settings.businessName}
-            onChangeText={(val) => updateSetting('businessName', val)}
+            value={localBusinessName}
+            onChangeText={setLocalBusinessName}
+            onBlur={() => {
+              if (localBusinessName !== settings.businessName) {
+                updateSetting('businessName', localBusinessName);
+              }
+            }}
             placeholder={strings.settings.businessNamePlaceholder}
             placeholderTextColor={colors.textMuted}
             maxLength={MAX_BUSINESS_NAME_LENGTH}
+            autoCapitalize="words"
+            accessibilityLabel="Business name"
           />
         </View>
 
         {/* Tax Rate */}
         <View style={styles.section}>
           <Text style={styles.label}>{strings.settings.taxRate}</Text>
-          <TextInput
-            style={styles.input}
-            value={settings.taxRate}
-            onChangeText={(val) => {
-              const result = validateTaxRate(val);
-              if (val === '' || result.valid || val.endsWith('.')) {
-                updateSetting('taxRate', val);
-              }
-            }}
-            placeholder={strings.settings.taxRatePlaceholder}
-            placeholderTextColor={colors.textMuted}
-            keyboardType="decimal-pad"
-            maxLength={6}
-          />
+          <TouchableOpacity
+            style={styles.pickerButton}
+            onPress={() => setShowTaxRateModal(true)}
+          >
+            <Text style={styles.pickerText}>{taxDisplay}</Text>
+          </TouchableOpacity>
           <Text style={styles.hint}>{strings.settings.taxNote}</Text>
         </View>
 
@@ -183,11 +201,17 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScr
           <Text style={styles.label}>{strings.settings.receiptFooter}</Text>
           <TextInput
             style={styles.input}
-            value={settings.receiptFooter}
-            onChangeText={(val) => updateSetting('receiptFooter', val)}
+            value={localReceiptFooter}
+            onChangeText={setLocalReceiptFooter}
+            onBlur={() => {
+              if (localReceiptFooter !== settings.receiptFooter) {
+                updateSetting('receiptFooter', localReceiptFooter);
+              }
+            }}
             placeholder={strings.settings.receiptFooterPlaceholder}
             placeholderTextColor={colors.textMuted}
             maxLength={MAX_RECEIPT_FOOTER_LENGTH}
+            accessibilityLabel="Receipt footer text"
           />
         </View>
 
@@ -220,8 +244,8 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScr
                     text: 'Reset',
                     style: 'destructive',
                     onPress: async () => {
-                      await AsyncStorage.removeItem('ospos_tier_selected');
-                      await AsyncStorage.removeItem('ospos_auth_token');
+                      await AsyncStorage.removeItem('onboardingComplete');
+                      await clearToken();
                       Alert.alert('Done', 'Restart the app now.');
                     },
                   },
@@ -337,9 +361,14 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScr
                 activeOpacity={0.7}
                 disabled={scanning}
               >
-                <Text style={styles.backupButtonText}>
-                  {scanning ? 'Scanning...' : 'Scan for Printers'}
-                </Text>
+                {scanning ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                    <ActivityIndicator color={colors.textSecondary} size="small" />
+                    <Text style={styles.backupButtonText}>Scanning...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.backupButtonText}>Scan for Printers</Text>
+                )}
               </TouchableOpacity>
               {foundPrinters.map((printer) => (
                 <TouchableOpacity
@@ -421,40 +450,26 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScr
         </View>
       </ScrollView>
 
-      {/* Currency Picker Modal */}
-      <Modal visible={showCurrencyPicker} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>{strings.settings.currency}</Text>
-            <FlatList
-              data={SUPPORTED_CURRENCIES}
-              keyExtractor={(item) => item.code}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.currencyRow,
-                    item.code === settings.currency && styles.currencyRowSelected,
-                  ]}
-                  onPress={() => {
-                    updateSetting('currency', item.code);
-                    setShowCurrencyPicker(false);
-                  }}
-                >
-                  <Text style={styles.currencySymbol}>{item.symbol}</Text>
-                  <Text style={styles.currencyCode}>{item.code}</Text>
-                  <Text style={styles.currencyName}>{item.name}</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity
-              style={styles.modalClose}
-              onPress={() => setShowCurrencyPicker(false)}
-            >
-              <Text style={styles.modalCloseText}>{strings.menuBuilder.cancel}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <CurrencyPickerModal
+        visible={showCurrencyPicker}
+        selectedCode={settings.currency}
+        onSelect={(code) => {
+          updateSetting('currency', code);
+          setShowCurrencyPicker(false);
+        }}
+        onClose={() => setShowCurrencyPicker(false)}
+      />
+
+      <TaxRateModal
+        visible={showTaxRateModal}
+        currentRate={settings.taxRate}
+        currencyCode={settings.currency}
+        onSave={(rate) => {
+          updateSetting('taxRate', rate);
+          setShowTaxRateModal(false);
+        }}
+        onClose={() => setShowTaxRateModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -487,16 +502,6 @@ const styles = StyleSheet.create({
   aboutSection: { paddingTop: spacing.lg, gap: spacing.xs },
   aboutTitle: { ...typography.bodyBold, marginBottom: spacing.sm },
   aboutText: { ...typography.caption },
-  modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
-  modal: { backgroundColor: colors.surface, borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl, padding: spacing.xxl, maxHeight: '70%' },
-  modalTitle: { ...typography.title2, textAlign: 'center', marginBottom: spacing.xl },
-  currencyRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md, paddingHorizontal: spacing.md, borderRadius: borderRadius.sm, marginBottom: spacing.xs },
-  currencyRowSelected: { backgroundColor: colors.cardHighlight },
-  currencySymbol: { ...typography.bodyBold, width: 40 },
-  currencyCode: { ...typography.bodyBold, width: 50 },
-  currencyName: { ...typography.body, color: colors.textSecondary, flex: 1 },
-  modalClose: { marginTop: spacing.lg, paddingVertical: spacing.lg, alignItems: 'center', backgroundColor: colors.cardHighlight, borderRadius: borderRadius.md },
-  modalCloseText: { ...typography.bodyBold, color: colors.textSecondary },
   sentryTestButton: { marginTop: spacing.md, backgroundColor: colors.surface, borderRadius: borderRadius.md, paddingVertical: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.warning },
   sentryTestText: { ...typography.bodyBold, color: colors.warning },
 });

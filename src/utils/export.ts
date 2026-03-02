@@ -2,6 +2,16 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { getAllOrdersForExport, getAllOrdersForDateRange, type OrderWithItems } from '../db/queries';
+import { formatCurrency, getCurrencyDecimals } from './currency';
+
+// Module-level currency code set before generating CSV/summary
+let _currencyCode = 'USD';
+
+function formatAmount(cents: number): string {
+  const decimals = getCurrencyDecimals(_currencyCode);
+  const divisor = decimals === 0 ? 1 : Math.pow(10, decimals);
+  return (cents / divisor).toFixed(decimals);
+}
 
 // Sanitize string for CSV: escape quotes, strip newlines, prevent formula injection
 function sanitizeCSVField(value: string): string {
@@ -24,7 +34,7 @@ function orderToCSVRow(order: OrderWithItems): string {
     itemParts.push(
       sanitizeCSVField(item.item_name),
       String(item.quantity),
-      (item.item_price / 100).toFixed(2)
+      formatAmount(item.item_price)
     );
   }
 
@@ -32,10 +42,10 @@ function orderToCSVRow(order: OrderWithItems): string {
     dateStr,
     timeStr,
     ...itemParts,
-    (order.subtotal / 100).toFixed(2),
-    (order.tax_amount / 100).toFixed(2),
-    (order.tip_amount / 100).toFixed(2),
-    (order.total / 100).toFixed(2),
+    formatAmount(order.subtotal),
+    formatAmount(order.tax_amount),
+    formatAmount(order.tip_amount),
+    formatAmount(order.total),
     order.payment_method,
   ].join(',');
 }
@@ -48,7 +58,8 @@ function buildCSVHeader(maxItems: number): string {
   return ['date', 'time', ...itemHeaders, 'subtotal', 'tax', 'tip', 'total', 'payment_method'].join(',');
 }
 
-export async function generateCSV(dateStr: string, endDate?: string): Promise<string> {
+export async function generateCSV(dateStr: string, endDate?: string, currencyCode?: string): Promise<string> {
+  if (currencyCode) _currencyCode = currencyCode;
   const orders = endDate
     ? await getAllOrdersForDateRange(dateStr, endDate)
     : await getAllOrdersForExport(dateStr);
@@ -64,8 +75,8 @@ export async function generateCSV(dateStr: string, endDate?: string): Promise<st
   return [header, ...rows].join('\n');
 }
 
-export async function exportCSVToFile(dateStr: string, endDate?: string): Promise<string | null> {
-  const csv = await generateCSV(dateStr, endDate);
+export async function exportCSVToFile(dateStr: string, endDate?: string, currencyCode?: string): Promise<string | null> {
+  const csv = await generateCSV(dateStr, endDate, currencyCode);
   if (!csv) return null;
 
   const fileName = endDate
@@ -79,8 +90,8 @@ export async function exportCSVToFile(dateStr: string, endDate?: string): Promis
   return filePath;
 }
 
-export async function shareCSV(dateStr: string, endDate?: string): Promise<void> {
-  const filePath = await exportCSVToFile(dateStr, endDate);
+export async function shareCSV(dateStr: string, endDate?: string, currencyCode?: string): Promise<void> {
+  const filePath = await exportCSVToFile(dateStr, endDate, currencyCode);
   if (!filePath) return;
 
   const isAvailable = await Sharing.isAvailableAsync();
@@ -99,14 +110,23 @@ export function generateTextSummary(
   cashTotal: number,
   cardTotal: number,
   averageValue: number,
-  currencySymbol: string
+  currencySymbol: string,
+  currencyCode?: string
 ): string {
+  const fmt = (cents: number) => {
+    if (currencyCode) {
+      const d = getCurrencyDecimals(currencyCode);
+      const divisor = d === 0 ? 1 : Math.pow(10, d);
+      return `${currencySymbol}${(cents / divisor).toFixed(d)}`;
+    }
+    return `${currencySymbol}${(cents / 100).toFixed(2)}`;
+  };
   return [
     `Sales Summary — ${dateStr}`,
-    `Total Sales: ${currencySymbol}${(totalSales / 100).toFixed(2)}`,
+    `Total Sales: ${fmt(totalSales)}`,
     `Transactions: ${transactionCount}`,
-    `Cash: ${currencySymbol}${(cashTotal / 100).toFixed(2)}`,
-    `Card: ${currencySymbol}${(cardTotal / 100).toFixed(2)}`,
-    `Average: ${currencySymbol}${(averageValue / 100).toFixed(2)}`,
+    `Cash: ${fmt(cashTotal)}`,
+    `Card: ${fmt(cardTotal)}`,
+    `Average: ${fmt(averageValue)}`,
   ].join('\n');
 }

@@ -86,7 +86,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (result.status === 'ok' || result.status === 'recovered') {
         const dbSettings = await getAllSettings();
-        const tier = await AsyncStorage.getItem('ospos_tier_selected');
         const testMode = await AsyncStorage.getItem('ospos_test_mode');
 
         settingsDispatch({
@@ -97,7 +96,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             currency: dbSettings['currency'] ?? 'USD',
             autoBackup: dbSettings['auto_backup'] ?? 'on',
             receiptFooter: dbSettings['receipt_footer'] ?? '',
-            tier: tier === 'paid' ? 'paid' : 'free',
+            tier: dbSettings['tier'] === 'paid' ? 'paid' : 'free',
             testMode: testMode === 'on' ? 'on' : 'off',
             isOnline: 'true',
             userEmail: dbSettings['user_email'] ?? '',
@@ -122,7 +121,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Start sync engine and register push notifications for paid tier
-        if (tier === 'paid') {
+        if (dbSettings['tier'] === 'paid') {
           startSyncEngine();
           registerForPushNotifications().catch(() => {});
         }
@@ -149,7 +148,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // Some keys are stored in AsyncStorage, not SQLite settings
     if (key === 'tier') {
-      await AsyncStorage.setItem('ospos_tier_selected', value);
+      await setSetting('tier', value);
       if (value === 'paid') {
         startSyncEngine();
       } else {

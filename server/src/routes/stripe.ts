@@ -5,6 +5,7 @@ import {
   createConnectedAccount,
   createAccountLink,
   getAccountStatus,
+  getAccountDetails,
   createConnectionToken,
 } from '../services/stripe';
 
@@ -106,6 +107,23 @@ router.get('/account-status', async (req: Request, res: Response): Promise<void>
   } catch (error) {
     console.error('[STRIPE] Account status error:', error);
     res.status(500).json({ error: 'Failed to get account status' });
+  }
+});
+
+// GET /stripe/account-details
+router.get('/account-details', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await findUserById(req.user!.userId);
+    if (!user?.stripe_account_id) {
+      res.status(400).json({ error: 'No Stripe account found' });
+      return;
+    }
+
+    const details = await getAccountDetails(user.stripe_account_id);
+    res.json(details);
+  } catch (error) {
+    console.error('[STRIPE] Account details error:', error);
+    res.status(500).json({ error: 'Failed to get account details' });
   }
 });
 

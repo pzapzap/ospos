@@ -10,6 +10,11 @@ function optionalEnv(name: string, defaultValue: string): string {
   return process.env[name] || defaultValue;
 }
 
+const jwtSecret = requireEnv('JWT_SECRET');
+if (process.env.NODE_ENV === 'production' && jwtSecret.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters in production');
+}
+
 export const config = {
   port: parseInt(optionalEnv('PORT', '3000'), 10),
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
@@ -19,7 +24,7 @@ export const config = {
   },
 
   jwt: {
-    secret: requireEnv('JWT_SECRET'),
+    secret: jwtSecret,
     expiresIn: '24h',
   },
 

@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
@@ -55,6 +56,12 @@ export default function AddItemModal({
   }, [editItem, visible]);
 
   const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Photo Access Required', 'Please enable photo library access in Settings to add item images.');
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -111,7 +118,10 @@ export default function AddItemModal({
                 testID="input-item-name"
                 style={[styles.input, errors.name ? styles.inputError : null]}
                 value={name}
-                onChangeText={setName}
+                onChangeText={(text) => {
+                  setName(text);
+                  if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                }}
                 placeholder={strings.menuBuilder.itemName}
                 placeholderTextColor={colors.textMuted}
                 autoFocus={!editItem}
@@ -128,7 +138,10 @@ export default function AddItemModal({
                 testID="input-item-price"
                 style={[styles.input, errors.price ? styles.inputError : null]}
                 value={price}
-                onChangeText={setPrice}
+                onChangeText={(text) => {
+                  setPrice(text);
+                  if (errors.price) setErrors((prev) => ({ ...prev, price: undefined }));
+                }}
                 placeholder="0.00"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="decimal-pad"

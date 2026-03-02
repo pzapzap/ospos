@@ -152,7 +152,8 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
               <FlatList
                 data={lastOrder.items}
                 keyExtractor={(item) => item.itemId}
-                scrollEnabled={false}
+                scrollEnabled={lastOrder.items.length > 10}
+                style={lastOrder.items.length > 10 ? { maxHeight: 200 } : undefined}
                 renderItem={({ item }) => (
                   <View style={styles.lineItem}>
                     <Text style={styles.lineItemName}>
@@ -201,6 +202,8 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
             {printerAvailable ? (
               <TouchableOpacity
                 style={[styles.receiptButton, { marginTop: spacing.xl }]}
+                accessibilityLabel="Print receipt"
+                accessibilityRole="button"
                 onPress={async () => {
                   if (!lastOrder) return;
                   setPrinting(true);
@@ -245,12 +248,16 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                     <TouchableOpacity
                       style={styles.receiptButton}
                       onPress={() => setReceiptMode('sms')}
+                      accessibilityLabel="Send receipt via text message"
+                      accessibilityRole="button"
                     >
                       <Text style={styles.receiptButtonText}>Text Receipt</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.receiptButton}
                       onPress={() => setReceiptMode('email')}
+                      accessibilityLabel="Send receipt via email"
+                      accessibilityRole="button"
                     >
                       <Text style={styles.receiptButtonText}>Email Receipt</Text>
                     </TouchableOpacity>

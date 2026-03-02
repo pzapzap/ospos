@@ -52,14 +52,11 @@ router.post('/stripe', async (req: Request, res: Response): Promise<void> => {
         const dispute = event.data.object as Stripe.Dispute;
         console.log(`[WEBHOOK] Dispute created: ${dispute.id}`);
 
-        // Find the merchant by their connected account
-        const charge = dispute.charge as Stripe.Charge | string;
-        const chargeObj = typeof charge === 'string' ? null : charge;
-        const accountId = chargeObj?.transfer_data?.destination;
+        // Direct charges: the connected account ID is in event.account
+        const connectedAccountId = (event as Stripe.Event & { account?: string }).account;
 
-        if (accountId) {
-          const destinationId = typeof accountId === 'string' ? accountId : accountId.id;
-          const user = await findUserByStripeAccount(destinationId);
+        if (connectedAccountId) {
+          const user = await findUserByStripeAccount(connectedAccountId);
 
           if (user) {
             await createDisputeRecord(
