@@ -147,25 +147,17 @@ export async function login(
 
 // ─── Stripe Connect ──────────────────────────────────────────────────────────
 
-export async function startOnboarding(
-  returnUrl: string,
-  refreshUrl: string
-): Promise<{ url: string; stripeAccountId: string }> {
+export async function startOnboarding(): Promise<{ url: string; stripeAccountId: string }> {
   return request({
     method: 'POST',
     path: '/stripe/onboarding',
-    body: { return_url: returnUrl, refresh_url: refreshUrl },
   });
 }
 
-export async function refreshOnboarding(
-  returnUrl: string,
-  refreshUrl: string
-): Promise<{ url: string }> {
+export async function refreshOnboarding(): Promise<{ url: string }> {
   return request({
     method: 'POST',
     path: '/stripe/onboarding/refresh',
-    body: { return_url: returnUrl, refresh_url: refreshUrl },
   });
 }
 

@@ -43,6 +43,7 @@ interface AppContextValue {
 
   isOnline: boolean;
   isTestMode: boolean;
+  reloadSettings: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -133,6 +134,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const reloadSettings = useCallback(async () => {
+    const dbSettings = await getAllSettings();
+    const testMode = await AsyncStorage.getItem('ospos_test_mode');
+    settingsDispatch({
+      type: 'LOAD_SETTINGS',
+      payload: {
+        businessName: dbSettings['business_name'] ?? '',
+        taxRate: dbSettings['tax_rate'] ?? '0',
+        currency: dbSettings['currency'] ?? 'USD',
+        autoBackup: dbSettings['auto_backup'] ?? 'on',
+        receiptFooter: dbSettings['receipt_footer'] ?? '',
+        tier: dbSettings['tier'] === 'paid' ? 'paid' : 'free',
+        testMode: testMode === 'on' ? 'on' : 'off',
+        isOnline: 'true',
+        userEmail: dbSettings['user_email'] ?? '',
+        stripeVerified: dbSettings['stripe_verified'] ?? 'true',
+      },
+    });
+    const rate = parseFloat(dbSettings['tax_rate'] ?? '0');
+    if (!isNaN(rate)) {
+      orderDispatch({ type: 'SET_TAX_RATE', payload: { rate } });
+    }
+  }, []);
+
   const updateSetting = useCallback(async (key: keyof SettingsState, value: string) => {
     settingsDispatch({ type: 'SET_SETTING', payload: { key, value } });
 
@@ -189,6 +214,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setLastOrder,
         isOnline,
         isTestMode,
+        reloadSettings,
       }}
     >
       {children}

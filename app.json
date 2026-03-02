@@ -79,8 +79,7 @@
           "organization": "phil-zamarripa"
         }
       ],
-      "expo-font",
-      "expo-localization"
+      "expo-font"
     ],
     "extra": {
       "eas": {

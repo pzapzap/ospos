@@ -7,6 +7,7 @@ import {
   FlatList,
   SafeAreaView,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -164,7 +165,7 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
 
       {items.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="restaurant-outline" size={48} color={colors.textMuted} style={{ marginBottom: spacing.md }} />
+          <Image source={require('../../assets/images/empty-menu-128.png')} style={{ width: 96, height: 96, resizeMode: 'contain', marginBottom: spacing.md }} />
           <Text style={styles.emptyText}>{strings.menuBuilder.emptyState}</Text>
         </View>
       ) : (

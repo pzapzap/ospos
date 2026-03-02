@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView as SafeAreaViewCompat } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../../constants/theme';
 import { strings } from '../../constants/strings';
 import { useOnboarding } from '../../state/OnboardingContext';
@@ -39,7 +39,7 @@ export default function ModeSelectScreen() {
           activeOpacity={0.7}
         >
           <View style={styles.iconContainer}>
-            <Ionicons name="cash-outline" size={48} color={colors.cash} />
+            <Ionicons name="cash-outline" size={48} color={colors.primary} />
           </View>
           <Text style={styles.cardTitle}>{strings.onboarding.cashOnlyTitle}</Text>
           <Text style={styles.cardDescription}>

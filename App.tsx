@@ -276,7 +276,7 @@ function MainTabs({ initialTab }: { initialTab?: string }) {
 // ─── App content ────────────────────────────────────────────────────────────
 
 function AppContent() {
-  const { dbReady } = useApp();
+  const { dbReady, reloadSettings } = useApp();
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [initialTab, setInitialTab] = useState<string | undefined>();
 
@@ -315,7 +315,8 @@ function AppContent() {
 
   if (!onboardingComplete) {
     return (
-      <OnboardingProvider onComplete={(options) => {
+      <OnboardingProvider onComplete={async (options) => {
+        await reloadSettings();
         setInitialTab(options?.initialTab);
         setOnboardingComplete(true);
       }}>

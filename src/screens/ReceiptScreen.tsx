@@ -108,12 +108,13 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {/* Top: receipt details */}
         <View style={styles.content}>
           {/* Checkmark Animation */}
           <Animated.View
             style={[styles.checkmark, { transform: [{ scale: checkmarkScale }] }]}
           >
-            <Ionicons name="checkmark-sharp" size={44} color={colors.primary} />
+            <Ionicons name="checkmark" size={40} color={colors.primary} />
           </Animated.View>
 
           <Text style={styles.title}>{strings.receipt.title}</Text>
@@ -197,116 +198,116 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
             {settings.receiptFooter ? (
               <Text style={styles.receiptFooter}>{settings.receiptFooter}</Text>
             ) : null}
-
-            {/* Print receipt (if printer connected) */}
-            {printerAvailable ? (
-              <TouchableOpacity
-                style={[styles.receiptButton, { marginTop: spacing.xl }]}
-                accessibilityLabel="Print receipt"
-                accessibilityRole="button"
-                onPress={async () => {
-                  if (!lastOrder) return;
-                  setPrinting(true);
-                  try {
-                    await printReceipt({
-                      businessName: settings.businessName || 'OSPOS',
-                      items: lastOrder.items.map((i) => ({
-                        name: i.itemName,
-                        quantity: i.quantity,
-                        price: i.itemPrice,
-                      })),
-                      subtotal: lastOrder.subtotal ?? lastOrder.total,
-                      taxAmount: lastOrder.taxAmount ?? 0,
-                      tipAmount: lastOrder.tipAmount ?? 0,
-                      total: lastOrder.total,
-                      paymentMethod: lastOrder.paymentMethod,
-                      timestamp: new Date(lastOrder.createdAt).toLocaleString(),
-                      footerText: settings.receiptFooter || undefined,
-                    });
-                    Alert.alert('Printed', 'Receipt sent to printer');
-                  } catch {
-                    Alert.alert('Print Failed', 'Could not print receipt');
-                  } finally {
-                    setPrinting(false);
-                  }
-                }}
-                disabled={printing}
-              >
-                {printing ? (
-                  <ActivityIndicator color={colors.primary} size="small" />
-                ) : (
-                  <Text style={styles.receiptButtonText}>Print Receipt</Text>
-                )}
-              </TouchableOpacity>
-            ) : null}
-
-            {/* Receipt delivery options (paid tier) */}
-            {isPaidTier ? (
-              <View style={styles.receiptOptions}>
-                {receiptMode === 'none' ? (
-                  <View style={styles.receiptButtons}>
-                    <TouchableOpacity
-                      style={styles.receiptButton}
-                      onPress={() => setReceiptMode('sms')}
-                      accessibilityLabel="Send receipt via text message"
-                      accessibilityRole="button"
-                    >
-                      <Text style={styles.receiptButtonText}>Text Receipt</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.receiptButton}
-                      onPress={() => setReceiptMode('email')}
-                      accessibilityLabel="Send receipt via email"
-                      accessibilityRole="button"
-                    >
-                      <Text style={styles.receiptButtonText}>Email Receipt</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View style={styles.recipientSection}>
-                    <Text style={styles.recipientLabel}>
-                      {receiptMode === 'sms' ? 'Phone number' : 'Email address'}
-                    </Text>
-                    <View style={styles.recipientRow}>
-                      <TextInput
-                        style={styles.recipientInput}
-                        value={recipient}
-                        onChangeText={setRecipient}
-                        placeholder={
-                          receiptMode === 'sms' ? '+1 (555) 123-4567' : 'customer@email.com'
-                        }
-                        placeholderTextColor={colors.textMuted}
-                        keyboardType={receiptMode === 'sms' ? 'phone-pad' : 'email-address'}
-                        autoCapitalize="none"
-                        autoFocus
-                      />
-                      {sending ? (
-                        <View style={styles.sendButton}>
-                          <ActivityIndicator color={colors.black} size="small" />
-                        </View>
-                      ) : (
-                        <TouchableOpacity
-                          style={[
-                            styles.sendButton,
-                            !recipient.trim() && styles.sendButtonDisabled,
-                          ]}
-                          onPress={handleSendReceipt}
-                          disabled={!recipient.trim()}
-                        >
-                          <Text style={styles.sendButtonText}>Send</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    <TouchableOpacity onPress={() => { setReceiptMode('none'); setRecipient(''); }}>
-                      <Text style={styles.cancelText}>Cancel</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            ) : null}
           </Animated.View>
+        </View>
 
-          {/* New Order Button */}
+        {/* Bottom: action buttons — fixed above keyboard */}
+        <View style={styles.footer}>
+          {/* Print receipt (if printer connected) */}
+          {printerAvailable ? (
+            <TouchableOpacity
+              style={styles.receiptButton}
+              accessibilityLabel="Print receipt"
+              accessibilityRole="button"
+              onPress={async () => {
+                if (!lastOrder) return;
+                setPrinting(true);
+                try {
+                  await printReceipt({
+                    businessName: settings.businessName || 'OSPOS',
+                    items: lastOrder.items.map((i) => ({
+                      name: i.itemName,
+                      quantity: i.quantity,
+                      price: i.itemPrice,
+                    })),
+                    subtotal: lastOrder.subtotal ?? lastOrder.total,
+                    taxAmount: lastOrder.taxAmount ?? 0,
+                    tipAmount: lastOrder.tipAmount ?? 0,
+                    total: lastOrder.total,
+                    paymentMethod: lastOrder.paymentMethod,
+                    timestamp: new Date(lastOrder.createdAt).toLocaleString(),
+                    footerText: settings.receiptFooter || undefined,
+                  });
+                  Alert.alert('Printed', 'Receipt sent to printer');
+                } catch {
+                  Alert.alert('Print Failed', 'Could not print receipt');
+                } finally {
+                  setPrinting(false);
+                }
+              }}
+              disabled={printing}
+            >
+              {printing ? (
+                <ActivityIndicator color={colors.primary} size="small" />
+              ) : (
+                <Text style={styles.receiptButtonText}>Print Receipt</Text>
+              )}
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Receipt delivery options (paid tier) */}
+          {isPaidTier ? (
+            receiptMode === 'none' ? (
+              <View style={styles.receiptButtonRow}>
+                <TouchableOpacity
+                  style={styles.receiptButton}
+                  onPress={() => setReceiptMode('sms')}
+                  accessibilityLabel="Send receipt via text message"
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.receiptButtonText}>Text Receipt</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.receiptButton}
+                  onPress={() => setReceiptMode('email')}
+                  accessibilityLabel="Send receipt via email"
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.receiptButtonText}>Email Receipt</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.recipientSection}>
+                <Text style={styles.recipientLabel}>
+                  {receiptMode === 'sms' ? 'Phone number' : 'Email address'}
+                </Text>
+                <View style={styles.recipientRow}>
+                  <TextInput
+                    style={styles.recipientInput}
+                    value={recipient}
+                    onChangeText={setRecipient}
+                    placeholder={
+                      receiptMode === 'sms' ? '+1 (555) 123-4567' : 'customer@email.com'
+                    }
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType={receiptMode === 'sms' ? 'phone-pad' : 'email-address'}
+                    autoCapitalize="none"
+                    autoFocus
+                  />
+                  {sending ? (
+                    <View style={styles.sendButton}>
+                      <ActivityIndicator color={colors.black} size="small" />
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={[
+                        styles.sendButton,
+                        !recipient.trim() && styles.sendButtonDisabled,
+                      ]}
+                      onPress={handleSendReceipt}
+                      disabled={!recipient.trim()}
+                    >
+                      <Text style={styles.sendButtonText}>Send</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <TouchableOpacity onPress={() => { setReceiptMode('none'); setRecipient(''); }}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          ) : null}
+
           <TouchableOpacity
             style={styles.newOrderButton}
             onPress={onNewOrder}
@@ -337,6 +338,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.xxl,
     paddingTop: spacing.xxxl,
+    overflow: 'hidden',
   },
   checkmark: {
     width: 80,
@@ -422,10 +424,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.lg,
   },
-  receiptOptions: {
-    marginTop: spacing.xl,
+  footer: {
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.xxl,
+    paddingBottom: spacing.xxl,
+    paddingTop: spacing.md,
+    gap: spacing.md,
   },
-  receiptButtons: {
+  receiptButtonRow: {
     flexDirection: 'row',
     gap: spacing.md,
   },
@@ -497,7 +503,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingVertical: spacing.lg,
     alignItems: 'center',
-    marginBottom: spacing.xxl,
     minHeight: touchTargets.chargeButton,
     justifyContent: 'center',
   },

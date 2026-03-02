@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
+  Linking,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
@@ -19,11 +20,6 @@ import type { OnboardingStackParamList } from '../navigation/OnboardingNavigator
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'StripeOnboarding'>;
 
-const API_MODE = process.env.EXPO_PUBLIC_API_MODE ?? (__DEV__ ? 'mock' : 'production');
-const API_BASE_URL = API_MODE === 'mock'
-  ? (process.env.EXPO_PUBLIC_MOCK_API_URL ?? 'http://localhost:3000')
-  : (process.env.EXPO_PUBLIC_API_URL ?? 'https://api.ospos.app');
-
 export default function StripeOnboardingScreen() {
   const navigation = useNavigation<Nav>();
   const { dispatch } = useOnboarding();
@@ -35,10 +31,7 @@ export default function StripeOnboardingScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const result = await startOnboarding(
-          `${API_BASE_URL}/stripe/return`,
-          `${API_BASE_URL}/stripe/refresh`
-        );
+        const result = await startOnboarding();
         if (mountedRef.current) {
           dispatch({ type: 'SET_STRIPE_ACCOUNT_ID', payload: result.stripeAccountId });
           setOnboardingUrl(result.url);
@@ -51,6 +44,19 @@ export default function StripeOnboardingScreen() {
     })();
     return () => { mountedRef.current = false; };
   }, [dispatch]);
+
+  // Listen for deep links from system browser (Safari)
+  // When Stripe finishes onboarding, it opens the return URL in Safari,
+  // which redirects to ospos://stripe/return, which opens the app.
+  useEffect(() => {
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      if (url.startsWith('ospos://stripe/')) {
+        handleDeepLink(url);
+      }
+    });
+    return () => sub.remove();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const prefillAndNavigate = async () => {
     try {
@@ -93,10 +99,7 @@ export default function StripeOnboardingScreen() {
       if (!mountedRef.current) return;
       setLoading(true);
       try {
-        const result = await startOnboarding(
-          `${API_BASE_URL}/stripe/return`,
-          `${API_BASE_URL}/stripe/refresh`
-        );
+        const result = await startOnboarding();
         if (mountedRef.current) setOnboardingUrl(result.url);
       } catch (err) {
         if (mountedRef.current) setError(err instanceof Error ? err.message : 'Failed to refresh onboarding');

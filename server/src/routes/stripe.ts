@@ -11,21 +11,35 @@ import {
 
 const router = Router();
 
-// Only allow ospos:// deep links and our own domain for redirect URLs
-const ALLOWED_URL_PATTERN = /^ospos:\/\//;
-function sanitizeRedirectUrl(url: string | undefined, fallback: string): string {
-  if (!url) return fallback;
-  if (ALLOWED_URL_PATTERN.test(url)) return url;
-  return fallback;
+// Redirect endpoints for Stripe Connect onboarding (no auth needed)
+// Stripe redirects here after onboarding → page auto-opens the app via deep link
+function deepLinkPage(deepLink: string, label: string): string {
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Returning to OSPOS</title>
+<style>body{font-family:-apple-system,system-ui,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#09090B;color:#fff;text-align:center}
+a{display:inline-block;margin-top:20px;padding:14px 28px;background:#22D3EE;color:#000;border-radius:10px;text-decoration:none;font-weight:600}</style>
+</head><body><div><p>Redirecting back to OSPOS...</p><a href="${deepLink}">${label}</a></div>
+<script>
+setTimeout(function(){window.location.href="${deepLink}";},100);
+setTimeout(function(){var i=document.createElement("iframe");i.style.display="none";i.src="${deepLink}";document.body.appendChild(i);},200);
+</script>
+</body></html>`;
 }
 
-// Redirect endpoints for Stripe Connect onboarding (no auth needed)
 router.get('/return', (_req: Request, res: Response) => {
-  res.redirect('ospos://stripe/return');
+  res.type('html').send(deepLinkPage('ospos://stripe/return', 'Return to OSPOS'));
 });
 router.get('/refresh', (_req: Request, res: Response) => {
-  res.redirect('ospos://stripe/refresh');
+  res.type('html').send(deepLinkPage('ospos://stripe/refresh', 'Return to OSPOS'));
 });
+
+// Build the server's own return/refresh URLs for Stripe account links
+function buildServerUrl(req: Request, path: string): string {
+  const proto = req.get('x-forwarded-proto') ?? req.protocol;
+  const host = req.get('host');
+  return `${proto}://${host}/stripe${path}`;
+}
 
 // All other Stripe routes require auth
 router.use(authMiddleware);
@@ -47,12 +61,10 @@ router.post('/onboarding', async (req: Request, res: Response): Promise<void> =>
       await updateUserStripeAccount(user.id, stripeAccountId);
     }
 
-    const { return_url, refresh_url } = req.body;
-
     const accountLink = await createAccountLink(
       stripeAccountId,
-      sanitizeRedirectUrl(refresh_url, 'ospos://stripe/refresh'),
-      sanitizeRedirectUrl(return_url, 'ospos://stripe/return')
+      buildServerUrl(req, '/refresh'),
+      buildServerUrl(req, '/return')
     );
 
     res.json({
@@ -74,12 +86,10 @@ router.post('/onboarding/refresh', async (req: Request, res: Response): Promise<
       return;
     }
 
-    const { return_url, refresh_url } = req.body;
-
     const accountLink = await createAccountLink(
       user.stripe_account_id,
-      sanitizeRedirectUrl(refresh_url, 'ospos://stripe/refresh'),
-      sanitizeRedirectUrl(return_url, 'ospos://stripe/return')
+      buildServerUrl(req, '/refresh'),
+      buildServerUrl(req, '/return')
     );
 
     res.json({ url: accountLink.url });

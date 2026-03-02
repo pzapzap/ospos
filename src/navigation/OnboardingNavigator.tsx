@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { colors } from '../constants/theme';
+import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import ModeSelectScreen from '../screens/onboarding/ModeSelectScreen';
 import StripeAuthScreen from '../screens/onboarding/StripeAuthScreen';
 import StripeOnboardingScreen from '../screens/StripeOnboardingScreen';
@@ -11,6 +12,7 @@ import ReceiptFooterScreen from '../screens/onboarding/ReceiptFooterScreen';
 import FinalScreen from '../screens/onboarding/FinalScreen';
 
 export type OnboardingStackParamList = {
+  Welcome: undefined;
   ModeSelect: undefined;
   StripeAuth: undefined;
   StripeOnboarding: undefined;
@@ -32,6 +34,7 @@ export default function OnboardingNavigator() {
         animation: 'slide_from_right',
       }}
     >
+      <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="ModeSelect" component={ModeSelectScreen} />
       <Stack.Screen name="StripeAuth" component={StripeAuthScreen} />
       <Stack.Screen name="StripeOnboarding" component={StripeOnboardingScreen} />

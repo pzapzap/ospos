@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -213,7 +214,7 @@ export default function SummaryScreen() {
             <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xxxl }} />
           ) : (
             <View style={styles.emptyContainer}>
-              <Ionicons name="analytics-outline" size={48} color={colors.textMuted} style={{ marginBottom: spacing.md }} />
+              <Image source={require('../../assets/images/empty-history-128.png')} style={{ width: 96, height: 96, resizeMode: 'contain', marginBottom: spacing.md }} />
               <Text style={styles.emptyText}>{strings.summary.noTransactions}</Text>
             </View>
           )

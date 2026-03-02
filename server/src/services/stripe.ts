@@ -81,7 +81,11 @@ export async function getAccountDetails(accountId: string): Promise<{
 }> {
   try {
     const account = await stripe.accounts.retrieve(accountId);
-    const addr = account.business_profile?.support_address;
+    // Check multiple address sources — support_address is often empty during onboarding
+    const addr = account.business_profile?.support_address
+      ?? account.company?.address
+      ?? account.individual?.address
+      ?? null;
     return {
       business_name: account.business_profile?.name ?? account.company?.name ?? null,
       default_currency: account.default_currency ?? null,

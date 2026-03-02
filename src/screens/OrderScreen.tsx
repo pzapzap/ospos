@@ -8,8 +8,8 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, typography, spacing, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
@@ -115,7 +115,7 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
               <ActivityIndicator size="large" color={colors.primary} />
             ) : (
               <View style={styles.emptyGrid}>
-                <Ionicons name="restaurant-outline" size={40} color={colors.textMuted} />
+                <Image source={require('../../assets/images/empty-menu-128.png')} style={styles.emptyGridImage} />
                 <Text style={styles.emptyGridText}>No menu items yet</Text>
                 <TouchableOpacity onPress={onMenuEdit}>
                   <Text style={styles.emptyGridLink}>Tap Edit Menu to add items</Text>
@@ -192,6 +192,12 @@ const styles = StyleSheet.create({
   emptyGrid: {
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  emptyGridImage: {
+    width: 96,
+    height: 96,
+    resizeMode: 'contain',
+    marginBottom: spacing.md,
   },
   emptyGridText: {
     ...typography.body,

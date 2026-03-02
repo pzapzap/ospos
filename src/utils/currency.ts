@@ -1,6 +1,7 @@
 // Currency formatting by locale/symbol
 
-import { getLocales } from 'expo-localization';
+// Use RN's built-in I18nManager to avoid native module dependency
+import { Platform, NativeModules } from 'react-native';
 
 const CURRENCY_CONFIG: Record<string, { symbol: string; locale: string; decimals: number }> = {
   USD: { symbol: '$', locale: 'en-US', decimals: 2 },
@@ -113,12 +114,11 @@ const LOCALE_CURRENCY_MAP: Record<string, string> = {
 
 export function getDefaultCurrency(): string {
   try {
-    const locales = getLocales();
-    if (locales.length > 0) {
-      const { currencyCode, regionCode } = locales[0];
-      if (currencyCode && SUPPORTED_CURRENCIES.some(c => c.code === currencyCode)) return currencyCode;
-      if (regionCode && LOCALE_CURRENCY_MAP[regionCode]) return LOCALE_CURRENCY_MAP[regionCode];
-    }
+    const locale = Platform.OS === 'ios'
+      ? NativeModules.SettingsManager?.settings?.AppleLocale ?? NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] ?? 'en_US'
+      : NativeModules.I18nManager?.localeIdentifier ?? 'en_US';
+    const regionCode = locale.split(/[_-]/).pop()?.toUpperCase();
+    if (regionCode && LOCALE_CURRENCY_MAP[regionCode]) return LOCALE_CURRENCY_MAP[regionCode];
   } catch {}
   return 'USD';
 }
