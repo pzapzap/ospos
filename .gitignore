@@ -32,10 +32,10 @@ yarn-error.*
 
 # local env files — NEVER commit secrets
 .env
-.env*
+.env.local
 .env*.local
 server/.env
-server/.env.*
+server/.env.local
 
 # typescript
 *.tsbuildinfo

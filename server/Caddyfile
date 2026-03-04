@@ -1,0 +1,3 @@
+api.ospos.app {
+	reverse_proxy server:3000
+}
