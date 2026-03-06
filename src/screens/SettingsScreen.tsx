@@ -14,7 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { clearToken } from '../services/api';
+import { clearToken, deleteAccount } from '../services/api';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
@@ -37,9 +37,11 @@ import TaxRateModal from '../components/TaxRateModal';
 interface SettingsScreenProps {
   onDisputesTap?: () => void;
   onUpgrade?: () => void;
+  onTTPOiSetup?: () => void;
+  onTTPOiEducation?: () => void;
 }
 
-export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScreenProps) {
+export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup, onTTPOiEducation }: SettingsScreenProps) {
   const { settings, updateSetting, isTestMode } = useApp();
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showTaxRateModal, setShowTaxRateModal] = useState(false);
@@ -259,23 +261,48 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScr
           </TouchableOpacity>
         )}
 
-        {/* Test Mode (paid tier only) */}
+        {/* Test Mode */}
+        <View style={styles.section}>
+          <View style={styles.switchRow}>
+            <Text style={styles.label}>Test Mode</Text>
+            <Switch
+              value={isTestMode}
+              onValueChange={handleTestModeToggle}
+              trackColor={{ false: colors.disabled, true: colors.dangerDark }}
+              thumbColor={colors.white}
+            />
+          </View>
+          {isTestMode ? (
+            <Text style={styles.testModeWarning}>
+              Test mode active — no real charges will be processed
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Tap to Pay on iPhone (paid tier only) */}
         {isPaidTier ? (
           <View style={styles.section}>
-            <View style={styles.switchRow}>
-              <Text style={styles.label}>Test Mode</Text>
-              <Switch
-                value={isTestMode}
-                onValueChange={handleTestModeToggle}
-                trackColor={{ false: colors.disabled, true: colors.dangerDark }}
-                thumbColor={colors.white}
-              />
-            </View>
-            {isTestMode ? (
-              <Text style={styles.testModeWarning}>
-                Test mode active — no real charges will be processed
-              </Text>
-            ) : null}
+            <Text style={styles.label}>Tap to Pay on iPhone</Text>
+            {settings.ttpOiSetupComplete === 'true' ? (
+              <View style={styles.syncIndicator}>
+                <Text style={[styles.syncText, { color: colors.primary }]}>
+                  Tap to Pay on iPhone is ready
+                </Text>
+                <TouchableOpacity onPress={onTTPOiEducation}>
+                  <Text style={styles.syncRetryText}>View Guide</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.backupButton}
+                  onPress={onTTPOiSetup}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.backupButtonText}>Set Up Tap to Pay on iPhone</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         ) : null}
 
@@ -313,6 +340,34 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade }: SettingsScr
               onPress={() => Linking.openURL('https://dashboard.stripe.com')}
             >
               <Text style={styles.linkText}>Open Stripe Dashboard</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.linkButton, { marginTop: spacing.sm }]}
+              onPress={() => {
+                Alert.alert(
+                  'Delete Account',
+                  'This will permanently delete your account and all associated data. This action cannot be undone.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Delete Account',
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          await deleteAccount();
+                          await AsyncStorage.removeItem('onboardingComplete');
+                          await clearToken();
+                          Alert.alert('Account Deleted', 'Your account has been deleted. The app will restart.');
+                        } catch (err) {
+                          Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete account. Please try again.');
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <Text style={[styles.linkText, { color: colors.danger }]}>Delete Account</Text>
             </TouchableOpacity>
           </View>
         ) : null}

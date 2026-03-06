@@ -123,6 +123,8 @@ export interface SettingsState {
   isOnline: string;       // 'true' | 'false'
   userEmail: string;
   stripeVerified: string; // 'true' | 'false' | 'pending'
+  // TTPOi
+  ttpOiSetupComplete: string; // 'true' | 'false'
 }
 
 export type SettingsAction =
@@ -140,6 +142,7 @@ export const initialSettingsState: SettingsState = {
   isOnline: 'true',
   userEmail: '',
   stripeVerified: 'true',
+  ttpOiSetupComplete: 'false',
 };
 
 export function settingsReducer(state: SettingsState, action: SettingsAction): SettingsState {

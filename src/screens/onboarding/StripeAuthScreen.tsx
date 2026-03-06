@@ -14,9 +14,10 @@ import { SafeAreaView as SafeAreaViewCompat } from 'react-native-safe-area-conte
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../../constants/theme';
 import { strings } from '../../constants/strings';
-import { register, login } from '../../services/api';
+import { register, login, loginWithApple } from '../../services/api';
 import { lightTap } from '../../utils/haptics';
 import type { OnboardingStackParamList } from '../../navigation/OnboardingNavigator';
 
@@ -54,6 +55,43 @@ export default function StripeAuthScreen() {
     }
   };
 
+  const handleAppleSignIn = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        throw new Error('No identity token received from Apple');
+      }
+
+      const fullName = credential.fullName
+        ? [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ')
+        : null;
+
+      await loginWithApple(
+        credential.identityToken,
+        credential.email,
+        fullName
+      );
+
+      navigation.navigate('StripeOnboarding');
+    } catch (err: unknown) {
+      // User cancelled — don't show error
+      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'ERR_REQUEST_CANCELED') {
+        return;
+      }
+      Alert.alert('Sign in with Apple Failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleMode = async () => {
     await lightTap();
     setMode(mode === 'register' ? 'login' : 'register');
@@ -84,6 +122,25 @@ export default function StripeAuthScreen() {
               : strings.stripeAuth.loginTitle}
           </Text>
           <Text style={styles.subtitle}>{strings.stripeAuth.subtitle}</Text>
+
+          {/* Sign in with Apple — Apple requires it to be prominent */}
+          {Platform.OS === 'ios' && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+              cornerRadius={borderRadius.md}
+              style={styles.appleButton}
+              onPress={handleAppleSignIn}
+            />
+          )}
+
+          {Platform.OS === 'ios' && (
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+          )}
 
           <TextInput
             style={styles.input}
@@ -176,6 +233,25 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     marginBottom: spacing.xxl,
+  },
+  appleButton: {
+    height: touchTargets.chargeButton,
+    marginBottom: spacing.md,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    ...typography.body,
+    color: colors.textMuted,
+    marginHorizontal: spacing.md,
   },
   input: {
     ...typography.body,

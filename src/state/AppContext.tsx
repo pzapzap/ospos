@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { initDatabase, type InitResult } from '../db/database';
 import { getAllSettings, setSetting } from '../db/queries';
 import {
@@ -16,6 +17,7 @@ import {
 import { shouldAutoBackup, performBackup, recordBackupTime } from '../utils/backup';
 import { startSyncEngine, stopSyncEngine, processSyncQueue } from '../services/sync';
 import { registerForPushNotifications } from '../services/notifications';
+import { registerPushToken } from '../services/api';
 
 interface AppContextValue {
   dbReady: boolean;
@@ -47,6 +49,21 @@ interface AppContextValue {
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
+
+const TEST_MODE_KEY = 'ospos_test_mode';
+
+async function getTestMode(): Promise<string | null> {
+  const value = await SecureStore.getItemAsync(TEST_MODE_KEY);
+  if (value) return value;
+  // One-time migration from AsyncStorage
+  const legacy = await AsyncStorage.getItem(TEST_MODE_KEY);
+  if (legacy) {
+    await SecureStore.setItemAsync(TEST_MODE_KEY, legacy);
+    await AsyncStorage.removeItem(TEST_MODE_KEY);
+    return legacy;
+  }
+  return null;
+}
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [dbReady, setDbReady] = useState(false);
@@ -87,7 +104,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (result.status === 'ok' || result.status === 'recovered') {
         const dbSettings = await getAllSettings();
-        const testMode = await AsyncStorage.getItem('ospos_test_mode');
+        const testMode = await getTestMode();
 
         settingsDispatch({
           type: 'LOAD_SETTINGS',
@@ -102,6 +119,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             isOnline: 'true',
             userEmail: dbSettings['user_email'] ?? '',
             stripeVerified: dbSettings['stripe_verified'] ?? 'true',
+            ttpOiSetupComplete: dbSettings['ttpoi_setup_complete'] ?? 'false',
           },
         });
 
@@ -124,7 +142,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Start sync engine and register push notifications for paid tier
         if (dbSettings['tier'] === 'paid') {
           startSyncEngine();
-          registerForPushNotifications().catch(() => {});
+          registerForPushNotifications()
+            .then((token) => { if (token) registerPushToken(token).catch(() => {}); })
+            .catch(() => {});
         }
       }
     })();
@@ -136,7 +156,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const reloadSettings = useCallback(async () => {
     const dbSettings = await getAllSettings();
-    const testMode = await AsyncStorage.getItem('ospos_test_mode');
+    const testMode = await getTestMode();
     settingsDispatch({
       type: 'LOAD_SETTINGS',
       payload: {
@@ -150,6 +170,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isOnline: 'true',
         userEmail: dbSettings['user_email'] ?? '',
         stripeVerified: dbSettings['stripe_verified'] ?? 'true',
+        ttpOiSetupComplete: dbSettings['ttpoi_setup_complete'] ?? 'false',
       },
     });
     const rate = parseFloat(dbSettings['tax_rate'] ?? '0');
@@ -169,6 +190,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       receiptFooter: 'receipt_footer',
       userEmail: 'user_email',
       stripeVerified: 'stripe_verified',
+      ttpOiSetupComplete: 'ttpoi_setup_complete',
     };
 
     // Some keys are stored in AsyncStorage, not SQLite settings
@@ -183,7 +205,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (key === 'testMode') {
-      await AsyncStorage.setItem('ospos_test_mode', value);
+      await SecureStore.setItemAsync(TEST_MODE_KEY, value);
       return;
     }
 

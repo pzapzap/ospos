@@ -88,7 +88,7 @@ export async function createItem(
 
   await db.runAsync(
     'INSERT INTO items (id, name, price, category, image_uri, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [id, name, price, category ?? null, imageUri ?? null, sortOrder, now, now]
+    [id, name, Math.round(price), category ?? null, imageUri ?? null, sortOrder, now, now]
   );
 
   const item = await db.getFirstAsync<Item>(
@@ -113,7 +113,7 @@ export async function updateItem(
   }
   if (updates.price !== undefined) {
     sets.push('price = ?');
-    values.push(updates.price);
+    values.push(Math.round(updates.price));
   }
   if (updates.category !== undefined) {
     sets.push('category = ?');
@@ -171,11 +171,11 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'none', 0, 'completed', ?)`,
       [
         orderId,
-        input.subtotal,
+        Math.round(input.subtotal),
         input.taxRate,
-        input.taxAmount,
-        input.tipAmount,
-        input.total,
+        Math.round(input.taxAmount),
+        Math.round(input.tipAmount),
+        Math.round(input.total),
         input.paymentMethod,
         input.stripePaymentId ?? null,
         now,
@@ -186,7 +186,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       const orderItemId = generateUUID();
       await db.runAsync(
         'INSERT INTO order_items (id, order_id, item_id, item_name, item_price, quantity) VALUES (?, ?, ?, ?, ?, ?)',
-        [orderItemId, orderId, item.itemId, item.itemName, item.itemPrice, item.quantity]
+        [orderItemId, orderId, item.itemId, item.itemName, Math.round(item.itemPrice), item.quantity]
       );
     }
 

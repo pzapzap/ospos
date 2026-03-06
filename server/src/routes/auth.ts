@@ -1,13 +1,17 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
-import { findUserByEmail, createUser } from '../db/queries/users';
-import { generateToken } from '../middleware/auth';
+import { findUserByEmail, findUserByAppleIdentifier, createUser, createUserWithApple, findUserById, deleteUser } from '../db/queries/users';
+import { generateToken, authMiddleware } from '../middleware/auth';
 
 const router = Router();
 const SALT_ROUNDS = 12;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Apple's public keys endpoint for verifying identity tokens
+const APPLE_KEYS_URL = 'https://appleid.apple.com/auth/keys';
 
 // Strict rate limit on auth endpoints: 20 req per 15 min per IP
 const authLimiter = rateLimit({
@@ -75,7 +79,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
     }
 
     const user = await findUserByEmail(email);
-    if (!user) {
+    if (!user || !user.password_hash) {
       res.status(401).json({ error: 'Invalid email or password' });
       return;
     }
@@ -95,6 +99,113 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
   } catch (error) {
     console.error('[AUTH] Login error:', error);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// POST /auth/apple — Sign in with Apple
+router.post('/apple', authLimiter, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { identityToken, email, fullName } = req.body;
+
+    if (!identityToken || typeof identityToken !== 'string') {
+      res.status(400).json({ error: 'Identity token is required' });
+      return;
+    }
+
+    // Decode the identity token to get the Apple user ID (sub claim)
+    // Apple identity tokens are JWTs signed by Apple
+    let decoded: { sub?: string; email?: string };
+    try {
+      // Decode without verification first to get header for key lookup
+      decoded = jwt.decode(identityToken) as { sub?: string; email?: string };
+      if (!decoded?.sub) {
+        throw new Error('Missing sub claim');
+      }
+
+      // Verify the token signature using Apple's public keys
+      const header = jwt.decode(identityToken, { complete: true })?.header;
+      if (!header?.kid) {
+        throw new Error('Missing kid in token header');
+      }
+
+      const keysResponse = await fetch(APPLE_KEYS_URL);
+      const keysData = await keysResponse.json() as { keys: Array<{ kid: string; kty: string; use: string; alg: string; n: string; e: string }> };
+      const appleKey = keysData.keys.find((k: { kid: string }) => k.kid === header.kid);
+      if (!appleKey) {
+        throw new Error('Apple public key not found');
+      }
+
+      // Convert JWK to PEM for verification
+      const { createPublicKey } = await import('crypto');
+      const publicKey = createPublicKey({ key: appleKey, format: 'jwk' });
+
+      jwt.verify(identityToken, publicKey, {
+        algorithms: ['RS256'],
+        issuer: 'https://appleid.apple.com',
+      });
+    } catch (verifyErr) {
+      console.error('[AUTH] Apple token verification failed:', verifyErr);
+      res.status(401).json({ error: 'Invalid Apple identity token' });
+      return;
+    }
+
+    const appleIdentifier = decoded.sub!;
+    // Apple provides email on first sign-in only; use token email as fallback
+    const userEmail = email || decoded.email || `apple_${appleIdentifier.slice(0, 8)}@private.appleid.com`;
+
+    // Check if user already exists with this Apple ID
+    let user = await findUserByAppleIdentifier(appleIdentifier);
+    let isNewUser = false;
+
+    if (!user) {
+      // Check if email already exists (user previously registered with email/password)
+      const existingByEmail = await findUserByEmail(userEmail);
+      if (existingByEmail) {
+        // Link Apple ID to existing account
+        const { query } = await import('../db/connection');
+        await query('UPDATE users SET apple_identifier = $1 WHERE id = $2', [appleIdentifier, existingByEmail.id]);
+        user = { ...existingByEmail, apple_identifier: appleIdentifier };
+      } else {
+        // Create new user
+        user = await createUserWithApple(userEmail, appleIdentifier);
+        isNewUser = true;
+      }
+    }
+
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+    });
+
+    res.json({ token, userId: user.id, isNewUser });
+  } catch (error) {
+    console.error('[AUTH] Apple auth error:', error);
+    res.status(500).json({ error: 'Apple sign-in failed' });
+  }
+});
+
+// POST /auth/delete-account — Delete user account and all associated data
+router.post('/delete-account', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const user = await findUserById(req.user.userId);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // CASCADE deletes all related data (synced_orders, receipt_logs, dispute_records)
+    await deleteUser(user.id);
+
+    console.log(`[AUTH] Account deleted: ${user.id}`);
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('[AUTH] Delete account error:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
   }
 });
 

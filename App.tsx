@@ -20,7 +20,7 @@ import { Bitter_400Regular, Bitter_500Medium, Bitter_600SemiBold, Bitter_700Bold
 import { Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold, Archivo_700Bold } from '@expo-google-fonts/archivo';
 import { Ionicons } from '@expo/vector-icons';
 import { AppProvider, useApp } from './src/state/AppContext';
-import { StripeTerminalProvider } from './src/services/terminal';
+import { StripeTerminalProvider, useStripeTerminal } from './src/services/terminal';
 import { fetchConnectionToken } from './src/services/terminal';
 import { clearToken } from './src/services/api';
 import { colors, typography, spacing } from './src/constants/theme';
@@ -37,7 +37,11 @@ import SummaryScreen from './src/screens/SummaryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import TransactionDetailScreen from './src/screens/TransactionDetailScreen';
 import DisputesScreen from './src/screens/DisputesScreen';
+import TTPOiSetupScreen from './src/screens/TTPOiSetupScreen';
 import StatusBanner from './src/components/StatusBanner';
+import TTPOiAwarenessModal from './src/components/TTPOiAwarenessModal';
+import TTPOiEducation from './src/components/TTPOiEducation';
+import * as SecureStore from 'expo-secure-store';
 import * as Sentry from '@sentry/react-native';
 
 // ─── ErrorBoundary (class — must be defined before App references it) ───────
@@ -104,6 +108,7 @@ type OrderStackParamList = {
   Payment: undefined;
   Receipt: undefined;
   MenuEdit: undefined;
+  TTPOiSetup: undefined;
 };
 
 type SummaryStackParamList = {
@@ -114,6 +119,8 @@ type SummaryStackParamList = {
 type SettingsStackParamList = {
   SettingsMain: undefined;
   Disputes: undefined;
+  TTPOiSetup: undefined;
+  TTPOiEducation: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -143,6 +150,12 @@ function OrderStackNavigator() {
             <PaymentScreen
               onPaymentComplete={() => navigation.navigate('Receipt')}
               onBack={() => navigation.goBack()}
+              onTTPOiSetup={() => navigation.navigate('TTPOiSetup')}
+              onUpgrade={async () => {
+                await AsyncStorage.removeItem('onboardingComplete');
+                await clearToken();
+                Alert.alert('Restart Required', 'Please restart the app to begin card payment setup.');
+              }}
             />
           )}
         </OrderStack.Screen>
@@ -156,6 +169,14 @@ function OrderStackNavigator() {
         <OrderStack.Screen name="MenuEdit">
           {({ navigation }) => (
             <MenuBuilderScreen onStartSelling={() => navigation.goBack()} />
+          )}
+        </OrderStack.Screen>
+        <OrderStack.Screen name="TTPOiSetup">
+          {({ navigation }) => (
+            <TTPOiSetupScreen
+              onComplete={() => navigation.goBack()}
+              onBack={() => navigation.goBack()}
+            />
           )}
         </OrderStack.Screen>
       </OrderStack.Navigator>
@@ -186,6 +207,8 @@ function SettingsStackNavigator() {
         {({ navigation }) => (
           <SettingsScreen
             onDisputesTap={() => navigation.navigate('Disputes')}
+            onTTPOiSetup={() => navigation.navigate('TTPOiSetup')}
+            onTTPOiEducation={() => navigation.navigate('TTPOiEducation')}
             onUpgrade={() => {
               Alert.alert(
                 'Upgrade to Card Payments',
@@ -209,6 +232,19 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="Disputes">
         {({ navigation }) => (
           <DisputesScreen onBack={() => navigation.goBack()} />
+        )}
+      </SettingsStack.Screen>
+      <SettingsStack.Screen name="TTPOiSetup">
+        {({ navigation }) => (
+          <TTPOiSetupScreen
+            onComplete={() => navigation.goBack()}
+            onBack={() => navigation.goBack()}
+          />
+        )}
+      </SettingsStack.Screen>
+      <SettingsStack.Screen name="TTPOiEducation">
+        {({ navigation }) => (
+          <TTPOiEducation onComplete={() => navigation.goBack()} />
         )}
       </SettingsStack.Screen>
     </SettingsStack.Navigator>
@@ -273,12 +309,24 @@ function MainTabs({ initialTab }: { initialTab?: string }) {
   );
 }
 
+// ─── Terminal warmup — pre-initializes SDK at app launch ─────────────────────
+function TerminalWarmup() {
+  const { initialize, isInitialized } = useStripeTerminal();
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize().catch(() => {});
+    }
+  }, [initialize, isInitialized]);
+  return null;
+}
+
 // ─── App content ────────────────────────────────────────────────────────────
 
 function AppContent() {
-  const { dbReady, reloadSettings } = useApp();
+  const { dbReady, reloadSettings, settings } = useApp();
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [initialTab, setInitialTab] = useState<string | undefined>();
+  const [showTTPOiAwareness, setShowTTPOiAwareness] = useState(false);
 
   useEffect(() => {
     if (!dbReady) return;
@@ -305,6 +353,17 @@ function AppContent() {
     })();
   }, [dbReady]);
 
+  // Show TTPOi awareness modal once for paid tier users who haven't seen it
+  useEffect(() => {
+    if (onboardingComplete && settings.tier === 'paid' && settings.ttpOiSetupComplete !== 'true') {
+      SecureStore.getItemAsync('ttpoi_awareness_shown').then((shown) => {
+        if (!shown) {
+          setShowTTPOiAwareness(true);
+        }
+      }).catch(() => {});
+    }
+  }, [onboardingComplete, settings.tier, settings.ttpOiSetupComplete]);
+
   if (!dbReady || onboardingComplete === null) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
@@ -327,14 +386,44 @@ function AppContent() {
     );
   }
 
+  const handleTTPOiAwarenessDismiss = async () => {
+    await SecureStore.setItemAsync('ttpoi_awareness_shown', 'true');
+    setShowTTPOiAwareness(false);
+  };
+
+  const handleTTPOiAwarenessEnable = async () => {
+    await SecureStore.setItemAsync('ttpoi_awareness_shown', 'true');
+    setShowTTPOiAwareness(false);
+    // User will navigate to TTPOi setup from within the app
+    setInitialTab('Settings');
+  };
+
+  const isPaidTier = settings.tier === 'paid';
+
+  const content = (
+    <>
+      <NavigationContainer>
+        <MainTabs initialTab={initialTab} />
+      </NavigationContainer>
+      <TTPOiAwarenessModal
+        visible={showTTPOiAwareness}
+        onEnable={handleTTPOiAwarenessEnable}
+        onDismiss={handleTTPOiAwarenessDismiss}
+      />
+    </>
+  );
+
+  if (!isPaidTier) {
+    return content;
+  }
+
   return (
     <StripeTerminalProvider
       logLevel={__DEV__ ? 'verbose' : 'none'}
       tokenProvider={fetchConnectionToken}
     >
-      <NavigationContainer>
-        <MainTabs initialTab={initialTab} />
-      </NavigationContainer>
+      <TerminalWarmup />
+      {content}
     </StripeTerminalProvider>
   );
 }

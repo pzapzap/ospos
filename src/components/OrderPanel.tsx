@@ -54,10 +54,26 @@ export default function OrderPanel({
   }, [total, totalAnim]);
 
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const itemYPositions = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    if (items.length > 0) {
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+  }, [items.length]);
+
+  useEffect(() => {
+    if (expandedId && itemYPositions.current[expandedId] != null) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: itemYPositions.current[expandedId], animated: true });
+      }, 100);
+    }
+  }, [expandedId]);
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.itemsList} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} style={styles.itemsList} showsVerticalScrollIndicator={false}>
         {items.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="receipt-outline" size={48} color={colors.textMuted} style={{ marginBottom: spacing.md }} />
@@ -65,7 +81,7 @@ export default function OrderPanel({
           </View>
         ) : (
           items.map((item) => (
-            <View key={item.itemId}>
+            <View key={item.itemId} onLayout={(e) => { itemYPositions.current[item.itemId] = e.nativeEvent.layout.y; }}>
               <TouchableOpacity
                 style={styles.lineItem}
                 onPress={() =>

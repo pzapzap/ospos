@@ -19,14 +19,15 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "_entitlements_tapToPay": "Re-enable once Apple approves Tap to Pay entitlement",
-      "entitlements": {},
+      "entitlements": {
+        "com.apple.developer.proximity-reader.payment.acceptance": true
+      },
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "OSPOS uses Bluetooth to connect to card readers and receipt printers.",
         "NSBluetoothPeripheralUsageDescription": "OSPOS uses Bluetooth to connect to card readers and receipt printers.",
         "NSCameraUsageDescription": "OSPOS uses the camera to take photos of menu items and dispute evidence.",
         "NSLocationWhenInUseUsageDescription": "OSPOS uses location for Stripe Terminal reader discovery.",
-        "NFCReaderUsageDescription": "OSPOS uses NFC for Tap to Pay card payments.",
+        "NFCReaderUsageDescription": "OSPOS uses NFC for Tap to Pay on iPhone contactless payments.",
         "NSPhotoLibraryUsageDescription": "OSPOS accesses photos for menu item images and dispute evidence."
       }
     },
@@ -79,6 +80,7 @@
           "organization": "phil-zamarripa"
         }
       ],
+      "expo-apple-authentication",
       "expo-font"
     ],
     "extra": {

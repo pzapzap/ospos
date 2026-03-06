@@ -91,6 +91,24 @@ UPDATE order_items SET item_price = CAST(ROUND(item_price * 100) AS INTEGER)
   WHERE typeof(item_price) = 'real' OR (item_price < 100000 AND item_price != CAST(item_price AS INTEGER));
 `;
 
+// Migration v5: Safety-net — ensure all money values are integer cents.
+// V4 did the dollar→cents conversion. V5 catches any rows V4 missed
+// (e.g. typeof was already 'integer' but value was dollars).
+// For new installs this is a no-op.
+export const MIGRATION_V5 = `
+UPDATE items SET price = CAST(ROUND(price) AS INTEGER)
+  WHERE typeof(price) != 'integer';
+UPDATE orders SET
+  subtotal = CAST(ROUND(subtotal) AS INTEGER),
+  tax_amount = CAST(ROUND(tax_amount) AS INTEGER),
+  tip_amount = CAST(ROUND(tip_amount) AS INTEGER),
+  total = CAST(ROUND(total) AS INTEGER),
+  refund_amount = CAST(ROUND(refund_amount) AS INTEGER)
+  WHERE typeof(subtotal) != 'integer';
+UPDATE order_items SET item_price = CAST(ROUND(item_price) AS INTEGER)
+  WHERE typeof(item_price) != 'integer';
+`;
+
 // Default settings inserted on first launch
 export const DEFAULT_SETTINGS = [
   { key: 'tax_rate', value: '0' },

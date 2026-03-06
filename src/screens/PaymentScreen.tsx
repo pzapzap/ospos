@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Reader } from '@stripe/stripe-terminal-react-native';
@@ -21,10 +22,13 @@ import type { OrderAction, OrderState } from '../state/reducers';
 import { useStripeTerminal } from '../services/terminal';
 import { lightTap, successNotification, errorNotification } from '../utils/haptics';
 import CashPaymentModal from '../components/CashPaymentModal';
+import ContactlessIcon from '../components/ContactlessIcon';
 
 interface PaymentScreenProps {
   onPaymentComplete: () => void;
   onBack: () => void;
+  onTTPOiSetup?: () => void;
+  onUpgrade?: () => void;
 }
 
 const TERMINAL_LOCATION_ID = process.env.EXPO_PUBLIC_STRIPE_LOCATION_ID ?? '';
@@ -46,6 +50,8 @@ interface CardButtonProps {
   currency: string;
   isOnline: boolean;
   isTestMode: boolean;
+  ttpOiSetupComplete: boolean;
+  onSetup: () => void;
   orderDispatch: React.Dispatch<OrderAction>;
   setLastOrder: (order: {
     orderId: string;
@@ -66,6 +72,8 @@ function CardButton({
   currency,
   isOnline,
   isTestMode,
+  ttpOiSetupComplete,
+  onSetup,
   orderDispatch,
   setLastOrder,
   onPaymentComplete,
@@ -142,6 +150,12 @@ function CardButton({
   }, []);
 
   const handlePress = async () => {
+    // If TTPOi not set up, redirect to setup screen (Apple req 5.3 — never gray out)
+    if (!ttpOiSetupComplete) {
+      onSetup();
+      return;
+    }
+
     if (!isOnline) {
       Alert.alert(strings.payment.offlineUnavailable, 'Card payments require an internet connection. Please use cash or try again when online.');
       return;
@@ -185,31 +199,33 @@ function CardButton({
         if (__DEV__) console.log('[OSPOS] Already connected to reader:', connectedReader?.serialNumber);
       }
 
-      // In test mode, use simulated Tap to Pay reader
-      // In production, try Tap to Pay first, then fall back to Bluetooth
-      if (!connected && isTestMode) {
+      // Connect to Tap to Pay on iPhone reader
+      if (!connected) {
+        const simulated = isTestMode;
         try {
-          if (__DEV__) console.log('[OSPOS] Starting simulated Tap to Pay discovery...');
-          setTimeout(() => {
-            discoverReaders({
+          if (!simulated) {
+            const tapSupport = await supportsReadersOfType({
+              deviceType: 'tapToPay',
               discoveryMethod: 'tapToPay',
-              simulated: true,
-              locationId: TERMINAL_LOCATION_ID || undefined,
-            }).then(({ error }) => {
-              if (__DEV__) {
-                if (error && __DEV__) console.warn('[OSPOS] Discovery error:', error.code, error.message);
-                else if (__DEV__) console.log('[OSPOS] Discovery completed');
-              }
-            }).catch((e) => {
-              if (__DEV__) console.warn('[OSPOS] Discovery threw:', e);
+              simulated: false,
             });
-          }, 100);
+            if (!tapSupport?.readerSupportResult) {
+              throw new Error(strings.payment.noReaderAvailable);
+            }
+          }
 
-          if (__DEV__) console.log('[OSPOS] Waiting for readers...');
+          setStatus(simulated ? 'Connecting simulated reader...' : 'Connecting Tap to Pay on iPhone...');
+
+          discoverReaders({
+            discoveryMethod: 'tapToPay',
+            simulated,
+            locationId: TERMINAL_LOCATION_ID || undefined,
+          }).then(({ error }) => {
+            if (error && __DEV__) console.warn('[OSPOS] Tap discovery error:', error.message);
+          });
+
           const readers = await waitForReaders();
-          if (__DEV__) console.log('[OSPOS] Readers found:', readers.length);
           if (readers.length > 0) {
-            setStatus('Connecting simulated reader...');
             const { reader, error: connectErr } = await connectReader(
               {
                 reader: readers[0],
@@ -220,98 +236,18 @@ function CardButton({
               },
               'tapToPay'
             );
-            if (__DEV__) console.log('[OSPOS] Connect result:', reader ? 'connected' : 'failed', connectErr?.message ?? '');
             if (reader && !connectErr) {
               connected = true;
             }
           }
         } catch (e) {
-          if (__DEV__) console.warn('[OSPOS] Simulated reader error:', e instanceof Error ? e.message : e);
-        }
-      } else if (!connected) {
-        // Production: try Tap to Pay first
-        try {
-          const tapSupport = await supportsReadersOfType({
-            deviceType: 'tapToPay',
-            discoveryMethod: 'tapToPay',
-            simulated: false,
-          });
-
-          if (tapSupport?.readerSupportResult) {
-            discoverReaders({
-              discoveryMethod: 'tapToPay',
-              simulated: false,
-              locationId: TERMINAL_LOCATION_ID || undefined,
-            }).then(({ error }) => {
-              if (error && __DEV__) console.warn('[OSPOS] Tap discovery error:', error.message);
-            });
-
-            {
-              const readers = await waitForReaders();
-              if (readers.length > 0) {
-                setStatus('Connecting Tap to Pay...');
-                const { reader, error: connectErr } = await connectReader(
-                  {
-                    reader: readers[0],
-                    locationId: TERMINAL_LOCATION_ID || readers[0].locationId || undefined,
-                    autoReconnectOnUnexpectedDisconnect: true,
-                    tosAcceptancePermitted: true,
-                    merchantDisplayName: 'OSPOS',
-                  },
-                  'tapToPay'
-                );
-                if (reader && !connectErr) {
-                  connected = true;
-                }
-              }
-            }
-          }
-        } catch (e) {
-          if (__DEV__) console.warn('[OSPOS] Tap to Pay not available:', e instanceof Error ? e.message : e);
-        }
-
-        // Fallback: real Bluetooth reader
-        if (!connected) {
-          try {
-            if (!mountedRef.current) throw new Error('unmounted');
-            await cancelDiscovering();
-
-            discoverReaders({
-              discoveryMethod: 'bluetoothScan',
-              simulated: false,
-            }).then(({ error }) => {
-              if (error && __DEV__) console.warn('[OSPOS] BT discovery error:', error.message);
-            });
-
-            {
-              const readers = await waitForReaders();
-              if (readers.length > 0) {
-                setStatus('Connecting reader...');
-                const { reader, error: connectErr } = await connectReader(
-                  {
-                    reader: readers[0],
-                    locationId: readers[0].locationId ?? undefined,
-                    autoReconnectOnUnexpectedDisconnect: true,
-                  },
-                  'bluetoothScan'
-                );
-                if (reader && !connectErr) {
-                  connected = true;
-                }
-              }
-            }
-          } catch {
-            // No Bluetooth reader either
-          }
+          if (__DEV__) console.warn('[OSPOS] Tap to Pay error:', e instanceof Error ? e.message : e);
+          throw e;
         }
       }
 
       if (!connected) {
-        throw new Error(
-          isTestMode
-            ? 'Could not connect simulated reader. Please try again.'
-            : 'Reader search timed out. Make sure Tap to Pay is enabled or your Bluetooth reader is nearby and powered on.'
-        );
+        throw new Error(strings.payment.noReaderAvailable);
       }
 
       if (!mountedRef.current) return;
@@ -376,10 +312,19 @@ function CardButton({
       onPaymentComplete();
     } catch (error) {
       await errorNotification();
-      Alert.alert(
-        'Payment Failed',
-        error instanceof Error ? error.message : 'Card payment failed. Try again or use cash.'
-      );
+      const errMsg = error instanceof Error ? error.message : '';
+      const errCode = (error as { code?: string })?.code ?? '';
+
+      if (errCode === 'osVersionNotSupported' || errMsg.includes('osVersionNotSupported')) {
+        Alert.alert(strings.ttpoi.osUpdateRequired, strings.ttpoi.osUpdateMessage);
+      } else if (errCode === 'unsupported' || errMsg.includes('not supported')) {
+        Alert.alert(strings.payment.paymentFailed, strings.ttpoi.incompatible);
+      } else {
+        Alert.alert(
+          strings.payment.paymentFailed,
+          errMsg || 'Card payment failed. Try again or use cash.'
+        );
+      }
     } finally {
       if (mountedRef.current) {
         setProcessing(false);
@@ -388,15 +333,22 @@ function CardButton({
     }
   };
 
-  const disabled = !isOnline || processing;
+  // Apple req 5.3: TTPOi button is NEVER grayed out
+  const buttonDisabled = processing;
 
   return (
     <TouchableOpacity
-      style={[styles.cardButton, !disabled && styles.cardButtonEnabled]}
+      style={[styles.cardButton, styles.cardButtonEnabled]}
       onPress={handlePress}
-      activeOpacity={disabled ? 1 : 0.7}
-      disabled={disabled}
-      accessibilityLabel={disabled ? 'Card payment unavailable' : 'Pay with card'}
+      activeOpacity={buttonDisabled ? 1 : 0.7}
+      disabled={buttonDisabled}
+      accessibilityLabel={
+        !ttpOiSetupComplete
+          ? 'Set up Tap to Pay on iPhone'
+          : processing
+            ? 'Processing payment'
+            : 'Pay with Tap to Pay on iPhone'
+      }
       accessibilityRole="button"
     >
       {processing ? (
@@ -406,12 +358,14 @@ function CardButton({
         </View>
       ) : (
         <>
-          <Ionicons name="card-outline" size={28} color={disabled ? colors.textMuted : colors.primary} />
-          <Text style={[styles.cardButtonText, !disabled && styles.cardButtonTextEnabled]}>
+          <ContactlessIcon size={28} color={colors.primary} />
+          <Text style={[styles.cardButtonText, styles.cardButtonTextEnabled]}>
             {strings.payment.card}
           </Text>
-          {!isOnline ? (
+          {!isOnline && ttpOiSetupComplete ? (
             <Text style={styles.cardComingSoon}>Offline — unavailable</Text>
+          ) : !ttpOiSetupComplete ? (
+            <Text style={styles.cardComingSoon}>Tap to set up</Text>
           ) : null}
         </>
       )}
@@ -420,29 +374,53 @@ function CardButton({
 }
 
 // ── Disabled card button for free tier — NO Stripe Terminal hook ──
-function DisabledCardButton() {
-  const handlePress = () => {
-    Alert.alert(strings.payment.card, strings.payment.cardComingSoon);
-  };
+function DisabledCardButton({ onUpgrade }: { onUpgrade?: () => void }) {
+  const [showModal, setShowModal] = useState(false);
 
   return (
-    <TouchableOpacity
-      style={styles.cardButton}
-      onPress={handlePress}
-      activeOpacity={1}
-      accessibilityLabel="Card payment unavailable"
-      accessibilityRole="button"
-    >
-      <Ionicons name="card-outline" size={28} color={colors.textMuted} />
-      <Text style={styles.cardButtonText}>{strings.payment.card}</Text>
-      <Text style={styles.cardComingSoon}>{strings.payment.cardComingSoon}</Text>
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity
+        style={[styles.cardButton, styles.cardButtonEnabled, { flexDirection: 'column', gap: spacing.xs }]}
+        onPress={() => setShowModal(true)}
+        activeOpacity={0.7}
+        accessibilityLabel="Tap to Pay on iPhone"
+        accessibilityRole="button"
+      >
+        <Text style={[styles.cardButtonText, styles.cardButtonTextEnabled]}>{strings.payment.card}</Text>
+      </TouchableOpacity>
+      <Modal visible={showModal} transparent animationType="fade">
+        <View style={styles.upgradeOverlay}>
+          <View style={styles.upgradeModal}>
+            <Text style={styles.upgradeTitle}>{strings.payment.card}</Text>
+            <Text style={styles.upgradeBody}>{strings.payment.cardComingSoon}</Text>
+            <TouchableOpacity
+              style={styles.upgradeSetupButton}
+              onPress={() => {
+                setShowModal(false);
+                onUpgrade?.();
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.upgradeSetupText}>Set Up</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.upgradeDismissButton}
+              onPress={() => setShowModal(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.upgradeDismissText}>Not Now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
 // ── Main PaymentScreen ──
-export default function PaymentScreen({ onPaymentComplete, onBack }: PaymentScreenProps) {
+export default function PaymentScreen({ onPaymentComplete, onBack, onTTPOiSetup, onUpgrade }: PaymentScreenProps) {
   const { order, orderDispatch, settings, setLastOrder, isTestMode, isOnline } = useApp();
+  const ttpOiSetupComplete = settings.ttpOiSetupComplete === 'true';
   const [selectedTip, setSelectedTip] = useState(0);
   const [showCashModal, setShowCashModal] = useState(false);
   const [customTipInput, setCustomTipInput] = useState('');
@@ -610,8 +588,24 @@ export default function PaymentScreen({ onPaymentComplete, onBack }: PaymentScre
           ) : null}
         </View>
 
-        {/* Payment Methods */}
+        {/* Payment Methods — TTPOi first (Apple req 5.2) */}
         <View style={styles.paymentMethods}>
+          {isPaidTier ? (
+            <CardButton
+              order={order}
+              currency={settings.currency}
+              isOnline={isOnline}
+              isTestMode={isTestMode}
+              ttpOiSetupComplete={ttpOiSetupComplete}
+              onSetup={() => onTTPOiSetup?.()}
+              orderDispatch={orderDispatch}
+              setLastOrder={setLastOrder}
+              onPaymentComplete={onPaymentComplete}
+            />
+          ) : (
+            <DisabledCardButton onUpgrade={onUpgrade} />
+          )}
+
           <TouchableOpacity
             style={styles.cashButton}
             onPress={handleCashPayment}
@@ -622,20 +616,6 @@ export default function PaymentScreen({ onPaymentComplete, onBack }: PaymentScre
             <Ionicons name="cash-outline" size={28} color={colors.black} />
             <Text style={styles.cashButtonText}>{strings.payment.cash}</Text>
           </TouchableOpacity>
-
-          {isPaidTier ? (
-            <CardButton
-              order={order}
-              currency={settings.currency}
-              isOnline={isOnline}
-              isTestMode={isTestMode}
-              orderDispatch={orderDispatch}
-              setLastOrder={setLastOrder}
-              onPaymentComplete={onPaymentComplete}
-            />
-          ) : (
-            <DisabledCardButton />
-          )}
         </View>
       </View>
 
@@ -808,5 +788,52 @@ const styles = StyleSheet.create({
   cardStatusText: {
     ...typography.body,
     color: colors.primary,
+  },
+  upgradeOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xxl,
+  },
+  upgradeModal: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xxl,
+    width: '100%',
+    alignItems: 'center',
+  },
+  upgradeTitle: {
+    ...typography.title2,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  upgradeBody: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: spacing.xxl,
+  },
+  upgradeSetupButton: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.lg,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  upgradeSetupText: {
+    ...typography.bodyBold,
+    color: colors.black,
+    fontSize: 16,
+  },
+  upgradeDismissButton: {
+    paddingVertical: spacing.md,
+  },
+  upgradeDismissText: {
+    ...typography.body,
+    color: colors.textSecondary,
   },
 });

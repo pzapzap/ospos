@@ -145,6 +145,27 @@ export async function login(
   return result;
 }
 
+export async function loginWithApple(
+  identityToken: string,
+  email?: string | null,
+  fullName?: string | null
+): Promise<{ token: string; userId: string; isNewUser: boolean }> {
+  const result = await request<{ token: string; userId: string; isNewUser: boolean }>({
+    method: 'POST',
+    path: '/auth/apple',
+    body: { identityToken, email, fullName },
+  });
+  await setToken(result.token);
+  return result;
+}
+
+export async function deleteAccount(): Promise<{ success: boolean }> {
+  return request({
+    method: 'POST',
+    path: '/auth/delete-account',
+  });
+}
+
 // ─── Stripe Connect ──────────────────────────────────────────────────────────
 
 export async function startOnboarding(): Promise<{ url: string; stripeAccountId: string }> {
@@ -298,5 +319,35 @@ export async function sendReceipt(
     method: 'POST',
     path: '/receipts/send',
     body: { orderId, method, recipient },
+  });
+}
+
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+export async function registerPushToken(
+  pushToken: string
+): Promise<{ success: boolean }> {
+  return request({
+    method: 'POST',
+    path: '/notifications/push-token',
+    body: { pushToken },
+  });
+}
+
+export async function sendTTPOiLaunchEmail(
+  businessName?: string
+): Promise<{ success: boolean }> {
+  return request({
+    method: 'POST',
+    path: '/notifications/ttpoi-launch-email',
+    body: { businessName },
+  });
+}
+
+export async function sendTTPOiLaunchPush(): Promise<{ success: boolean }> {
+  return request({
+    method: 'POST',
+    path: '/notifications/ttpoi-launch-push',
+    body: {},
   });
 }
