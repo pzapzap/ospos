@@ -25,7 +25,7 @@ OSPOS turns any smartphone into a cash register. Add your menu items, tap to bui
 - Works completely offline
 
 **Card payments (1% per transaction):**
-- Accept card payments via Tap to Pay or Bluetooth reader
+- Accept card payments via Tap to Pay on iPhone or Bluetooth reader
 - Stripe Connect for secure payment processing
 - Test mode to practice before going live
 - Cloud backup of all transactions
@@ -60,4 +60,10 @@ Used for taking photos of menu items and capturing dispute evidence images.
 Used by Stripe Terminal SDK for reader discovery (required by Stripe).
 
 **NFC:**
-Used for Tap to Pay card payments via Stripe Terminal.
+Used for Tap to Pay on iPhone contactless payments via Stripe Terminal.
+
+---
+
+## Legal Disclaimers
+
+Tap to Pay on iPhone requires a supported payment app and the latest version of iOS. Update to the latest version by going to Settings > General > Software Update. Tap Download and Install. Some contactless cards may not be accepted. Transaction limits may apply. The Contactless Symbol is a trademark owned by and used with permission of EMVCo, LLC. Tap to Pay on iPhone is not available in all markets. Terms apply.
