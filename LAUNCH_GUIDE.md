@@ -3,14 +3,49 @@
 Everything below is manual steps that only you can do.
 All code work is complete and TypeScript compiles clean.
 
+**Last updated**: March 6, 2026
+
 ---
 
-## 1. Server Deploy + Cert Pinning Hashes
+## Server Status (COMPLETED March 6, 2026)
 
-Your server code is ready at `server/`. Deploy it first so Caddy provisions the Let's Encrypt cert.
+Server is deployed and running on Hetzner (157.180.82.227) via Docker Compose:
+- **Caddy** (reverse proxy + auto-SSL) — `api.ospos.app` live and serving HTTPS
+- **Node.js/Express** server — health check passing
+- **PostgreSQL 16** — all 3 migrations applied (initial schema, integer cents, Apple auth)
+- **Website files** uploaded (index.html, terms.html, privacy.html, help.html) — waiting for `ospos.app` DNS
+
+**What's configured:**
+- Stripe test keys + webhook secret in `.env`
+- JWT secret (64 chars) in `.env`
+- Postgres password (real, not default) in `.env`
+
+**What's NOT configured yet:**
+- Twilio creds (SMS receipts) — need account setup
+- SendGrid creds (email receipts) — need DNS verification (David has keys)
+- `ospos.app` root DNS — currently points to wrong IP, David needs to add A record → 157.180.82.227
+
+---
+
+## 1. DNS (David Has Keys)
+
+**A record for website:**
+```
+ospos.app → 157.180.82.227
+```
+
+**SendGrid CNAME/TXT records for email:**
+Check Twilio/SendGrid dashboard → Settings → Sender Authentication for exact values.
+
+Once DNS is set, Caddy auto-provisions SSL and the website goes live at ospos.app/terms, ospos.app/privacy, ospos.app/help.
+
+---
+
+## 2. Cert Pinning Hashes (After DNS)
+
+Once `api.ospos.app` has its Let's Encrypt cert (it already does), extract the SPKI hash:
 
 ```bash
-# After deploy, extract the SPKI hashes:
 openssl s_client -connect api.ospos.app:443 -servername api.ospos.app 2>/dev/null | \
   openssl x509 -pubkey -noout | \
   openssl pkey -pubin -outform der | \
@@ -25,7 +60,7 @@ The ISRG Root X1 backup pin (`C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=`) is 
 
 ---
 
-## 2. EAS Secrets
+## 3. EAS Secrets
 
 ```bash
 eas secret:create --name EXPO_PUBLIC_SENTRY_DSN --value "<your-sentry-dsn>"
@@ -34,7 +69,7 @@ eas secret:create --name SENDGRID_FROM_EMAIL --value "noreply@ospos.app"
 ```
 
 The Sentry DSN is on sentry.io under your OSPOS project settings.
-SendGrid: create a free account at sendgrid.com, verify your sender domain (ospos.app), and grab the API key.
+SendGrid: account created on Twilio.com, needs DNS verification before API key works.
 
 ---
 
@@ -155,19 +190,18 @@ When Let's Encrypt rotates their intermediate cert, you'll need an app update wi
 
 ## Domain Check
 
-You mentioned ospos.app might be yours — verify:
-- `ospos.app` resolves and has a landing page (the website/ directory)
-- `api.ospos.app` resolves to your server
-- Both have HTTPS via Caddy/Let's Encrypt
-- SendGrid sender domain verified for `ospos.app`
+- `api.ospos.app` → 157.180.82.227 — WORKING, HTTPS active, health check passing
+- `ospos.app` → currently 76.223.105.230 (WRONG) — David needs to update A record to 157.180.82.227
+- Website files (index, terms, privacy, help) are uploaded and Caddy is configured to serve them
+- SendGrid sender domain NOT yet verified (needs DNS records from David)
 
 ---
 
-## Summary of What's Code-Complete
+## Summary
 
 | Feature | Status |
 |---------|--------|
-| TTPOi compliance (5 phases) | Done |
+| TTPOi compliance (5 phases) | Code complete |
 | Apple-approved copy in all strings | Done |
 | Apple Hero banner in awareness modal | Done |
 | Legal disclaimers on all TTPOi screens | Done |
@@ -183,3 +217,16 @@ You mentioned ospos.app might be yours — verify:
 | app.json NFC description fixed | Done |
 | All 17 audit violations fixed | Done |
 | TypeScript clean (0 errors) | Done |
+| Sign in with Apple (client + server) | Done |
+| Account deletion (client + server) | Done |
+| **Server deployed to Hetzner** | **Done (March 6)** |
+| **All 3 server migrations applied** | **Done (March 6)** |
+| **Website pages created (terms, privacy, help)** | **Done (March 6)** |
+| **Website files uploaded to server** | **Done (March 6)** |
+| DNS: ospos.app root A record | Waiting on David |
+| DNS: SendGrid email verification | Waiting on David |
+| Twilio/SendGrid creds in server .env | Not yet |
+| Xcode build (Development profile) | Not yet — needs Mac |
+| TTPOi video recording | Not yet — needs working build |
+| App Store Connect metadata | Not yet |
+| Apple TTPOi Publishing Entitlement | Not yet — needs videos |
