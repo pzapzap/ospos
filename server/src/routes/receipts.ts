@@ -28,6 +28,11 @@ interface OrderItemRow {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+[1-9]\d{1,14}$/;
 
+// Format cents to dollars string
+function formatMoney(cents: number): string {
+  return (cents / 100).toFixed(2);
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -51,19 +56,19 @@ function formatReceiptText(
   lines.push('');
 
   for (const item of items) {
-    const lineTotal = (item.item_price * item.quantity).toFixed(2);
+    const lineTotal = formatMoney(item.item_price * item.quantity);
     lines.push(`${item.quantity}x ${item.item_name}  $${lineTotal}`);
   }
 
   lines.push('');
-  lines.push(`Subtotal: $${order.subtotal.toFixed(2)}`);
+  lines.push(`Subtotal: $${formatMoney(order.subtotal)}`);
   if (order.tax_amount > 0) {
-    lines.push(`Tax: $${order.tax_amount.toFixed(2)}`);
+    lines.push(`Tax: $${formatMoney(order.tax_amount)}`);
   }
   if (order.tip_amount > 0) {
-    lines.push(`Tip: $${order.tip_amount.toFixed(2)}`);
+    lines.push(`Tip: $${formatMoney(order.tip_amount)}`);
   }
-  lines.push(`Total: $${order.total.toFixed(2)}`);
+  lines.push(`Total: $${formatMoney(order.total)}`);
   lines.push(`Paid by: ${order.payment_method}`);
   lines.push('');
   lines.push('Thank you!');
@@ -80,35 +85,46 @@ function formatReceiptHtml(
     .map(
       (item) =>
         `<tr>
-          <td style="padding:4px 8px">${escapeHtml(`${item.quantity}x ${item.item_name}`)}</td>
-          <td style="padding:4px 8px;text-align:right">$${(item.item_price * item.quantity).toFixed(2)}</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee">${escapeHtml(`${item.quantity}x ${item.item_name}`)}</td>
+          <td style="padding:8px 0;text-align:right;border-bottom:1px solid #eee">$${formatMoney(item.item_price * item.quantity)}</td>
         </tr>`
     )
     .join('');
 
-  const safeName = businessName ? escapeHtml(businessName) : '';
+  const safeName = businessName ? escapeHtml(businessName) : 'OSPOS';
 
   return `
-    <div style="max-width:400px;margin:0 auto;font-family:system-ui,sans-serif;color:#333">
-      ${safeName ? `<h2 style="text-align:center;margin-bottom:4px">${safeName}</h2>` : ''}
-      <p style="text-align:center;color:#666;font-size:14px">
-        ${escapeHtml(new Date(order.created_at).toLocaleString())}
-      </p>
-      <table style="width:100%;border-collapse:collapse;margin:16px 0">
-        ${itemRows}
-      </table>
-      <hr style="border:none;border-top:1px solid #ddd"/>
-      <table style="width:100%;border-collapse:collapse">
-        <tr><td style="padding:4px 8px">Subtotal</td><td style="padding:4px 8px;text-align:right">$${order.subtotal.toFixed(2)}</td></tr>
-        ${order.tax_amount > 0 ? `<tr><td style="padding:4px 8px">Tax</td><td style="padding:4px 8px;text-align:right">$${order.tax_amount.toFixed(2)}</td></tr>` : ''}
-        ${order.tip_amount > 0 ? `<tr><td style="padding:4px 8px">Tip</td><td style="padding:4px 8px;text-align:right">$${order.tip_amount.toFixed(2)}</td></tr>` : ''}
-        <tr style="font-weight:bold"><td style="padding:4px 8px">Total</td><td style="padding:4px 8px;text-align:right">$${order.total.toFixed(2)}</td></tr>
-      </table>
-      <p style="text-align:center;color:#666;font-size:14px;margin-top:16px">
-        Paid by ${escapeHtml(order.payment_method)}
-      </p>
-      <p style="text-align:center;color:#999;font-size:12px">Thank you!</p>
-    </div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body style="margin:0;padding:20px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+      <div style="max-width:400px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+        <h1 style="text-align:center;margin:0 0 4px 0;font-size:24px;color:#111">${safeName}</h1>
+        <p style="text-align:center;color:#666;font-size:14px;margin:0 0 20px 0">
+          ${escapeHtml(new Date(order.created_at).toLocaleString())}
+        </p>
+        <table style="width:100%;border-collapse:collapse">
+          ${itemRows}
+        </table>
+        <div style="margin-top:16px;padding-top:16px;border-top:2px solid #111">
+          <table style="width:100%;border-collapse:collapse">
+            <tr><td style="padding:4px 0;color:#666">Subtotal</td><td style="padding:4px 0;text-align:right">$${formatMoney(order.subtotal)}</td></tr>
+            ${order.tax_amount > 0 ? `<tr><td style="padding:4px 0;color:#666">Tax</td><td style="padding:4px 0;text-align:right">$${formatMoney(order.tax_amount)}</td></tr>` : ''}
+            ${order.tip_amount > 0 ? `<tr><td style="padding:4px 0;color:#666">Tip</td><td style="padding:4px 0;text-align:right">$${formatMoney(order.tip_amount)}</td></tr>` : ''}
+            <tr style="font-size:18px;font-weight:bold"><td style="padding:8px 0 0 0">Total</td><td style="padding:8px 0 0 0;text-align:right">$${formatMoney(order.total)}</td></tr>
+          </table>
+        </div>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #eee;text-align:center">
+          <p style="margin:0 0 4px 0;color:#666;font-size:14px">Paid by ${escapeHtml(order.payment_method === 'card' ? 'Card' : 'Cash')}</p>
+          <p style="margin:0;color:#22D3EE;font-size:14px;font-weight:500">Thank you!</p>
+        </div>
+      </div>
+      <p style="text-align:center;color:#999;font-size:12px;margin-top:16px">Powered by OSPOS</p>
+    </body>
+    </html>
   `;
 }
 
@@ -162,13 +178,20 @@ router.post('/send', async (req: Request, res: Response): Promise<void> => {
         )
       : [];
 
-    // Get user email for business name
-    const user = await queryOne<{ email: string }>(
-      'SELECT email FROM users WHERE id = $1',
-      [req.user.userId]
+    // Get business name from synced settings, fall back to email or OSPOS
+    const businessSetting = await queryOne<{ value: string }>(
+      'SELECT value FROM synced_settings WHERE user_id = $1 AND key = $2',
+      [req.user.userId, 'business_name']
     );
 
-    const businessName = user?.email?.split('@')[0] ?? 'OSPOS';
+    let businessName = businessSetting?.value;
+    if (!businessName) {
+      const user = await queryOne<{ email: string }>(
+        'SELECT email FROM users WHERE id = $1',
+        [req.user.userId]
+      );
+      businessName = user?.email?.split('@')[0] ?? 'OSPOS';
+    }
 
     const log = await createReceiptLog(req.user.userId, orderId, method, recipient);
 
