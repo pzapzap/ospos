@@ -72,7 +72,7 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
 
     setSending(true);
     try {
-      const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', recipient.trim());
+      const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', recipient.trim(), settings.businessName || undefined);
       if (result.success) {
         Alert.alert('Sent', `Receipt sent via ${receiptMode === 'sms' ? 'SMS' : 'email'}`);
         setReceiptMode('none');

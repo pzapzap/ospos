@@ -178,13 +178,8 @@ router.post('/send', async (req: Request, res: Response): Promise<void> => {
         )
       : [];
 
-    // Get business name from synced settings, fall back to email or OSPOS
-    const businessSetting = await queryOne<{ value: string }>(
-      'SELECT value FROM synced_settings WHERE user_id = $1 AND key = $2',
-      [req.user.userId, 'business_name']
-    );
-
-    let businessName = businessSetting?.value;
+    // Get business name from request body, or fall back to email/OSPOS
+    let businessName = typeof req.body.businessName === 'string' ? req.body.businessName : null;
     if (!businessName) {
       const user = await queryOne<{ email: string }>(
         'SELECT email FROM users WHERE id = $1',

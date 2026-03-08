@@ -350,12 +350,13 @@ export async function syncPull(
 export async function sendReceipt(
   orderId: string,
   method: 'sms' | 'email',
-  recipient: string
+  recipient: string,
+  businessName?: string
 ): Promise<{ success: boolean }> {
   return request({
     method: 'POST',
     path: '/receipts/send',
-    body: { orderId, method, recipient },
+    body: { orderId, method, recipient, businessName },
   });
 }
 
