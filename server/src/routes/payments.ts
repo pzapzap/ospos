@@ -24,7 +24,7 @@ router.post('/create-intent', async (req: Request, res: Response): Promise<void>
   try {
     if (!req.user) { res.status(401).json({ error: 'Unauthorized' }); return; }
 
-    const { amount, currency, tip_amount } = req.body;
+    const { amount, currency, tip_amount, test_mode } = req.body;
 
     if (!amount || !currency) {
       res.status(400).json({ error: 'Amount and currency are required' });
@@ -45,6 +45,21 @@ router.post('/create-intent', async (req: Request, res: Response): Promise<void>
 
     if (typeof currency !== 'string' || currency.length !== 3) {
       res.status(400).json({ error: 'currency must be a 3-letter ISO code' });
+      return;
+    }
+
+    // In test mode, create a simulated payment intent without connected account
+    if (test_mode === true) {
+      const testIntent = await stripe.paymentIntents.create({
+        amount: tip_amount ? amount + tip_amount : amount,
+        currency: currency.toLowerCase(),
+        payment_method_types: ['card_present'],
+        capture_method: 'automatic',
+      });
+      res.json({
+        clientSecret: testIntent.client_secret,
+        paymentIntentId: testIntent.id,
+      });
       return;
     }
 

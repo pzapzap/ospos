@@ -177,13 +177,20 @@ function CardButton({
       }
 
       await lightTap();
+
+      // Stripe minimum is 50 cents
+      if (order.total < 50) {
+        throw new Error(`Minimum card payment is ${formatCurrency(50, currency)}`);
+      }
+
       setStatus('Creating payment...');
 
       // order.total and order.tipAmount are already integer cents
       const { clientSecret, paymentIntentId } = await createPaymentIntent(
         order.total,
         currency.toLowerCase(),
-        order.tipAmount > 0 ? order.tipAmount : undefined
+        order.tipAmount > 0 ? order.tipAmount : undefined,
+        isTestMode
       );
 
       if (!mountedRef.current) return;

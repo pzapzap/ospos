@@ -252,12 +252,13 @@ export async function getConnectionToken(): Promise<{ secret: string }> {
 export async function createPaymentIntent(
   amount: number,
   currency: string,
-  tipAmount?: number
+  tipAmount?: number,
+  testMode?: boolean
 ): Promise<{ clientSecret: string; paymentIntentId: string }> {
   return request({
     method: 'POST',
     path: '/payments/create-intent',
-    body: { amount, currency, tip_amount: tipAmount },
+    body: { amount, currency, tip_amount: tipAmount, test_mode: testMode },
   });
 }
 
