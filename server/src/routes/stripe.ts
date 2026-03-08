@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
-import { findUserById, updateUserStripeAccount } from '../db/queries/users';
+import { findUserById, updateUserStripeAccount, updateUserTerminalLocation } from '../db/queries/users';
 import {
   createConnectedAccount,
   createAccountLink,
   getAccountStatus,
   getAccountDetails,
   createConnectionToken,
+  createTerminalLocation,
 } from '../services/stripe';
 
 const router = Router();
@@ -59,6 +60,15 @@ router.post('/onboarding', async (req: Request, res: Response): Promise<void> =>
       const account = await createConnectedAccount(user.email);
       stripeAccountId = account.id;
       await updateUserStripeAccount(user.id, stripeAccountId);
+
+      // Create Terminal location for this connected account
+      try {
+        const location = await createTerminalLocation(stripeAccountId, `OSPOS - ${user.email}`);
+        await updateUserTerminalLocation(user.id, location.id);
+      } catch (locErr) {
+        console.error('[STRIPE] Failed to create terminal location:', locErr);
+        // Continue without location — user can retry later
+      }
     }
 
     const accountLink = await createAccountLink(

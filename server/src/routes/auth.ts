@@ -56,7 +56,7 @@ router.post('/register', authLimiter, async (req: Request, res: Response): Promi
       email: user.email,
     });
 
-    res.status(201).json({ token, userId: user.id });
+    res.status(201).json({ token, userId: user.id, terminalLocationId: user.terminal_location_id });
   } catch (error) {
     console.error('[AUTH] Register error:', error);
     res.status(500).json({ error: 'Registration failed' });
@@ -95,7 +95,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
       email: user.email,
     });
 
-    res.json({ token, userId: user.id });
+    res.json({ token, userId: user.id, terminalLocationId: user.terminal_location_id });
   } catch (error) {
     console.error('[AUTH] Login error:', error);
     res.status(500).json({ error: 'Login failed' });
@@ -177,7 +177,7 @@ router.post('/apple', authLimiter, async (req: Request, res: Response): Promise<
       email: user.email,
     });
 
-    res.json({ token, userId: user.id, isNewUser });
+    res.json({ token, userId: user.id, isNewUser, terminalLocationId: user.terminal_location_id });
   } catch (error) {
     console.error('[AUTH] Apple auth error:', error);
     res.status(500).json({ error: 'Apple sign-in failed' });

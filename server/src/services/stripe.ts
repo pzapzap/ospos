@@ -102,6 +102,32 @@ export async function getAccountDetails(accountId: string): Promise<{
 
 // ─── Terminal ────────────────────────────────────────────────────────────────
 
+export async function createTerminalLocation(
+  stripeAccountId: string,
+  displayName: string
+): Promise<Stripe.Terminal.Location> {
+  try {
+    // Create a location on the connected account for Terminal readers
+    return await stripe.terminal.locations.create(
+      {
+        display_name: displayName,
+        address: {
+          line1: 'OSPOS Mobile Location',
+          city: 'San Francisco',
+          state: 'CA',
+          postal_code: '94111',
+          country: 'US',
+        },
+      },
+      { stripeAccount: stripeAccountId }
+    );
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Create terminal location error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
 export async function createConnectionToken(stripeAccountId?: string): Promise<{ secret: string }> {
   try {
     const token = await stripe.terminal.connectionTokens.create(
