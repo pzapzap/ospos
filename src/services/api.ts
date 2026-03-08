@@ -241,9 +241,12 @@ export async function getAccountDetails(): Promise<AccountDetails> {
 }
 
 export async function getConnectionToken(): Promise<{ secret: string }> {
+  // Check if test mode is enabled
+  const testMode = await SecureStore.getItemAsync('ospos_test_mode');
   return request({
     method: 'POST',
     path: '/stripe/connection-token',
+    body: { test_mode: testMode === 'on' },
   });
 }
 

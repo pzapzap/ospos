@@ -153,6 +153,15 @@ router.get('/account-details', async (req: Request, res: Response): Promise<void
 // POST /stripe/connection-token
 router.post('/connection-token', async (req: Request, res: Response): Promise<void> => {
   try {
+    const { test_mode } = req.body;
+
+    // In test mode, create token for platform account (no connected account)
+    if (test_mode === true) {
+      const token = await createConnectionToken();
+      res.json(token);
+      return;
+    }
+
     const user = await findUserById(req.user!.userId);
     if (!user?.stripe_account_id) {
       res.status(400).json({ error: 'Stripe account not set up' });
