@@ -92,10 +92,30 @@ router.post('/refund', async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) { res.status(401).json({ error: 'Unauthorized' }); return; }
 
-    const { paymentIntentId, amount } = req.body;
+    const { paymentIntentId, amount, test_mode } = req.body;
 
     if (!paymentIntentId || typeof paymentIntentId !== 'string' || !/^pi_[a-zA-Z0-9]+$/.test(paymentIntentId)) {
       res.status(400).json({ error: 'Invalid paymentIntentId' });
+      return;
+    }
+
+    // In test mode, refund on platform account
+    if (test_mode === true) {
+      let pi;
+      try {
+        pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      } catch {
+        res.status(403).json({ error: 'Payment not found' });
+        return;
+      }
+
+      if (amount !== undefined && (typeof amount !== 'number' || amount <= 0 || amount > pi.amount)) {
+        res.status(400).json({ error: 'Invalid refund amount' });
+        return;
+      }
+
+      const refund = await createRefund(paymentIntentId, amount ? Math.round(amount) : undefined);
+      res.json({ refundId: refund.id, status: refund.status, amount: refund.amount });
       return;
     }
 

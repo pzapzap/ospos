@@ -27,7 +27,7 @@ export default function TransactionDetailScreen({
   orderId,
   onBack,
 }: TransactionDetailScreenProps) {
-  const { settings } = useApp();
+  const { settings, isTestMode } = useApp();
   const mountedRef = useRef(true);
   const [order, setOrder] = useState<OrderWithItems | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -110,7 +110,7 @@ export default function TransactionDetailScreen({
           onPress: async () => {
             setProcessing(true);
             try {
-              await issueRefund(order.stripe_payment_id!, amount);
+              await issueRefund(order.stripe_payment_id!, amount, isTestMode);
 
               // Update local SQLite — accumulate refund amounts
               const db = getDatabase();

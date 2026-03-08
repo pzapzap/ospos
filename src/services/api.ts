@@ -267,12 +267,13 @@ export async function createPaymentIntent(
 
 export async function issueRefund(
   paymentIntentId: string,
-  amount?: number
+  amount?: number,
+  testMode?: boolean
 ): Promise<{ refundId: string; status: string; amount: number }> {
   return request({
     method: 'POST',
     path: '/payments/refund',
-    body: { paymentIntentId, amount },
+    body: { paymentIntentId, amount, test_mode: testMode },
   });
 }
 
