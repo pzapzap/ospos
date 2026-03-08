@@ -26,6 +26,21 @@ export function validatePhone(phone: string): boolean {
   return digits.length >= 10 && digits.length <= 15;
 }
 
+/** Format phone number to E.164 (e.g., +14155551234) */
+export function formatPhoneE164(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  // If already has country code (11+ digits starting with 1 for US)
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+${digits}`;
+  }
+  // Assume US/Canada (+1) for 10-digit numbers
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+  // Otherwise just prepend + and hope for the best
+  return `+${digits}`;
+}
+
 /** Max quantity per line item */
 export const MAX_ITEM_QUANTITY = 999;
 

@@ -20,7 +20,7 @@ import { formatCurrency } from '../utils/currency';
 import { successNotification } from '../utils/haptics';
 import { useApp } from '../state/AppContext';
 import { sendReceipt, type ReceiptOrderData } from '../services/api';
-import { validateEmail, validatePhone } from '../utils/validation';
+import { validateEmail, validatePhone, formatPhoneE164 } from '../utils/validation';
 import { isPrinterConnected, printReceipt } from '../services/printer';
 
 interface ReceiptScreenProps {
@@ -85,7 +85,8 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
           quantity: item.quantity,
         })),
       };
-      const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', recipient.trim(), settings.businessName || undefined, orderData);
+      const formattedRecipient = receiptMode === 'sms' ? formatPhoneE164(recipient) : recipient.trim();
+      const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', formattedRecipient, settings.businessName || undefined, orderData);
       if (result.success) {
         Alert.alert('Sent', `Receipt sent via ${receiptMode === 'sms' ? 'SMS' : 'email'}`);
         setReceiptMode('none');
