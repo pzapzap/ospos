@@ -39,9 +39,10 @@ interface SettingsScreenProps {
   onUpgrade?: () => void;
   onTTPOiSetup?: () => void;
   onTTPOiEducation?: () => void;
+  onAccountDeleted?: () => void;
 }
 
-export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup, onTTPOiEducation }: SettingsScreenProps) {
+export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup, onTTPOiEducation, onAccountDeleted }: SettingsScreenProps) {
   const { settings, updateSetting, isTestMode } = useApp();
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showTaxRateModal, setShowTaxRateModal] = useState(false);
@@ -238,17 +239,22 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
             style={[styles.upgradeButton, { backgroundColor: colors.danger }]}
             onPress={() => {
               Alert.alert(
-                'Reset Account',
-                'This will sign you out and reset to the onboarding screen. You can re-register with the real server.',
+                'Delete Account',
+                'This will permanently delete your account and all associated data. This action cannot be undone.',
                 [
                   { text: 'Cancel', style: 'cancel' },
                   {
-                    text: 'Reset',
+                    text: 'Delete Account',
                     style: 'destructive',
                     onPress: async () => {
-                      await AsyncStorage.removeItem('onboardingComplete');
-                      await clearToken();
-                      Alert.alert('Done', 'Restart the app now.');
+                      try {
+                        await deleteAccount();
+                        await AsyncStorage.removeItem('onboardingComplete');
+                        await clearToken();
+                        onAccountDeleted?.();
+                      } catch (err) {
+                        Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete account. Please try again.');
+                      }
                     },
                   },
                 ]
@@ -256,8 +262,8 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
             }}
             activeOpacity={0.7}
           >
-            <Text style={styles.upgradeButtonText}>Reset Account</Text>
-            <Text style={styles.upgradeHint}>Sign out and re-do onboarding</Text>
+            <Text style={styles.upgradeButtonText}>Delete Account</Text>
+            <Text style={styles.upgradeHint}>Permanently delete your account</Text>
           </TouchableOpacity>
         )}
 
@@ -357,7 +363,7 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
                           await deleteAccount();
                           await AsyncStorage.removeItem('onboardingComplete');
                           await clearToken();
-                          Alert.alert('Account Deleted', 'Your account has been deleted. The app will restart.');
+                          onAccountDeleted?.();
                         } catch (err) {
                           Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete account. Please try again.');
                         }

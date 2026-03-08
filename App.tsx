@@ -200,7 +200,7 @@ function SummaryStackNavigator() {
   );
 }
 
-function SettingsStackNavigator() {
+function SettingsStackNavigator({ onAccountDeleted }: { onAccountDeleted?: () => void }) {
   return (
     <SettingsStack.Navigator screenOptions={noHeader}>
       <SettingsStack.Screen name="SettingsMain">
@@ -209,6 +209,7 @@ function SettingsStackNavigator() {
             onDisputesTap={() => navigation.navigate('Disputes')}
             onTTPOiSetup={() => navigation.navigate('TTPOiSetup')}
             onTTPOiEducation={() => navigation.navigate('TTPOiEducation')}
+            onAccountDeleted={onAccountDeleted}
             onUpgrade={() => {
               Alert.alert(
                 'Upgrade to Card Payments',
@@ -251,7 +252,7 @@ function SettingsStackNavigator() {
   );
 }
 
-function MainTabs({ initialTab }: { initialTab?: string }) {
+function MainTabs({ initialTab, onAccountDeleted }: { initialTab?: string; onAccountDeleted?: () => void }) {
   return (
     <Tab.Navigator
       initialRouteName={initialTab}
@@ -299,12 +300,13 @@ function MainTabs({ initialTab }: { initialTab?: string }) {
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsStackNavigator}
         options={{
           tabBarLabel: 'Settings',
           tabBarIcon: ({ color }) => <Ionicons name="settings-outline" size={22} color={color} />,
         }}
-      />
+      >
+        {() => <SettingsStackNavigator onAccountDeleted={onAccountDeleted} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }
@@ -400,10 +402,14 @@ function AppContent() {
 
   const isPaidTier = settings.tier === 'paid';
 
+  const handleAccountDeleted = () => {
+    setOnboardingComplete(false);
+  };
+
   const content = (
     <>
       <NavigationContainer>
-        <MainTabs initialTab={initialTab} />
+        <MainTabs initialTab={initialTab} onAccountDeleted={handleAccountDeleted} />
       </NavigationContainer>
       <TTPOiAwarenessModal
         visible={showTTPOiAwareness}
