@@ -19,7 +19,7 @@ import { strings } from '../constants/strings';
 import { formatCurrency } from '../utils/currency';
 import { successNotification } from '../utils/haptics';
 import { useApp } from '../state/AppContext';
-import { sendReceipt } from '../services/api';
+import { sendReceipt, type ReceiptOrderData } from '../services/api';
 import { validateEmail, validatePhone } from '../utils/validation';
 import { isPrinterConnected, printReceipt } from '../services/printer';
 
@@ -72,7 +72,20 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
 
     setSending(true);
     try {
-      const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', recipient.trim(), settings.businessName || undefined);
+      const orderData: ReceiptOrderData = {
+        subtotal: lastOrder.subtotal,
+        taxAmount: lastOrder.taxAmount,
+        tipAmount: lastOrder.tipAmount,
+        total: lastOrder.total,
+        paymentMethod: lastOrder.paymentMethod,
+        createdAt: lastOrder.createdAt,
+        items: lastOrder.items.map(item => ({
+          name: item.itemName,
+          price: item.itemPrice,
+          quantity: item.quantity,
+        })),
+      };
+      const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', recipient.trim(), settings.businessName || undefined, orderData);
       if (result.success) {
         Alert.alert('Sent', `Receipt sent via ${receiptMode === 'sms' ? 'SMS' : 'email'}`);
         setReceiptMode('none');

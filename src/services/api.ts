@@ -347,16 +347,27 @@ export async function syncPull(
 
 // ─── Receipts ────────────────────────────────────────────────────────────────
 
+export interface ReceiptOrderData {
+  subtotal: number;
+  taxAmount: number;
+  tipAmount: number;
+  total: number;
+  paymentMethod: string;
+  createdAt: string;
+  items: Array<{ name: string; price: number; quantity: number }>;
+}
+
 export async function sendReceipt(
   orderId: string,
   method: 'sms' | 'email',
   recipient: string,
-  businessName?: string
+  businessName?: string,
+  orderData?: ReceiptOrderData
 ): Promise<{ success: boolean }> {
   return request({
     method: 'POST',
     path: '/receipts/send',
-    body: { orderId, method, recipient, businessName },
+    body: { orderId, method, recipient, businessName, orderData },
   });
 }
 

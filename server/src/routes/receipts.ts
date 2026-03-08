@@ -128,12 +128,27 @@ function formatReceiptHtml(
   `;
 }
 
+interface ClientOrderData {
+  subtotal: number;
+  taxAmount: number;
+  tipAmount: number;
+  total: number;
+  paymentMethod: string;
+  createdAt: string;
+  items: Array<{ name: string; price: number; quantity: number }>;
+}
+
 // POST /receipts/send
 router.post('/send', async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) { res.status(401).json({ error: 'Unauthorized' }); return; }
 
-    const { orderId, method, recipient } = req.body;
+    const { orderId, method, recipient, orderData } = req.body as {
+      orderId: string;
+      method: string;
+      recipient: string;
+      orderData?: ClientOrderData;
+    };
 
     if (!orderId || !method || !recipient) {
       res.status(400).json({ error: 'orderId, method, and recipient are required' });
@@ -165,18 +180,39 @@ router.post('/send', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Fetch order details for receipt content
-    const order = await queryOne<OrderRow>(
-      'SELECT id, subtotal, tax_amount, tip_amount, total, payment_method, created_at FROM synced_orders WHERE id = $1 AND user_id = $2',
-      [orderId, req.user.userId]
-    );
+    // Use client-provided order data, or fall back to database query
+    let order: OrderRow | null = null;
+    let items: OrderItemRow[] = [];
 
-    const items = order
-      ? await query<OrderItemRow>(
-          'SELECT item_name, item_price, quantity FROM synced_order_items WHERE order_id = $1',
-          [orderId]
-        )
-      : [];
+    if (orderData) {
+      // Use data sent from client (immediate, no sync delay)
+      order = {
+        id: orderId,
+        subtotal: orderData.subtotal,
+        tax_amount: orderData.taxAmount,
+        tip_amount: orderData.tipAmount,
+        total: orderData.total,
+        payment_method: orderData.paymentMethod,
+        created_at: orderData.createdAt,
+      };
+      items = orderData.items.map(item => ({
+        item_name: item.name,
+        item_price: item.price,
+        quantity: item.quantity,
+      }));
+    } else {
+      // Fall back to database (for older clients or re-sends)
+      order = await queryOne<OrderRow>(
+        'SELECT id, subtotal, tax_amount, tip_amount, total, payment_method, created_at FROM synced_orders WHERE id = $1 AND user_id = $2',
+        [orderId, req.user.userId]
+      );
+      items = order
+        ? await query<OrderItemRow>(
+            'SELECT item_name, item_price, quantity FROM synced_order_items WHERE order_id = $1',
+            [orderId]
+          )
+        : [];
+    }
 
     // Get business name from request body, or fall back to email/OSPOS
     let businessName = typeof req.body.businessName === 'string' ? req.body.businessName : null;
