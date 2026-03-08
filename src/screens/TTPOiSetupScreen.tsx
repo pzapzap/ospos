@@ -15,11 +15,10 @@ import { colors, typography, spacing, borderRadius, touchTargets } from '../cons
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
 import { useStripeTerminal } from '../services/terminal';
+import { getTerminalLocationId } from '../services/api';
 import ContactlessIcon from '../components/ContactlessIcon';
 import TTPOiConfigProgress from '../components/TTPOiConfigProgress';
 import TTPOiEducation from '../components/TTPOiEducation';
-
-const TERMINAL_LOCATION_ID = process.env.EXPO_PUBLIC_STRIPE_LOCATION_ID ?? '';
 
 interface TTPOiSetupScreenProps {
   onComplete: () => void;
@@ -32,7 +31,13 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
   const { updateSetting, isTestMode } = useApp();
   const [step, setStep] = useState<SetupStep>('requirements');
   const [deviceCompatible, setDeviceCompatible] = useState<boolean | null>(null);
+  const [terminalLocationId, setTerminalLocationId] = useState<string | null>(null);
   const readerResolverRef = useRef<((readers: Reader.Type[]) => void) | null>(null);
+
+  // Load terminal location ID on mount
+  useEffect(() => {
+    getTerminalLocationId().then(setTerminalLocationId);
+  }, []);
 
   const {
     initialize,
@@ -117,7 +122,7 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
       discoverReaders({
         discoveryMethod: 'tapToPay',
         simulated: isTestMode,
-        locationId: TERMINAL_LOCATION_ID || undefined,
+        locationId: terminalLocationId || undefined,
       }).catch(() => {});
 
       const readers = await waitForReaders();
@@ -132,7 +137,7 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
       const { reader, error } = await connectReader(
         {
           reader: readers[0],
-          locationId: TERMINAL_LOCATION_ID || readers[0].locationId || undefined,
+          locationId: terminalLocationId || readers[0].locationId || undefined,
           autoReconnectOnUnexpectedDisconnect: true,
           tosAcceptancePermitted: true,
           merchantDisplayName: 'OSPOS',

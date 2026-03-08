@@ -13,8 +13,10 @@ const API_BASE_URL = API_MODE === 'mock'
   : (process.env.EXPO_PUBLIC_API_URL ?? 'https://api.ospos.app');
 
 const TOKEN_KEY = 'ospos_auth_token';
+const TERMINAL_LOCATION_KEY = 'ospos_terminal_location_id';
 
 let authToken: string | null = null;
+let terminalLocationId: string | null = null;
 let onAuthExpired: (() => void) | null = null;
 
 export function setOnAuthExpired(callback: () => void): void {
@@ -43,9 +45,26 @@ async function setToken(token: string): Promise<void> {
 
 export async function clearToken(): Promise<void> {
   authToken = null;
+  terminalLocationId = null;
   await SecureStore.deleteItemAsync(TOKEN_KEY);
+  await SecureStore.deleteItemAsync(TERMINAL_LOCATION_KEY);
   // Also clear legacy location in case migration hasn't happened
   await AsyncStorage.removeItem(TOKEN_KEY).catch(() => {});
+}
+
+async function setTerminalLocationId(locationId: string | null): Promise<void> {
+  terminalLocationId = locationId;
+  if (locationId) {
+    await SecureStore.setItemAsync(TERMINAL_LOCATION_KEY, locationId);
+  } else {
+    await SecureStore.deleteItemAsync(TERMINAL_LOCATION_KEY);
+  }
+}
+
+export async function getTerminalLocationId(): Promise<string | null> {
+  if (terminalLocationId) return terminalLocationId;
+  terminalLocationId = await SecureStore.getItemAsync(TERMINAL_LOCATION_KEY);
+  return terminalLocationId;
 }
 
 export async function hasToken(): Promise<boolean> {
@@ -122,26 +141,32 @@ async function request<T>(options: RequestOptions): Promise<T> {
 export async function register(
   email: string,
   password: string
-): Promise<{ token: string; userId: string }> {
-  const result = await request<{ token: string; userId: string }>({
+): Promise<{ token: string; userId: string; terminalLocationId?: string }> {
+  const result = await request<{ token: string; userId: string; terminalLocationId?: string }>({
     method: 'POST',
     path: '/auth/register',
     body: { email, password },
   });
   await setToken(result.token);
+  if (result.terminalLocationId) {
+    await setTerminalLocationId(result.terminalLocationId);
+  }
   return result;
 }
 
 export async function login(
   email: string,
   password: string
-): Promise<{ token: string; userId: string }> {
-  const result = await request<{ token: string; userId: string }>({
+): Promise<{ token: string; userId: string; terminalLocationId?: string }> {
+  const result = await request<{ token: string; userId: string; terminalLocationId?: string }>({
     method: 'POST',
     path: '/auth/login',
     body: { email, password },
   });
   await setToken(result.token);
+  if (result.terminalLocationId) {
+    await setTerminalLocationId(result.terminalLocationId);
+  }
   return result;
 }
 
@@ -149,13 +174,16 @@ export async function loginWithApple(
   identityToken: string,
   email?: string | null,
   fullName?: string | null
-): Promise<{ token: string; userId: string; isNewUser: boolean }> {
-  const result = await request<{ token: string; userId: string; isNewUser: boolean }>({
+): Promise<{ token: string; userId: string; isNewUser: boolean; terminalLocationId?: string }> {
+  const result = await request<{ token: string; userId: string; isNewUser: boolean; terminalLocationId?: string }>({
     method: 'POST',
     path: '/auth/apple',
     body: { identityToken, email, fullName },
   });
   await setToken(result.token);
+  if (result.terminalLocationId) {
+    await setTerminalLocationId(result.terminalLocationId);
+  }
   return result;
 }
 
@@ -168,11 +196,15 @@ export async function deleteAccount(): Promise<{ success: boolean }> {
 
 // ─── Stripe Connect ──────────────────────────────────────────────────────────
 
-export async function startOnboarding(): Promise<{ url: string; stripeAccountId: string }> {
-  return request({
+export async function startOnboarding(): Promise<{ url: string; stripeAccountId: string; terminalLocationId?: string }> {
+  const result = await request<{ url: string; stripeAccountId: string; terminalLocationId?: string }>({
     method: 'POST',
     path: '/stripe/onboarding',
   });
+  if (result.terminalLocationId) {
+    await setTerminalLocationId(result.terminalLocationId);
+  }
+  return result;
 }
 
 export async function refreshOnboarding(): Promise<{ url: string }> {

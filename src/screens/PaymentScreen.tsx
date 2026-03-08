@@ -17,7 +17,7 @@ import { strings } from '../constants/strings';
 import { formatCurrency, getCurrencyDecimals } from '../utils/currency';
 import { useApp } from '../state/AppContext';
 import { createOrder } from '../db/queries';
-import { createPaymentIntent } from '../services/api';
+import { createPaymentIntent, getTerminalLocationId } from '../services/api';
 import type { OrderAction, OrderState } from '../state/reducers';
 import { useStripeTerminal } from '../services/terminal';
 import { lightTap, successNotification, errorNotification } from '../utils/haptics';
@@ -31,10 +31,7 @@ interface PaymentScreenProps {
   onUpgrade?: () => void;
 }
 
-const TERMINAL_LOCATION_ID = process.env.EXPO_PUBLIC_STRIPE_LOCATION_ID ?? '';
-if (!TERMINAL_LOCATION_ID && __DEV__) {
-  if (__DEV__) console.warn('[OSPOS] No EXPO_PUBLIC_STRIPE_LOCATION_ID configured — Tap to Pay may fail');
-}
+// Terminal location ID is loaded dynamically from SecureStore (set during auth/onboarding)
 
 const TIP_OPTIONS = [
   { label: strings.payment.noTip, value: 0, percent: null, isCustom: false },
@@ -80,8 +77,14 @@ function CardButton({
 }: CardButtonProps) {
   const [processing, setProcessing] = useState(false);
   const [status, setStatus] = useState('');
+  const [terminalLocationId, setTerminalLocationId] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const readerResolverRef = useRef<((readers: Reader.Type[]) => void) | null>(null);
+
+  // Load terminal location ID on mount
+  useEffect(() => {
+    getTerminalLocationId().then(setTerminalLocationId);
+  }, []);
 
   const {
     initialize,
@@ -219,7 +222,7 @@ function CardButton({
           discoverReaders({
             discoveryMethod: 'tapToPay',
             simulated,
-            locationId: TERMINAL_LOCATION_ID || undefined,
+            locationId: terminalLocationId || undefined,
           }).then(({ error }) => {
             if (error && __DEV__) console.warn('[OSPOS] Tap discovery error:', error.message);
           });
@@ -229,7 +232,7 @@ function CardButton({
             const { reader, error: connectErr } = await connectReader(
               {
                 reader: readers[0],
-                locationId: TERMINAL_LOCATION_ID || readers[0].locationId || undefined,
+                locationId: terminalLocationId || readers[0].locationId || undefined,
                 autoReconnectOnUnexpectedDisconnect: true,
                 tosAcceptancePermitted: true,
                 merchantDisplayName: 'OSPOS',

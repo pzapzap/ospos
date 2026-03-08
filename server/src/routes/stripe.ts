@@ -55,6 +55,7 @@ router.post('/onboarding', async (req: Request, res: Response): Promise<void> =>
     }
 
     let stripeAccountId = user.stripe_account_id;
+    let terminalLocationId = user.terminal_location_id;
 
     if (!stripeAccountId) {
       const account = await createConnectedAccount(user.email);
@@ -64,6 +65,7 @@ router.post('/onboarding', async (req: Request, res: Response): Promise<void> =>
       // Create Terminal location for this connected account
       try {
         const location = await createTerminalLocation(stripeAccountId, `OSPOS - ${user.email}`);
+        terminalLocationId = location.id;
         await updateUserTerminalLocation(user.id, location.id);
       } catch (locErr) {
         console.error('[STRIPE] Failed to create terminal location:', locErr);
@@ -80,6 +82,7 @@ router.post('/onboarding', async (req: Request, res: Response): Promise<void> =>
     res.json({
       url: accountLink.url,
       stripeAccountId,
+      terminalLocationId,
     });
   } catch (error) {
     console.error('[STRIPE] Onboarding error:', error);
