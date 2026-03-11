@@ -1,3 +1,9 @@
 api.ospos.app {
 	reverse_proxy server:3000
 }
+
+ospos.app {
+	root * /srv/www
+	try_files {path}.html {path}
+	file_server
+}

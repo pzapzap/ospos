@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — OSPOS</title>
+<meta name="description" content="OSPOS Privacy Policy. Learn how OSPOS handles your data, what we collect, and how we protect your privacy.">
+<meta property="og:title" content="Privacy Policy — OSPOS">
+<meta property="og:url" content="https://ospos.app/privacy">
+<meta name="theme-color" content="#09090B">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='38' fill='none' stroke='%2322D3EE' stroke-width='6.5' stroke-linecap='round' stroke-dasharray='220 18.5' stroke-dashoffset='9.3'/><circle cx='50' cy='50' r='11' fill='%23D4A574'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;500;600;700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #09090B;
+  --surface: #18181B;
+  --surface-light: #27272A;
+  --border: #27272A;
+  --text: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted: #52525B;
+  --cyan: #22D3EE;
+  --cyan-dark: #06B6D4;
+  --gold: #D4A574;
+  --font-display: 'Bitter', Georgia, serif;
+  --font-num: 'Archivo', 'Helvetica Neue', sans-serif;
+  --radius: 14px;
+  --radius-lg: 20px;
+}
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font-display); background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+a { color: var(--cyan); text-decoration: none; transition: color 0.2s; }
+a:hover { color: #67E8F9; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 16px 0;
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+nav .container {
+  max-width: 1120px; margin: 0 auto; padding: 0 24px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--text);
+}
+.nav-logo:hover { color: var(--text); }
+.nav-links {
+  display: flex; align-items: center; gap: 32px; list-style: none;
+}
+.nav-links a {
+  font-size: 14px; font-weight: 500; color: var(--text-secondary); transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+
+.container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.legal-content {
+  max-width: 760px; margin: 0 auto;
+  padding: 140px 24px 100px;
+}
+.legal-content h1 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(28px, 4vw, 40px); letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+.legal-meta {
+  font-size: 14px; color: var(--text-muted); margin-bottom: 48px;
+}
+.legal-content h2 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 20px; margin-top: 48px; margin-bottom: 16px;
+  color: var(--text); letter-spacing: -0.3px;
+}
+.legal-content h3 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 17px; margin-top: 32px; margin-bottom: 12px;
+  color: var(--text);
+}
+.legal-content p {
+  font-size: 15px; color: var(--text-secondary); line-height: 1.8;
+  margin-bottom: 16px;
+}
+.legal-content strong { color: var(--text); font-weight: 600; }
+.legal-content ul, .legal-content ol {
+  margin-bottom: 16px; padding-left: 24px;
+}
+.legal-content li {
+  font-size: 15px; color: var(--text-secondary); line-height: 1.8;
+  margin-bottom: 8px;
+}
+.legal-content hr {
+  border: none; border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+.data-table {
+  width: 100%; border-collapse: collapse; margin: 24px 0;
+  font-size: 14px;
+}
+.data-table th, .data-table td {
+  padding: 12px 16px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.data-table th {
+  font-weight: 600; color: var(--text); background: var(--surface);
+  font-family: var(--font-num); font-size: 13px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.data-table td { color: var(--text-secondary); }
+.data-table tr:last-child td { border-bottom: none; }
+
+footer {
+  padding: 48px 0;
+  border-top: 1px solid var(--border);
+}
+footer .container {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 24px;
+}
+.footer-left { display: flex; flex-direction: column; gap: 6px; }
+.footer-brand { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--text); }
+.footer-tagline { font-size: 13px; color: var(--text-muted); }
+.footer-tagline a { color: var(--text-muted); }
+.footer-tagline a:hover { color: var(--cyan); }
+.footer-links { display: flex; gap: 28px; list-style: none; }
+.footer-links a { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy {
+  font-size: 12px; color: var(--text-muted); width: 100%;
+  text-align: center; margin-top: 24px; padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  footer .container { flex-direction: column; text-align: center; }
+  .footer-links { flex-wrap: wrap; justify-content: center; }
+  .data-table { font-size: 13px; }
+  .data-table th, .data-table td { padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="/" class="nav-logo">
+      <svg viewBox="0 0 1024 1024" width="36" height="36"><circle cx="512" cy="512" r="389" fill="none" stroke="#22D3EE" stroke-width="67" stroke-linecap="round" stroke-dasharray="2255 190" stroke-dashoffset="95"/><circle cx="512" cy="512" r="113" fill="#D4A574"/></svg>
+      <span>OSPOS</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/terms">Terms</a></li>
+      <li><a href="https://github.com/ospos" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="mailto:hello@ospos.app">Support</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="legal-content">
+  <h1>Privacy Policy</h1>
+  <p class="legal-meta">Effective Date: March 1, 2026 &middot; Last Updated: March 1, 2026</p>
+  <hr>
+
+  <p>This Privacy Policy describes how OSPOS ("we," "us," "our") collects, uses, and protects your information when you use the OSPOS mobile application and related services (the "Service"). We are committed to protecting your privacy and being transparent about our data practices.</p>
+
+  <h2>1. Our Privacy Principles</h2>
+  <p>OSPOS is built on a simple idea: <strong>your data is yours.</strong> We designed the app so that the Free Tier works entirely on your device with zero data leaving your phone. For Paid Tier users, we collect only what's necessary to provide cloud features. We never sell your data.</p>
+
+  <h2>2. Information We Collect</h2>
+
+  <h3>Free Tier (No Data Collection)</h3>
+  <p>If you use the Free Tier, we collect <strong>nothing</strong>. All data — including your menu, orders, transaction history, and business settings — is stored locally on your device using SQLite. No data is transmitted to our servers. No account is required. No internet connection is needed.</p>
+
+  <h3>Paid Tier (Account Required)</h3>
+  <p>When you create an OSPOS account and use the Paid Tier, we collect:</p>
+  <table class="data-table">
+    <thead>
+      <tr><th>Data</th><th>Purpose</th><th>Storage</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Email address</td><td>Account authentication, notifications</td><td>Our servers</td></tr>
+      <tr><td>Business name</td><td>Receipts, account identification</td><td>Our servers</td></tr>
+      <tr><td>Business settings</td><td>Tax rate, tip config, sync preferences</td><td>Our servers + device</td></tr>
+      <tr><td>Order history</td><td>Cloud sync, reporting</td><td>Our servers + device</td></tr>
+      <tr><td>Transaction records</td><td>Cloud sync, reporting, receipts</td><td>Our servers + device</td></tr>
+      <tr><td>Customer phone/email</td><td>Receipt delivery (entered per-transaction)</td><td>Our servers (with order)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Apple Sign In</h3>
+  <p>If you sign in with Apple, we receive only the information Apple provides based on your choices: your name (if you share it) and either your real email address or an Apple-generated private relay address. We use this solely for account creation and authentication.</p>
+
+  <h2>3. Information We Never Collect</h2>
+  <p>We <strong>never</strong> collect, store, process, or have access to:</p>
+  <ul>
+    <li>Credit card numbers, debit card numbers, or cardholder data</li>
+    <li>Your location (location permission is used only for Stripe reader discovery and never transmitted to us)</li>
+    <li>Your contacts, messages, call logs, or browsing history</li>
+    <li>Device advertising identifiers</li>
+    <li>Biometric data (Face ID / Touch ID is processed entirely on-device by iOS)</li>
+  </ul>
+  <p>All payment card data is handled exclusively by <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe</a> in accordance with PCI DSS standards.</p>
+
+  <h2>4. How We Use Your Information</h2>
+  <p>We use your information solely to:</p>
+  <ul>
+    <li>Provide and operate the Service (account management, data sync, receipts)</li>
+    <li>Send transactional emails (account verification, password resets, receipts)</li>
+    <li>Communicate service updates and important notices</li>
+    <li>Improve the Service using aggregated, anonymized analytics</li>
+    <li>Comply with legal obligations</li>
+  </ul>
+  <p>We <strong>do not</strong> use your data for advertising, profiling, or marketing to third parties.</p>
+
+  <h2>5. Third-Party Services</h2>
+  <p>The Paid Tier integrates with the following third-party services, each with their own privacy policies:</p>
+  <ul>
+    <li><strong>Stripe</strong> — Payment processing. Stripe receives transaction and business data necessary to process payments. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's Privacy Policy</a>.</li>
+    <li><strong>Twilio</strong> — SMS receipt delivery. Twilio receives customer phone numbers only when an SMS receipt is sent. See <a href="https://www.twilio.com/legal/privacy" target="_blank" rel="noopener">Twilio's Privacy Policy</a>.</li>
+    <li><strong>SendGrid</strong> — Email receipt delivery. SendGrid receives customer email addresses only when an email receipt is sent. See <a href="https://www.twilio.com/legal/privacy" target="_blank" rel="noopener">SendGrid's Privacy Policy</a>.</li>
+    <li><strong>Sentry</strong> — Error monitoring. Sentry receives anonymized crash reports and error data to help us fix bugs. No personally identifiable information is sent. See <a href="https://sentry.io/privacy/" target="_blank" rel="noopener">Sentry's Privacy Policy</a>.</li>
+  </ul>
+  <p>We do not share your data with any other third parties.</p>
+
+  <h2>6. Data Security</h2>
+  <p>We take reasonable measures to protect your data:</p>
+  <ul>
+    <li><strong>In transit:</strong> All communication between the app and our servers uses TLS encryption (HTTPS).</li>
+    <li><strong>At rest:</strong> Server-stored data is encrypted. Local data on iOS is protected by Apple's filesystem encryption.</li>
+    <li><strong>Authentication:</strong> Account tokens are stored in your device's secure keychain (Keychain on iOS), not in plaintext storage.</li>
+    <li><strong>Payment data:</strong> We never handle card data. Stripe manages all payment security in compliance with PCI DSS.</li>
+  </ul>
+
+  <h2>7. Data Retention</h2>
+  <ul>
+    <li><strong>Free Tier:</strong> Data exists only on your device. Deleting the app deletes your data.</li>
+    <li><strong>Paid Tier:</strong> We retain your data for as long as your account is active. After account deletion, server-stored data is retained for 90 days (to allow recovery), then permanently deleted.</li>
+    <li><strong>Legal obligations:</strong> We may retain certain records longer if required by law (e.g., tax records, fraud prevention).</li>
+  </ul>
+
+  <h2>8. Your Rights</h2>
+  <p>You have the right to:</p>
+  <ul>
+    <li><strong>Access your data:</strong> Export your transaction data via CSV at any time. Request a full data export by contacting us.</li>
+    <li><strong>Delete your data:</strong> Request deletion of your server-stored data by emailing <a href="mailto:hello@ospos.app">hello@ospos.app</a>. We process requests within 30 days.</li>
+    <li><strong>Correct your data:</strong> Update your account information at any time through the app.</li>
+    <li><strong>Port your data:</strong> Export your data in CSV format for use with other services.</li>
+  </ul>
+  <p>If you are located in the European Union, United Kingdom, or California, you may have additional rights under GDPR, UK GDPR, or CCPA respectively. Contact us to exercise these rights.</p>
+
+  <h2>9. Children's Privacy</h2>
+  <p>OSPOS is a business tool intended for users 18 years of age or older. We do not knowingly collect information from children under 13 (or under 16 in the EU). If you believe we have inadvertently collected such data, please contact us and we will promptly delete it.</p>
+
+  <h2>10. International Data Transfers</h2>
+  <p>Our servers are located in the United States and Germany (Hetzner). If you use the Paid Tier from outside these regions, your data will be transferred to and processed in these locations. By using the Paid Tier, you consent to this transfer. We ensure appropriate safeguards are in place for international transfers.</p>
+
+  <h2>11. Changes to This Policy</h2>
+  <p>We may update this Privacy Policy from time to time. For material changes, we will provide at least 30 days' notice via email (for Paid Tier users) or in-app notification. The most current version will always be available at <a href="/privacy">ospos.app/privacy</a>.</p>
+
+  <h2>12. Contact Us</h2>
+  <p>If you have questions about this Privacy Policy or want to exercise your data rights, contact us at:</p>
+  <p><strong>OSPOS</strong><br>Email: <a href="mailto:hello@ospos.app">hello@ospos.app</a><br>Website: <a href="https://ospos.app">ospos.app</a></p>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-left">
+      <div class="footer-brand">OSPOS</div>
+      <div class="footer-tagline">Made in California by <a href="#">TTTS Co</a>&thinsp;&mdash;&thinsp;the think tank that ships.</div>
+    </div>
+    <ul class="footer-links">
+      <li><a href="/terms">Terms</a></li>
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="https://github.com/ospos" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="mailto:hello@ospos.app">Support</a></li>
+    </ul>
+    <div class="footer-copy">&copy; 2026 OSPOS. All rights reserved.</div>
+  </div>
+</footer>
+
+</body>
+</html>

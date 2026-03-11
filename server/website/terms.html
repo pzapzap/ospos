@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms of Service — OSPOS</title>
+<meta name="description" content="OSPOS Terms of Service. Read the terms governing your use of the OSPOS mobile point-of-sale application.">
+<meta property="og:title" content="Terms of Service — OSPOS">
+<meta property="og:url" content="https://ospos.app/terms">
+<meta name="theme-color" content="#09090B">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='38' fill='none' stroke='%2322D3EE' stroke-width='6.5' stroke-linecap='round' stroke-dasharray='220 18.5' stroke-dashoffset='9.3'/><circle cx='50' cy='50' r='11' fill='%23D4A574'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;500;600;700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #09090B;
+  --surface: #18181B;
+  --surface-light: #27272A;
+  --border: #27272A;
+  --text: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted: #52525B;
+  --cyan: #22D3EE;
+  --cyan-dark: #06B6D4;
+  --gold: #D4A574;
+  --font-display: 'Bitter', Georgia, serif;
+  --font-num: 'Archivo', 'Helvetica Neue', sans-serif;
+  --radius: 14px;
+  --radius-lg: 20px;
+}
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font-display); background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+a { color: var(--cyan); text-decoration: none; transition: color 0.2s; }
+a:hover { color: #67E8F9; }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 16px 0;
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid transparent;
+  transition: background 0.3s, border-color 0.3s;
+}
+nav.scrolled { border-bottom-color: var(--border); }
+nav .container {
+  max-width: 1120px; margin: 0 auto; padding: 0 24px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--text);
+}
+.nav-logo:hover { color: var(--text); }
+.nav-links {
+  display: flex; align-items: center; gap: 32px; list-style: none;
+}
+.nav-links a {
+  font-size: 14px; font-weight: 500; color: var(--text-secondary); transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+
+/* CONTENT */
+.container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.legal-content {
+  max-width: 760px; margin: 0 auto;
+  padding: 140px 24px 100px;
+}
+.legal-content h1 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(28px, 4vw, 40px); letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+.legal-meta {
+  font-size: 14px; color: var(--text-muted); margin-bottom: 48px;
+}
+.legal-content h2 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 20px; margin-top: 48px; margin-bottom: 16px;
+  color: var(--text); letter-spacing: -0.3px;
+}
+.legal-content p {
+  font-size: 15px; color: var(--text-secondary); line-height: 1.8;
+  margin-bottom: 16px;
+}
+.legal-content strong { color: var(--text); font-weight: 600; }
+.legal-content ul, .legal-content ol {
+  margin-bottom: 16px; padding-left: 24px;
+}
+.legal-content li {
+  font-size: 15px; color: var(--text-secondary); line-height: 1.8;
+  margin-bottom: 8px;
+}
+.legal-content hr {
+  border: none; border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+
+/* FOOTER */
+footer {
+  padding: 48px 0;
+  border-top: 1px solid var(--border);
+}
+footer .container {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 24px;
+}
+.footer-left { display: flex; flex-direction: column; gap: 6px; }
+.footer-brand { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--text); }
+.footer-tagline { font-size: 13px; color: var(--text-muted); }
+.footer-tagline a { color: var(--text-muted); }
+.footer-tagline a:hover { color: var(--cyan); }
+.footer-links { display: flex; gap: 28px; list-style: none; }
+.footer-links a { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy {
+  font-size: 12px; color: var(--text-muted); width: 100%;
+  text-align: center; margin-top: 24px; padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  footer .container { flex-direction: column; text-align: center; }
+  .footer-links { flex-wrap: wrap; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<nav id="nav" class="scrolled">
+  <div class="container">
+    <a href="/" class="nav-logo">
+      <svg viewBox="0 0 1024 1024" width="36" height="36"><circle cx="512" cy="512" r="389" fill="none" stroke="#22D3EE" stroke-width="67" stroke-linecap="round" stroke-dasharray="2255 190" stroke-dashoffset="95"/><circle cx="512" cy="512" r="113" fill="#D4A574"/></svg>
+      <span>OSPOS</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="https://github.com/ospos" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="mailto:hello@ospos.app">Support</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="legal-content">
+  <h1>Terms of Service</h1>
+  <p class="legal-meta">Effective Date: March 1, 2026 &middot; Last Updated: March 1, 2026</p>
+  <hr>
+
+  <p>These Terms of Service ("Terms") are a legal agreement between you and OSPOS ("we," "us," "our") governing your use of the OSPOS mobile application and related services (the "Service"). By downloading, installing, or using OSPOS, you agree to these Terms. If you do not agree, do not use the Service.</p>
+
+  <h2>1. What OSPOS Is</h2>
+  <p>OSPOS is a mobile point-of-sale application designed for small businesses. The Service allows you to build a menu, process transactions, track sales, and manage your business from your phone.</p>
+  <p>OSPOS is available in two tiers:</p>
+  <p><strong>Free Tier.</strong> Cash-only point of sale with menu management, sales tracking, daily summaries, and local CSV export. No account required. No internet connection required. All data is stored locally on your device.</p>
+  <p><strong>Paid Tier.</strong> Everything in the Free Tier, plus the ability to accept card payments, send SMS and email receipts, access date-range reporting, and sync data to our servers. The Paid Tier requires an OSPOS account and a connected Stripe account.</p>
+
+  <h2>2. Eligibility</h2>
+  <p>To use OSPOS, you must be at least 18 years old and legally authorized to operate a business in your jurisdiction. By creating an account or using the Paid Tier, you represent that you meet these requirements and that all information you provide to us is accurate and complete.</p>
+  <p>You are solely responsible for obtaining and maintaining any business licenses, permits, tax registrations, or other authorizations required to operate your business and accept payments in your location. OSPOS does not verify your business status, and your use of the Service does not constitute legal authorization to operate a business.</p>
+
+  <h2>3. Accounts</h2>
+  <p>To use the Paid Tier, you must create an OSPOS account using a valid email address. You are responsible for maintaining the security of your account credentials. You agree to notify us immediately at <a href="mailto:hello@ospos.app">hello@ospos.app</a> if you believe your account has been compromised.</p>
+  <p>You may not share your account credentials with others, create multiple accounts for the same business to circumvent any limitations, or use another person's account without their permission.</p>
+
+  <h2>4. Payment Processing and Fees</h2>
+  <p><strong>OSPOS is not a payment processor.</strong> All card payment processing is handled by Stripe, Inc. ("Stripe"). When you enable card payments through OSPOS, you are creating a Stripe Connected Account and agreeing to Stripe's own Terms of Service and Connected Account Agreement. We facilitate the connection between your business and Stripe but do not process, store, or have access to cardholder payment data.</p>
+  <p><strong>Platform Fee.</strong> We charge a platform fee of 1% on each card transaction processed through OSPOS. This fee is collected automatically by Stripe on our behalf from the transaction amount before funds are deposited to your Stripe account.</p>
+  <p><strong>Stripe Fees.</strong> Stripe charges its own standard processing fees (currently 2.9% + $0.30 per transaction, though Stripe's rates may change). These fees are separate from and in addition to our 1% platform fee. Your total effective fee per card transaction is the sum of our platform fee and Stripe's processing fee.</p>
+  <p><strong>Cash Transactions.</strong> OSPOS does not charge any fees on cash transactions. The Free Tier is and will remain free.</p>
+  <p><strong>Fee Changes.</strong> We may change our platform fee with 30 days' written notice to you via email or in-app notification. Continued use of card payment features after the effective date of a fee change constitutes acceptance of the new fee. If you do not agree to a fee change, you may discontinue use of the Paid Tier at any time.</p>
+
+  <h2>5. Your Responsibilities</h2>
+  <p>When using OSPOS, you agree to:</p>
+  <ul>
+    <li>Use the Service only for lawful business purposes and in compliance with all applicable laws, regulations, and industry standards in your jurisdiction, including tax laws, consumer protection laws, and any regulations governing the sale of your products or services.</li>
+    <li>Accurately report and remit all applicable taxes. OSPOS may calculate and display estimated taxes based on rates you configure, but we do not file taxes on your behalf. Tax calculations provided by OSPOS are for convenience only and should not be relied upon as tax advice. You are solely responsible for determining the correct tax rates, collecting the appropriate amounts, and remitting taxes to the relevant authorities.</li>
+    <li>Not use the Service to process transactions for illegal goods or services, transactions that violate Stripe's Acceptable Use Policy, fraudulent or deceptive transactions, or transactions on behalf of third parties without proper authorization.</li>
+    <li>Maintain accurate records of your transactions and comply with any record-keeping requirements under applicable law.</li>
+  </ul>
+
+  <h2>6. Data and Privacy</h2>
+  <p><strong>What We Store.</strong> For Free Tier users, all data (menu items, orders, transaction history, business settings) is stored locally on your device using SQLite. We do not collect or transmit this data. For Paid Tier users, we additionally store your email address, business name, business settings, order history, and transaction records on our servers to enable syncing, reporting, and receipt delivery.</p>
+  <p><strong>What We Never Store.</strong> We never store, process, or have access to credit card numbers, debit card numbers, or other cardholder payment data. All payment card data is handled exclusively by Stripe in accordance with PCI DSS standards.</p>
+  <p><strong>Data Use.</strong> We use your data solely to provide and improve the Service. We do not sell your data to third parties. We may use aggregated, anonymized data for analytics purposes.</p>
+  <p><strong>Data Export.</strong> You may export your transaction data at any time via CSV export. For Paid Tier users, you may also request a complete export of your data by contacting <a href="mailto:hello@ospos.app">hello@ospos.app</a>.</p>
+  <p><strong>Data Deletion.</strong> If you delete the app without a Paid Tier account, your locally stored data is deleted with the app. Paid Tier users may request deletion of their server-stored data by contacting <a href="mailto:hello@ospos.app">hello@ospos.app</a>. We will process deletion requests within 30 days, subject to any legal obligations to retain certain records.</p>
+  <p>For more details, please review our <a href="/privacy">Privacy Policy</a>.</p>
+
+  <h2>7. Chargebacks, Disputes, and Refunds</h2>
+  <p>Chargebacks and payment disputes are handled by Stripe in accordance with Stripe's policies and the rules of the applicable card networks (Visa, Mastercard, etc.). We will make reasonable efforts to surface dispute notifications to you through the Service, but we are not responsible for the outcome of any chargeback or dispute.</p>
+  <p>You are solely responsible for responding to chargebacks and disputes in a timely manner, issuing refunds to your customers when appropriate, any fees or penalties assessed by Stripe or card networks in connection with disputes, and maintaining sufficient documentation to support your transactions.</p>
+  <p>OSPOS is not liable for any losses you incur as a result of chargebacks, disputes, or Stripe account actions including holds, reserves, or account termination by Stripe.</p>
+
+  <h2>8. Intellectual Property</h2>
+  <p>OSPOS and its original content, features, and functionality are owned by OSPOS and are protected by copyright, trademark, and other intellectual property laws. The OSPOS name, logo, and associated branding are our trademarks. You may not use our trademarks without prior written consent.</p>
+  <p>Portions of the OSPOS application are open source and available under the MIT License. The open-source components are identified in our public repository. These Terms govern your use of the Service as a whole, including any proprietary components not covered by the MIT License.</p>
+
+  <h2>9. Third-Party Services</h2>
+  <p>The Service integrates with third-party services including Stripe (payment processing), Twilio (SMS receipt delivery), and SendGrid (email receipt delivery). Your use of these services through OSPOS is subject to their respective terms of service and privacy policies.</p>
+  <p>We are not responsible for the availability, accuracy, or performance of third-party services, and we make no warranties regarding their operation.</p>
+
+  <h2>10. Service Availability and Modifications</h2>
+  <p><strong>Free Tier.</strong> The Free Tier operates entirely on your device and does not depend on our servers or internet connectivity. We do not guarantee any specific level of availability for app updates or support.</p>
+  <p><strong>Paid Tier.</strong> We strive to maintain reliable server availability for syncing, receipt delivery, and cloud features, but we do not guarantee uninterrupted or error-free service. We may perform scheduled maintenance with reasonable advance notice when possible.</p>
+  <p><strong>Modifications.</strong> We may update, modify, or discontinue features of the Service at any time. For material changes that negatively affect Paid Tier functionality, we will provide 30 days' notice. The Free Tier's core functionality (menu builder, order processing, cash transactions, and local data storage) will remain available as long as the app is installed on your device, regardless of any changes to our servers or Paid Tier offerings.</p>
+
+  <h2>11. Termination</h2>
+  <p><strong>By You.</strong> You may stop using OSPOS at any time. Free Tier users can simply delete the app. Paid Tier users may downgrade to the Free Tier or delete their account by contacting <a href="mailto:hello@ospos.app">hello@ospos.app</a>.</p>
+  <p><strong>By Us.</strong> We may suspend or terminate your access to the Paid Tier immediately and without notice if you violate these Terms, engage in fraudulent or illegal activity, use the Service in a manner that could harm OSPOS, other users, or third parties, fail to maintain a valid Stripe account when using card payment features, or if we are required to do so by law or by Stripe.</p>
+  <p>Upon termination of your Paid Tier access, your locally stored data remains on your device. We will retain your server-stored data for 90 days following termination, during which time you may request a data export. After 90 days, server-stored data may be permanently deleted.</p>
+
+  <h2>12. Disclaimer of Warranties</h2>
+  <p>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE, THAT ANY DEFECTS WILL BE CORRECTED, THAT THE SERVICE WILL MEET YOUR SPECIFIC BUSINESS REQUIREMENTS, OR THAT TAX CALCULATIONS OR OTHER FIGURES DISPLAYED BY THE SERVICE ARE ACCURATE OR COMPLETE.</p>
+
+  <h2>13. Limitation of Liability</h2>
+  <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL OSPOS, ITS OFFICERS, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, REVENUE, DATA, BUSINESS OPPORTUNITIES, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF THE SERVICE, REGARDLESS OF WHETHER SUCH DAMAGES WERE FORESEEABLE OR WHETHER WE WERE ADVISED OF THEIR POSSIBILITY.</p>
+  <p>OUR TOTAL AGGREGATE LIABILITY FOR ALL CLAIMS ARISING OUT OF OR RELATING TO THESE TERMS OR THE SERVICE SHALL NOT EXCEED THE GREATER OF (A) THE TOTAL PLATFORM FEES YOU HAVE PAID TO US IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM, OR (B) ONE HUNDRED DOLLARS ($100.00).</p>
+  <p>THESE LIMITATIONS APPLY REGARDLESS OF THE LEGAL THEORY ON WHICH THE CLAIM IS BASED, INCLUDING BREACH OF CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR ANY OTHER THEORY.</p>
+  <p>SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OR LIMITATION OF CERTAIN DAMAGES. IN SUCH JURISDICTIONS, OUR LIABILITY SHALL BE LIMITED TO THE MAXIMUM EXTENT PERMITTED BY LAW.</p>
+
+  <h2>14. Indemnification</h2>
+  <p>You agree to indemnify, defend, and hold harmless OSPOS and its officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, costs, and expenses (including reasonable attorneys' fees) arising out of or related to your use of the Service, your violation of these Terms, your violation of any applicable law or regulation, your business operations or the products or services you sell using the Service, or any dispute between you and your customers.</p>
+
+  <h2>15. Dispute Resolution</h2>
+  <p><strong>Governing Law.</strong> These Terms shall be governed by and construed in accordance with the laws of the State of California, United States, without regard to its conflict of law provisions. If you are located outside the United States, you agree that the laws of California will still govern these Terms, except to the extent that mandatory consumer protection laws in your jurisdiction require otherwise.</p>
+  <p><strong>Informal Resolution.</strong> Before initiating any formal dispute resolution, you agree to contact us at <a href="mailto:hello@ospos.app">hello@ospos.app</a> and attempt to resolve the dispute informally for at least 30 days.</p>
+  <p><strong>Arbitration.</strong> Any dispute that cannot be resolved informally shall be resolved through binding arbitration conducted in accordance with the rules of the American Arbitration Association. The arbitration shall take place in Orange County, California, United States, unless otherwise agreed by the parties. The arbitrator's decision shall be final and binding and may be entered as a judgment in any court of competent jurisdiction. If you reside in a jurisdiction where binding arbitration is not enforceable, this provision shall not apply to you, and disputes shall instead be submitted to the exclusive jurisdiction of the state and federal courts located in Orange County, California.</p>
+  <p><strong>Class Action Waiver.</strong> You agree that any dispute resolution proceedings will be conducted only on an individual basis and not in a class, consolidated, or representative action. If this class action waiver is found to be unenforceable, then the entirety of this arbitration provision shall be null and void.</p>
+  <p><strong>Small Claims Exception.</strong> Notwithstanding the above, either party may bring an individual action in small claims court for disputes within that court's jurisdictional limits.</p>
+  <p><strong>International Users.</strong> OSPOS is operated from the United States. If you access the Service from outside the United States, you do so at your own initiative and are responsible for compliance with local laws, including but not limited to tax laws, business licensing requirements, consumer protection regulations, and data protection laws applicable in your jurisdiction. Nothing in these Terms limits any rights you may have under mandatory consumer protection laws in your country of residence that cannot be waived by contract.</p>
+
+  <h2>16. Apple and Google App Store Terms</h2>
+  <p>These Terms incorporate the following acknowledgments required by Apple, Inc. and Google, LLC:</p>
+  <p><strong>Acknowledgment.</strong> These Terms are between you and OSPOS only, not with Apple or Google. OSPOS, not Apple or Google, is solely responsible for the Service and its content.</p>
+  <p><strong>Scope of License.</strong> Your license to use OSPOS is a non-transferable license to use the application on devices that you own or control, as permitted by the usage rules of the applicable app store.</p>
+  <p><strong>Maintenance and Support.</strong> OSPOS is solely responsible for providing maintenance and support for the Service. Apple and Google have no obligation to provide any maintenance or support services.</p>
+  <p><strong>Warranty.</strong> OSPOS is solely responsible for any product warranties, whether express or implied. In the event of any failure of the Service to conform to any applicable warranty, you may notify Apple or Google for a refund of the purchase price (if any). To the maximum extent permitted by law, Apple and Google have no other warranty obligation with respect to the Service.</p>
+  <p><strong>Product Claims.</strong> OSPOS, not Apple or Google, is responsible for addressing any claims relating to the Service, including product liability claims, claims that the Service fails to conform to any applicable legal or regulatory requirement, and claims arising under consumer protection or similar legislation.</p>
+  <p><strong>Intellectual Property Claims.</strong> OSPOS, not Apple or Google, is responsible for the investigation, defense, settlement, and discharge of any third-party intellectual property infringement claim related to the Service.</p>
+  <p><strong>Third-Party Beneficiary.</strong> Apple and its subsidiaries are third-party beneficiaries of these Terms. Upon your acceptance of these Terms, Apple will have the right (and will be deemed to have accepted the right) to enforce these Terms against you as a third-party beneficiary.</p>
+
+  <h2>17. Open Source</h2>
+  <p>Certain components of OSPOS are released as open-source software under the MIT License. The open-source code is available at our public GitHub repository. The MIT License applies only to the source code of those components. These Terms govern your use of the compiled application, the Paid Tier services, our servers, and any proprietary components.</p>
+
+  <h2>18. Changes to These Terms</h2>
+  <p>We may modify these Terms at any time. For material changes, we will provide at least 30 days' notice via email (for Paid Tier users) or in-app notification. Your continued use of the Service after the effective date of any changes constitutes acceptance of the revised Terms. If you do not agree to the changes, you must stop using the Service.</p>
+  <p>The most current version of these Terms will always be available at <a href="/terms">ospos.app/terms</a>.</p>
+
+  <h2>19. General Provisions</h2>
+  <p><strong>Entire Agreement.</strong> These Terms, together with our <a href="/privacy">Privacy Policy</a> and any other policies referenced herein, constitute the entire agreement between you and OSPOS.</p>
+  <p><strong>Severability.</strong> If any provision of these Terms is found to be unenforceable, the remaining provisions shall continue in full force and effect.</p>
+  <p><strong>Waiver.</strong> Our failure to enforce any provision of these Terms shall not constitute a waiver of that provision.</p>
+  <p><strong>Assignment.</strong> You may not assign your rights or obligations under these Terms without our written consent. We may assign our rights and obligations without restriction.</p>
+  <p><strong>Notices.</strong> We may provide notices to you via email (for Paid Tier users), in-app notifications, or by posting updates on ospos.app. You may contact us at <a href="mailto:hello@ospos.app">hello@ospos.app</a>.</p>
+  <p><strong>Force Majeure.</strong> We shall not be liable for any failure or delay in performance due to circumstances beyond our reasonable control, including natural disasters, government actions, internet outages, or third-party service failures.</p>
+
+  <h2>20. Contact Us</h2>
+  <p>If you have questions about these Terms, contact us at:</p>
+  <p><strong>OSPOS</strong><br>Email: <a href="mailto:hello@ospos.app">hello@ospos.app</a><br>Website: <a href="https://ospos.app">ospos.app</a></p>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-left">
+      <div class="footer-brand">OSPOS</div>
+      <div class="footer-tagline">Made in California by <a href="#">TTTS Co</a>&thinsp;&mdash;&thinsp;the think tank that ships.</div>
+    </div>
+    <ul class="footer-links">
+      <li><a href="/terms">Terms</a></li>
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="https://github.com/ospos" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="mailto:hello@ospos.app">Support</a></li>
+    </ul>
+    <div class="footer-copy">&copy; 2026 OSPOS. All rights reserved.</div>
+  </div>
+</footer>
+
+</body>
+</html>
