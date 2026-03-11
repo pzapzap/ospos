@@ -86,7 +86,12 @@ router.post('/onboarding', async (req: Request, res: Response): Promise<void> =>
     });
   } catch (error) {
     console.error('[STRIPE] Onboarding error:', error);
-    res.status(500).json({ error: 'Failed to start onboarding' });
+    const stripeErr = error as { code?: string; message?: string };
+    res.status(500).json({
+      error: 'Failed to start onboarding',
+      details: stripeErr.message || 'Unknown error',
+      code: stripeErr.code || 'unknown'
+    });
   }
 });
 
