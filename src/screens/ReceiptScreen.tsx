@@ -29,6 +29,15 @@ interface ReceiptScreenProps {
 
 type ReceiptMode = 'none' | 'sms' | 'email';
 
+const EMAIL_DOMAINS = [
+  'gmail.com',
+  'yahoo.com',
+  'icloud.com',
+  'outlook.com',
+  'hotmail.com',
+  'aol.com',
+];
+
 export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
   const { lastOrder, settings } = useApp();
   const checkmarkScale = useRef(new Animated.Value(0)).current;
@@ -317,6 +326,26 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                     </TouchableOpacity>
                   )}
                 </View>
+                {/* Email domain suggestions */}
+                {recipient.includes('@') && !recipient.includes('.', recipient.indexOf('@')) ? (
+                  <View style={styles.domainSuggestions}>
+                    {EMAIL_DOMAINS
+                      .filter(domain => {
+                        const afterAt = recipient.split('@')[1]?.toLowerCase() || '';
+                        return domain.startsWith(afterAt);
+                      })
+                      .slice(0, 4)
+                      .map(domain => (
+                        <TouchableOpacity
+                          key={domain}
+                          style={styles.domainChip}
+                          onPress={() => setRecipient(recipient.split('@')[0] + '@' + domain)}
+                        >
+                          <Text style={styles.domainChipText}>@{domain}</Text>
+                        </TouchableOpacity>
+                      ))}
+                  </View>
+                ) : null}
                 <TouchableOpacity onPress={() => { setReceiptMode('none'); setRecipient(''); }}>
                   <Text style={styles.cancelText}>Cancel</Text>
                 </TouchableOpacity>
@@ -507,6 +536,25 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     paddingVertical: spacing.sm,
+  },
+  domainSuggestions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  domainChip: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  domainChipText: {
+    ...typography.body,
+    color: colors.primary,
+    fontSize: 14,
   },
   errorText: {
     ...typography.body,

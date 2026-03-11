@@ -91,8 +91,8 @@ function formatReceiptHtml(
     .map(
       (item) =>
         `<tr>
-          <td style="padding:8px 0;border-bottom:1px solid #eee">${escapeHtml(`${item.quantity}x ${item.item_name}`)}</td>
-          <td style="padding:8px 0;text-align:right;border-bottom:1px solid #eee">$${formatMoney(item.item_price * item.quantity)}</td>
+          <td style="padding:12px 0;border-bottom:1px solid #27272a;color:#fafafa">${escapeHtml(`${item.quantity}x ${item.item_name}`)}</td>
+          <td style="padding:12px 0;text-align:right;border-bottom:1px solid #27272a;color:#fafafa;font-weight:500">$${formatMoney(item.item_price * item.quantity)}</td>
         </tr>`
     )
     .join('');
@@ -106,33 +106,47 @@ function formatReceiptHtml(
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
-    <body style="margin:0;padding:20px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-      <div style="max-width:400px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
-        <h1 style="text-align:center;margin:0 0 4px 0;font-size:24px;color:#111">${safeName}</h1>
-        <p style="text-align:center;color:#666;font-size:14px;margin:0 0 20px 0">
+    <body style="margin:0;padding:20px;background:#09090b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+      <div style="max-width:420px;margin:0 auto;background:#18181b;border-radius:16px;padding:32px;border:1px solid #27272a">
+        <!-- OSPOS Logo/Brand -->
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="display:inline-block;background:#22D3EE;color:#09090b;font-weight:bold;font-size:14px;padding:6px 16px;border-radius:6px;letter-spacing:1px">OSPOS</div>
+        </div>
+
+        <!-- Business Name -->
+        <h1 style="text-align:center;margin:0 0 8px 0;font-size:28px;color:#fafafa;font-weight:600">${safeName}</h1>
+        <p style="text-align:center;color:#a1a1aa;font-size:14px;margin:0 0 24px 0">
           ${escapeHtml(new Date(order.created_at).toLocaleString())}
         </p>
-        <table style="width:100%;border-collapse:collapse">
-          ${itemRows}
-        </table>
-        <div style="margin-top:16px;padding-top:16px;border-top:2px solid #111">
+
+        <!-- Items -->
+        <div style="background:#09090b;border-radius:12px;padding:16px;margin-bottom:20px">
           <table style="width:100%;border-collapse:collapse">
-            <tr><td style="padding:4px 0;color:#666">Subtotal</td><td style="padding:4px 0;text-align:right">$${formatMoney(order.subtotal)}</td></tr>
-            ${order.tax_amount > 0 ? `<tr><td style="padding:4px 0;color:#666">Tax</td><td style="padding:4px 0;text-align:right">$${formatMoney(order.tax_amount)}</td></tr>` : ''}
-            ${order.tip_amount > 0 ? `<tr><td style="padding:4px 0;color:#666">Tip</td><td style="padding:4px 0;text-align:right">$${formatMoney(order.tip_amount)}</td></tr>` : ''}
-            <tr style="font-size:18px;font-weight:bold"><td style="padding:8px 0 0 0">Total</td><td style="padding:8px 0 0 0;text-align:right">$${formatMoney(order.total)}</td></tr>
+            ${itemRows}
           </table>
         </div>
-        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #eee;text-align:center">
-          <p style="margin:0 0 4px 0;color:#666;font-size:14px">Paid by ${escapeHtml(order.payment_method === 'card' ? 'Card' : 'Cash')}</p>
+
+        <!-- Totals -->
+        <div style="padding:16px 0;border-top:2px solid #22D3EE">
+          <table style="width:100%;border-collapse:collapse">
+            <tr><td style="padding:6px 0;color:#a1a1aa">Subtotal</td><td style="padding:6px 0;text-align:right;color:#fafafa">$${formatMoney(order.subtotal)}</td></tr>
+            ${order.tax_amount > 0 ? `<tr><td style="padding:6px 0;color:#a1a1aa">Tax</td><td style="padding:6px 0;text-align:right;color:#fafafa">$${formatMoney(order.tax_amount)}</td></tr>` : ''}
+            ${order.tip_amount > 0 ? `<tr><td style="padding:6px 0;color:#a1a1aa">Tip</td><td style="padding:6px 0;text-align:right;color:#fafafa">$${formatMoney(order.tip_amount)}</td></tr>` : ''}
+            <tr><td style="padding:12px 0 0 0;font-size:22px;font-weight:bold;color:#fafafa">Total</td><td style="padding:12px 0 0 0;text-align:right;font-size:22px;font-weight:bold;color:#22D3EE">$${formatMoney(order.total)}</td></tr>
+          </table>
+        </div>
+
+        <!-- Payment Info -->
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid #27272a;text-align:center">
+          <p style="margin:0 0 8px 0;color:#a1a1aa;font-size:14px">Paid by ${escapeHtml(order.payment_method === 'card' ? 'Card' : 'Cash')}</p>
           ${order.payment_method === 'cash' && cashTendered && cashTendered > order.total ? `
-          <p style="margin:8px 0 4px 0;color:#666;font-size:14px">Cash Tendered: $${formatMoney(cashTendered)}</p>
-          <p style="margin:0 0 8px 0;color:#22D3EE;font-size:14px;font-weight:500">Change: $${formatMoney(cashTendered - order.total)}</p>
+          <p style="margin:8px 0 4px 0;color:#a1a1aa;font-size:14px">Cash Tendered: $${formatMoney(cashTendered)}</p>
+          <p style="margin:0 0 12px 0;color:#22D3EE;font-size:16px;font-weight:600">Change: $${formatMoney(cashTendered - order.total)}</p>
           ` : ''}
-          <p style="margin:0;color:#22D3EE;font-size:14px;font-weight:500">Thank you!</p>
+          <p style="margin:16px 0 0 0;color:#22D3EE;font-size:16px;font-weight:500">Thank you!</p>
         </div>
       </div>
-      <p style="text-align:center;color:#999;font-size:12px;margin-top:16px">Powered by OSPOS</p>
+      <p style="text-align:center;color:#52525b;font-size:12px;margin-top:20px">Powered by <span style="color:#22D3EE">OSPOS</span></p>
     </body>
     </html>
   `;
