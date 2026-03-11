@@ -79,6 +79,7 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
         total: lastOrder.total,
         paymentMethod: lastOrder.paymentMethod,
         createdAt: lastOrder.createdAt,
+        cashTendered: lastOrder.cashTendered,
         items: lastOrder.items.map(item => ({
           name: item.itemName,
           price: item.itemPrice,
@@ -157,6 +158,22 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                     : 'Card'}
               </Text>
             </View>
+            {lastOrder.paymentMethod === 'cash' && lastOrder.cashTendered && lastOrder.cashTendered > lastOrder.total ? (
+              <>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Cash Tendered</Text>
+                  <Text style={styles.infoValue}>
+                    {formatCurrency(lastOrder.cashTendered, settings.currency)}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Change</Text>
+                  <Text style={[styles.infoValue, { color: colors.primary }]}>
+                    {formatCurrency(lastOrder.cashTendered - lastOrder.total, settings.currency)}
+                  </Text>
+                </View>
+              </>
+            ) : null}
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>{strings.receipt.time}</Text>
               <Text style={styles.infoValue}>{formattedDate}</Text>
@@ -259,42 +276,27 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
             </TouchableOpacity>
           ) : null}
 
-          {/* Receipt delivery options (paid tier) */}
-          {isPaidTier ? (
-            receiptMode === 'none' ? (
-              <View style={styles.receiptButtonRow}>
-                <TouchableOpacity
-                  style={styles.receiptButton}
-                  onPress={() => setReceiptMode('sms')}
-                  accessibilityLabel="Send receipt via text message"
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.receiptButtonText}>Text Receipt</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.receiptButton}
-                  onPress={() => setReceiptMode('email')}
-                  accessibilityLabel="Send receipt via email"
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.receiptButtonText}>Email Receipt</Text>
-                </TouchableOpacity>
-              </View>
+          {/* Receipt delivery options - SMS disabled pending carrier approval */}
+          {receiptMode === 'none' ? (
+              <TouchableOpacity
+                style={styles.receiptButton}
+                onPress={() => setReceiptMode('email')}
+                accessibilityLabel="Send receipt via email"
+                accessibilityRole="button"
+              >
+                <Text style={styles.receiptButtonText}>Email Receipt</Text>
+              </TouchableOpacity>
             ) : (
               <View style={styles.recipientSection}>
-                <Text style={styles.recipientLabel}>
-                  {receiptMode === 'sms' ? 'Phone number' : 'Email address'}
-                </Text>
+                <Text style={styles.recipientLabel}>Email address</Text>
                 <View style={styles.recipientRow}>
                   <TextInput
                     style={styles.recipientInput}
                     value={recipient}
                     onChangeText={setRecipient}
-                    placeholder={
-                      receiptMode === 'sms' ? '+1 (555) 123-4567' : 'customer@email.com'
-                    }
+                    placeholder="customer@email.com"
                     placeholderTextColor={colors.textMuted}
-                    keyboardType={receiptMode === 'sms' ? 'phone-pad' : 'email-address'}
+                    keyboardType="email-address"
                     autoCapitalize="none"
                     autoFocus
                   />
@@ -319,8 +321,7 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                   <Text style={styles.cancelText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
-            )
-          ) : null}
+            )}
 
           <TouchableOpacity
             style={styles.newOrderButton}

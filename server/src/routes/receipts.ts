@@ -45,7 +45,8 @@ function escapeHtml(s: string): string {
 function formatReceiptText(
   businessName: string,
   order: OrderRow,
-  items: OrderItemRow[]
+  items: OrderItemRow[],
+  cashTendered?: number
 ): string {
   const lines: string[] = [];
   if (businessName) {
@@ -69,7 +70,11 @@ function formatReceiptText(
     lines.push(`Tip: $${formatMoney(order.tip_amount)}`);
   }
   lines.push(`Total: $${formatMoney(order.total)}`);
-  lines.push(`Paid by: ${order.payment_method}`);
+  lines.push(`Paid by: ${order.payment_method === 'card' ? 'Card' : 'Cash'}`);
+  if (order.payment_method === 'cash' && cashTendered && cashTendered > order.total) {
+    lines.push(`Cash Tendered: $${formatMoney(cashTendered)}`);
+    lines.push(`Change: $${formatMoney(cashTendered - order.total)}`);
+  }
   lines.push('');
   lines.push('Thank you!');
 
@@ -79,7 +84,8 @@ function formatReceiptText(
 function formatReceiptHtml(
   businessName: string,
   order: OrderRow,
-  items: OrderItemRow[]
+  items: OrderItemRow[],
+  cashTendered?: number
 ): string {
   const itemRows = items
     .map(
@@ -119,6 +125,10 @@ function formatReceiptHtml(
         </div>
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid #eee;text-align:center">
           <p style="margin:0 0 4px 0;color:#666;font-size:14px">Paid by ${escapeHtml(order.payment_method === 'card' ? 'Card' : 'Cash')}</p>
+          ${order.payment_method === 'cash' && cashTendered && cashTendered > order.total ? `
+          <p style="margin:8px 0 4px 0;color:#666;font-size:14px">Cash Tendered: $${formatMoney(cashTendered)}</p>
+          <p style="margin:0 0 8px 0;color:#22D3EE;font-size:14px;font-weight:500">Change: $${formatMoney(cashTendered - order.total)}</p>
+          ` : ''}
           <p style="margin:0;color:#22D3EE;font-size:14px;font-weight:500">Thank you!</p>
         </div>
       </div>
@@ -135,6 +145,7 @@ interface ClientOrderData {
   total: number;
   paymentMethod: string;
   createdAt: string;
+  cashTendered?: number;
   items: Array<{ name: string; price: number; quantity: number }>;
 }
 
@@ -226,9 +237,11 @@ router.post('/send', async (req: Request, res: Response): Promise<void> => {
 
     const log = await createReceiptLog(req.user.userId, orderId, method, recipient);
 
+    const cashTendered = orderData?.cashTendered;
+
     if (method === 'sms') {
       const body = order
-        ? formatReceiptText(businessName, order, items)
+        ? formatReceiptText(businessName, order, items, cashTendered)
         : `Your receipt from OSPOS. Order: ${orderId}`;
 
       const result = await sendSMS(recipient, body);
@@ -236,7 +249,7 @@ router.post('/send', async (req: Request, res: Response): Promise<void> => {
       res.json({ success: result.success, receiptLogId: log.id });
     } else {
       const html = order
-        ? formatReceiptHtml(businessName, order, items)
+        ? formatReceiptHtml(businessName, order, items, cashTendered)
         : `<h1>Receipt</h1><p>Order: ${escapeHtml(orderId)}</p>`;
 
       const result = await sendEmail(recipient, `Receipt from ${businessName}`, html);

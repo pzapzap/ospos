@@ -84,12 +84,16 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
     })();
   }, [initialize, isInitialized, supportsReadersOfType, isTestMode]);
 
+  // Store cancelDiscovering in a ref so cleanup only runs on unmount
+  const cancelDiscoveringRef = useRef(cancelDiscovering);
+  cancelDiscoveringRef.current = cancelDiscovering;
+
   useEffect(() => {
     return () => {
       readerResolverRef.current = null;
-      try { cancelDiscovering().catch(() => {}); } catch { /* noop */ }
+      try { cancelDiscoveringRef.current().catch(() => {}); } catch { /* noop */ }
     };
-  }, [cancelDiscovering]);
+  }, []);
 
   const waitForReaders = useCallback((): Promise<Reader.Type[]> => {
     return new Promise((resolve) => {

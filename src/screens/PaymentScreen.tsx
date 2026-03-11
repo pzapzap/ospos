@@ -117,13 +117,17 @@ function CardButton({
     }
   }, [initialize, isInitialized]);
 
+  // Store cancelDiscovering in a ref so cleanup only runs on unmount, not on every re-render
+  const cancelDiscoveringRef = useRef(cancelDiscovering);
+  cancelDiscoveringRef.current = cancelDiscovering;
+
   useEffect(() => {
     return () => {
       mountedRef.current = false;
       readerResolverRef.current = null;
-      try { cancelDiscovering().catch(() => {}); } catch { /* SDK may not be initialized */ }
+      try { cancelDiscoveringRef.current().catch(() => {}); } catch { /* SDK may not be initialized */ }
     };
-  }, [cancelDiscovering]);
+  }, []);
 
   const discoveredReadersRef = useRef(discoveredReaders);
   discoveredReadersRef.current = discoveredReaders;

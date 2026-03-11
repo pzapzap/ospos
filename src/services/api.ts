@@ -357,6 +357,7 @@ export interface ReceiptOrderData {
   total: number;
   paymentMethod: string;
   createdAt: string;
+  cashTendered?: number;
   items: Array<{ name: string; price: number; quantity: number }>;
 }
 
