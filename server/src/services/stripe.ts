@@ -106,16 +106,21 @@ export async function getAccountRequirements(accountId: string): Promise<{
   eventually_due: string[];
   past_due: string[];
   disabled_reason: string | null;
+  charges_enabled: boolean;
 }> {
   try {
     const account = await stripe.accounts.retrieve(accountId);
     const reqs = account.requirements;
+    const hasOutstandingReqs = (reqs?.currently_due?.length ?? 0) > 0 || (reqs?.past_due?.length ?? 0) > 0;
+    // Show requirements banner if there are outstanding items OR if charges are disabled (account restricted/under review)
+    const chargesEnabled = account.charges_enabled ?? false;
     return {
-      has_requirements: (reqs?.currently_due?.length ?? 0) > 0 || (reqs?.past_due?.length ?? 0) > 0,
+      has_requirements: hasOutstandingReqs || !chargesEnabled,
       currently_due: reqs?.currently_due ?? [],
       eventually_due: reqs?.eventually_due ?? [],
       past_due: reqs?.past_due ?? [],
       disabled_reason: reqs?.disabled_reason ?? null,
+      charges_enabled: chargesEnabled,
     };
   } catch (error) {
     const stripeErr = error as Stripe.errors.StripeError;

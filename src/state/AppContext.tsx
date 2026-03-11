@@ -27,6 +27,7 @@ export interface StripeRequirements {
   past_due: string[];
   disabled_reason: string | null;
   remediation_url: string | null;
+  charges_enabled: boolean;
 }
 
 interface AppContextValue {

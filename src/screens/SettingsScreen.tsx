@@ -166,11 +166,23 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
             }}
             activeOpacity={0.7}
           >
-            <Text style={styles.requirementsBannerTitle}>Action needed</Text>
-            <Text style={styles.requirementsBannerText}>
-              Complete your Stripe setup to accept card payments
-            </Text>
-            <Text style={styles.requirementsBannerLink}>Tap to continue setup →</Text>
+            {stripeRequirements.currently_due.length > 0 || stripeRequirements.past_due.length > 0 ? (
+              <>
+                <Text style={styles.requirementsBannerTitle}>Action needed</Text>
+                <Text style={styles.requirementsBannerText}>
+                  Complete your Stripe setup to accept card payments
+                </Text>
+                <Text style={styles.requirementsBannerLink}>Tap to continue setup →</Text>
+              </>
+            ) : !stripeRequirements.charges_enabled ? (
+              <>
+                <Text style={styles.requirementsBannerTitle}>Verification pending</Text>
+                <Text style={styles.requirementsBannerText}>
+                  Stripe is reviewing your account. Card payments will be available once verified.
+                </Text>
+                <Text style={styles.requirementsBannerLink}>Tap to check status →</Text>
+              </>
+            ) : null}
           </TouchableOpacity>
         ) : null}
 
