@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, useCallback, useRef } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
@@ -17,7 +18,16 @@ import {
 import { shouldAutoBackup, performBackup, recordBackupTime } from '../utils/backup';
 import { startSyncEngine, stopSyncEngine, processSyncQueue } from '../services/sync';
 import { registerForPushNotifications } from '../services/notifications';
-import { registerPushToken } from '../services/api';
+import { registerPushToken, getAccountRequirements } from '../services/api';
+
+export interface StripeRequirements {
+  has_requirements: boolean;
+  currently_due: string[];
+  eventually_due: string[];
+  past_due: string[];
+  disabled_reason: string | null;
+  remediation_url: string | null;
+}
 
 interface AppContextValue {
   dbReady: boolean;
@@ -46,6 +56,8 @@ interface AppContextValue {
   isOnline: boolean;
   isTestMode: boolean;
   reloadSettings: () => Promise<void>;
+  stripeRequirements: StripeRequirements | null;
+  checkStripeRequirements: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -72,8 +84,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [settings, settingsDispatch] = useReducer(settingsReducer, initialSettingsState);
   const [lastOrder, setLastOrder] = useState<AppContextValue['lastOrder']>(null);
   const [isOnline, setIsOnline] = useState(true);
+  const [stripeRequirements, setStripeRequirements] = useState<StripeRequirements | null>(null);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   const isTestMode = settings.testMode === 'on';
+
+  // Check Stripe account requirements
+  const checkStripeRequirements = useCallback(async () => {
+    if (settings.tier !== 'paid') return;
+    try {
+      const requirements = await getAccountRequirements();
+      setStripeRequirements(requirements);
+    } catch (err) {
+      if (__DEV__) console.warn('[OSPOS] Failed to check Stripe requirements:', err);
+    }
+  }, [settings.tier]);
 
   // Connectivity monitoring
   useEffect(() => {
@@ -145,6 +170,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           registerForPushNotifications()
             .then((token) => { if (token) registerPushToken(token).catch(() => {}); })
             .catch(() => {});
+          // Check Stripe requirements on startup
+          getAccountRequirements()
+            .then(setStripeRequirements)
+            .catch(() => {});
         }
       }
     })();
@@ -153,6 +182,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       stopSyncEngine();
     };
   }, []);
+
+  // Check Stripe requirements when app returns to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        // App came to foreground - check requirements
+        if (settings.tier === 'paid') {
+          getAccountRequirements()
+            .then(setStripeRequirements)
+            .catch(() => {});
+        }
+      }
+      appStateRef.current = nextState;
+    });
+
+    return () => subscription.remove();
+  }, [settings.tier]);
 
   const reloadSettings = useCallback(async () => {
     const dbSettings = await getAllSettings();
@@ -237,6 +283,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isOnline,
         isTestMode,
         reloadSettings,
+        stripeRequirements,
+        checkStripeRequirements,
       }}
     >
       {children}

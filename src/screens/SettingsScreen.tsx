@@ -43,7 +43,7 @@ interface SettingsScreenProps {
 }
 
 export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup, onTTPOiEducation, onAccountDeleted }: SettingsScreenProps) {
-  const { settings, updateSetting, isTestMode } = useApp();
+  const { settings, updateSetting, isTestMode, stripeRequirements, checkStripeRequirements } = useApp();
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showTaxRateModal, setShowTaxRateModal] = useState(false);
   const [localBusinessName, setLocalBusinessName] = useState(settings.businessName);
@@ -71,13 +71,14 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
 
   const isPaidTier = settings.tier === 'paid';
 
-  // Load sync health on focus
+  // Load sync health and check Stripe requirements on focus
   useFocusEffect(
     useCallback(() => {
       if (isPaidTier) {
         getSyncHealth().then(setSyncHealth).catch(() => {});
+        checkStripeRequirements();
       }
-    }, [isPaidTier])
+    }, [isPaidTier, checkStripeRequirements])
   );
 
   const handleBackupNow = async () => {
@@ -151,6 +152,27 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>{strings.settings.title}</Text>
+
+        {/* Stripe Requirements Banner */}
+        {isPaidTier && stripeRequirements?.has_requirements ? (
+          <TouchableOpacity
+            style={styles.requirementsBanner}
+            onPress={() => {
+              if (stripeRequirements.remediation_url) {
+                Linking.openURL(stripeRequirements.remediation_url);
+              } else {
+                Linking.openURL('https://dashboard.stripe.com');
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.requirementsBannerTitle}>Action needed</Text>
+            <Text style={styles.requirementsBannerText}>
+              Complete your Stripe setup to accept card payments
+            </Text>
+            <Text style={styles.requirementsBannerLink}>Tap to continue setup →</Text>
+          </TouchableOpacity>
+        ) : null}
 
         {/* Business Name */}
         <View style={styles.section}>
@@ -565,4 +587,8 @@ const styles = StyleSheet.create({
   aboutText: { ...typography.caption },
   sentryTestButton: { marginTop: spacing.md, backgroundColor: colors.surface, borderRadius: borderRadius.md, paddingVertical: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.warning },
   sentryTestText: { ...typography.bodyBold, color: colors.warning },
+  requirementsBanner: { backgroundColor: colors.warningLight, borderRadius: borderRadius.md, padding: spacing.lg, marginBottom: spacing.xxl, borderWidth: 1, borderColor: colors.warning },
+  requirementsBannerTitle: { ...typography.bodyBold, color: colors.warning, marginBottom: spacing.xs },
+  requirementsBannerText: { ...typography.body, color: colors.text, marginBottom: spacing.sm },
+  requirementsBannerLink: { ...typography.bodyBold, color: colors.warning },
 });
