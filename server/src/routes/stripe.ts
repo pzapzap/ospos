@@ -6,6 +6,8 @@ import {
   createAccountLink,
   getAccountStatus,
   getAccountDetails,
+  getAccountRequirements,
+  createRemediationLink,
   createConnectionToken,
   createTerminalLocation,
 } from '../services/stripe';
@@ -152,6 +154,35 @@ router.get('/account-details', async (req: Request, res: Response): Promise<void
   } catch (error) {
     console.error('[STRIPE] Account details error:', error);
     res.status(500).json({ error: 'Failed to get account details' });
+  }
+});
+
+// GET /stripe/account-requirements
+router.get('/account-requirements', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await findUserById(req.user!.userId);
+    if (!user?.stripe_account_id) {
+      res.status(400).json({ error: 'No Stripe account found' });
+      return;
+    }
+
+    const requirements = await getAccountRequirements(user.stripe_account_id);
+
+    // If there are outstanding requirements, include a remediation link
+    let remediationUrl: string | null = null;
+    if (requirements.has_requirements) {
+      const link = await createRemediationLink(
+        user.stripe_account_id,
+        buildServerUrl(req, '/refresh'),
+        buildServerUrl(req, '/return')
+      );
+      remediationUrl = link.url;
+    }
+
+    res.json({ ...requirements, remediation_url: remediationUrl });
+  } catch (error) {
+    console.error('[STRIPE] Account requirements error:', error);
+    res.status(500).json({ error: 'Failed to get account requirements' });
   }
 });
 

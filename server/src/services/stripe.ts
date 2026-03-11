@@ -100,6 +100,49 @@ export async function getAccountDetails(accountId: string): Promise<{
   }
 }
 
+export async function getAccountRequirements(accountId: string): Promise<{
+  has_requirements: boolean;
+  currently_due: string[];
+  eventually_due: string[];
+  past_due: string[];
+  disabled_reason: string | null;
+}> {
+  try {
+    const account = await stripe.accounts.retrieve(accountId);
+    const reqs = account.requirements;
+    return {
+      has_requirements: (reqs?.currently_due?.length ?? 0) > 0 || (reqs?.past_due?.length ?? 0) > 0,
+      currently_due: reqs?.currently_due ?? [],
+      eventually_due: reqs?.eventually_due ?? [],
+      past_due: reqs?.past_due ?? [],
+      disabled_reason: reqs?.disabled_reason ?? null,
+    };
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Account requirements error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
+export async function createRemediationLink(
+  accountId: string,
+  refreshUrl: string,
+  returnUrl: string
+): Promise<Stripe.AccountLink> {
+  try {
+    return await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
+      type: 'account_update',
+    });
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[STRIPE] Remediation link error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
 // ─── Terminal ────────────────────────────────────────────────────────────────
 
 export async function createTerminalLocation(

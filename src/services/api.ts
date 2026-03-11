@@ -243,6 +243,20 @@ export async function getAccountDetails(): Promise<AccountDetails> {
   });
 }
 
+export async function getAccountRequirements(): Promise<{
+  has_requirements: boolean;
+  currently_due: string[];
+  eventually_due: string[];
+  past_due: string[];
+  disabled_reason: string | null;
+  remediation_url: string | null;
+}> {
+  return request({
+    method: 'GET',
+    path: '/stripe/account-requirements',
+  });
+}
+
 export async function getConnectionToken(): Promise<{ secret: string }> {
   // Check if test mode is enabled
   const testMode = await SecureStore.getItemAsync('ospos_test_mode');
