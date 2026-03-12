@@ -171,12 +171,23 @@ router.get('/account-requirements', async (req: Request, res: Response): Promise
     // If there are outstanding requirements, include a remediation link
     let remediationUrl: string | null = null;
     if (requirements.has_requirements) {
-      const link = await createRemediationLink(
-        user.stripe_account_id,
-        buildServerUrl(req, '/refresh'),
-        buildServerUrl(req, '/return')
-      );
-      remediationUrl = link.url;
+      try {
+        // Try account_update first (for accounts that finished initial onboarding)
+        const link = await createRemediationLink(
+          user.stripe_account_id,
+          buildServerUrl(req, '/refresh'),
+          buildServerUrl(req, '/return')
+        );
+        remediationUrl = link.url;
+      } catch {
+        // Fall back to account_onboarding (for accounts still in initial setup)
+        const link = await createAccountLink(
+          user.stripe_account_id,
+          buildServerUrl(req, '/refresh'),
+          buildServerUrl(req, '/return')
+        );
+        remediationUrl = link.url;
+      }
     }
 
     res.json({ ...requirements, remediation_url: remediationUrl });
