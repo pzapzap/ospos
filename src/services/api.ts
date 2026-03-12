@@ -250,6 +250,7 @@ export async function getAccountRequirements(): Promise<{
   past_due: string[];
   disabled_reason: string | null;
   remediation_url: string | null;
+  charges_enabled: boolean;
 }> {
   return request({
     method: 'GET',
