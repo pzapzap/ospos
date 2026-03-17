@@ -17,6 +17,9 @@ import notificationsRoutes from './routes/notifications';
 
 const app = express();
 
+// Trust Caddy reverse proxy (required for rate limiting behind proxy)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: { directives: { defaultSrc: ["'self'"] } },

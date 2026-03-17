@@ -270,24 +270,22 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={[styles.upgradeButton, { backgroundColor: colors.danger }]}
+            style={[styles.upgradeButton, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}
             onPress={() => {
               Alert.alert(
-                'Delete Account',
-                'This will permanently delete your account and all associated data. This action cannot be undone.',
+                'Sign Out',
+                'Sign out of your account? You can sign back in anytime.',
                 [
                   { text: 'Cancel', style: 'cancel' },
                   {
-                    text: 'Delete Account',
-                    style: 'destructive',
+                    text: 'Sign Out',
                     onPress: async () => {
                       try {
-                        await deleteAccount();
                         await AsyncStorage.removeItem('onboardingComplete');
                         await clearToken();
                         onAccountDeleted?.();
                       } catch (err) {
-                        Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete account. Please try again.');
+                        Alert.alert('Error', 'Failed to sign out. Please try again.');
                       }
                     },
                   },
@@ -296,8 +294,8 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
             }}
             activeOpacity={0.7}
           >
-            <Text style={styles.upgradeButtonText}>Delete Account</Text>
-            <Text style={styles.upgradeHint}>Permanently delete your account</Text>
+            <Text style={[styles.upgradeButtonText, { color: colors.text }]}>Sign Out</Text>
+            <Text style={[styles.upgradeHint, { color: colors.textSecondary }]}>Switch accounts or sign back in later</Text>
           </TouchableOpacity>
         )}
 
@@ -324,12 +322,12 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           <View style={styles.section}>
             <Text style={styles.label}>Tap to Pay on iPhone</Text>
             {settings.ttpOiSetupComplete === 'true' ? (
-              <View style={styles.syncIndicator}>
-                <Text style={[styles.syncText, { color: colors.primary }]}>
+              <View style={[styles.syncIndicator, { alignItems: 'center' }]}>
+                <Text style={[styles.syncText, { color: colors.primary, textAlign: 'center' }]}>
                   Tap to Pay on iPhone is ready
                 </Text>
                 <TouchableOpacity onPress={onTTPOiEducation}>
-                  <Text style={styles.syncRetryText}>View Guide</Text>
+                  <Text style={[styles.syncRetryText, { textAlign: 'center' }]}>View Guide</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -351,12 +349,13 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           <View style={styles.section}>
             <Text style={styles.label}>Sync</Text>
             <TouchableOpacity
-              style={styles.syncIndicator}
+              style={[styles.syncIndicator, { alignItems: 'center' }]}
               onPress={syncHealth.failedCount > 0 ? handleForceRetry : undefined}
             >
               <Text
                 style={[
                   styles.syncText,
+                  { textAlign: 'center' },
                   syncHealth.failedCount > 0 && styles.syncWarning,
                 ]}
               >
@@ -364,7 +363,7 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
                 {syncHealth.failedCount > 0 ? '⚠' : '✓'}
               </Text>
               {syncHealth.failedCount > 0 ? (
-                <Text style={styles.syncRetryText}>Tap to force retry</Text>
+                <Text style={[styles.syncRetryText, { textAlign: 'center' }]}>Tap to force retry</Text>
               ) : null}
             </TouchableOpacity>
           </View>
@@ -380,6 +379,32 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
               onPress={() => Linking.openURL('https://dashboard.stripe.com')}
             >
               <Text style={styles.linkText}>Open Stripe Dashboard</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.linkButton, { marginTop: spacing.sm }]}
+              onPress={() => {
+                Alert.alert(
+                  'Sign Out',
+                  'Sign out of your account? You can sign back in anytime.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Sign Out',
+                      onPress: async () => {
+                        try {
+                          await AsyncStorage.removeItem('onboardingComplete');
+                          await clearToken();
+                          onAccountDeleted?.();
+                        } catch (err) {
+                          Alert.alert('Error', 'Failed to sign out. Please try again.');
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.linkText}>Sign Out</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.linkButton, { marginTop: spacing.sm }]}
@@ -419,7 +444,7 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           </TouchableOpacity>
         ) : null}
 
-        {/* Bluetooth Printer */}
+        {/* Bluetooth Printer - disabled until fully tested
         <View style={styles.section}>
           <Text style={styles.label}>Receipt Printer</Text>
           {printerConnected ? (
@@ -487,6 +512,7 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
             </>
           )}
         </View>
+        */}
 
         {/* Auto-Backup */}
         <View style={styles.section}>
@@ -530,6 +556,37 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           >
             <Text style={styles.linkText}>GitHub</Text>
           </TouchableOpacity>
+          {isPaidTier ? (
+            <TouchableOpacity
+              style={[styles.sentryTestButton, { borderColor: colors.danger, marginTop: spacing.lg }]}
+              onPress={() => {
+                Alert.alert(
+                  'Delete Account',
+                  'This will permanently delete your account and all associated data. This action cannot be undone.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Delete Account',
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          await deleteAccount();
+                          await AsyncStorage.removeItem('onboardingComplete');
+                          await clearToken();
+                          onAccountDeleted?.();
+                        } catch (err) {
+                          Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete account. Please try again.');
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.sentryTestText, { color: colors.danger }]}>Delete Account</Text>
+            </TouchableOpacity>
+          ) : null}
           {__DEV__ ? (
             <TouchableOpacity
               style={styles.sentryTestButton}
