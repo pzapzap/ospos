@@ -2,6 +2,16 @@
 
 A free, open source point of sale app that runs on any smartphone. It is a cash register. Not a restaurant management system. Not an inventory tracker. A cash register.
 
+## Branches
+
+| Branch | Purpose |
+|--------|---------|
+| `master` | Shared base — stable code that both platforms build from |
+| `ios` | iOS production build (App Store) |
+| `android` | Android build (Play Store) — includes Google Sign-In, Tap to Pay on Android |
+
+**iOS-only changes** go on `ios`. **Android-only changes** go on `android`. **Shared changes** go on `master` and get merged into both.
+
 ## What OSPOS Does
 
 - **Build a menu** — add items with names, prices, and photos
@@ -112,4 +122,4 @@ MIT — see [LICENSE](LICENSE)
 ## Links
 
 - [Website](https://ospos.app)
-- [GitHub](https://github.com/ospos/ospos)
+- [GitHub](https://github.com/pzapzap/ospos)
