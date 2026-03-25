@@ -544,6 +544,21 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           <Text style={styles.linkText}>{strings.settings.helpSupport}</Text>
         </TouchableOpacity>
 
+        {/* Legal */}
+        <View style={styles.legalRow}>
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://ospos.app/privacy')}
+          >
+            <Text style={styles.legalLink}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalDot}>·</Text>
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://ospos.app/terms')}
+          >
+            <Text style={styles.legalLink}>Terms of Service</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* About */}
         <View style={styles.aboutSection}>
           <Text style={styles.aboutTitle}>{strings.settings.about}</Text>
@@ -648,6 +663,9 @@ const styles = StyleSheet.create({
   backupButtonText: { ...typography.bodyBold, color: colors.textSecondary },
   linkRow: { paddingVertical: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border, marginBottom: spacing.lg },
   linkText: { ...typography.body, color: colors.primary },
+  legalRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, paddingVertical: spacing.md, gap: spacing.sm },
+  legalLink: { ...typography.caption, color: colors.textMuted },
+  legalDot: { ...typography.caption, color: colors.textMuted },
   upgradeButton: { backgroundColor: colors.primary, borderRadius: borderRadius.md, paddingVertical: spacing.lg, paddingHorizontal: spacing.xl, alignItems: 'center', marginBottom: spacing.xxl },
   upgradeButtonText: { ...typography.bodyBold, color: colors.black, fontSize: 16 },
   upgradeHint: { ...typography.caption, color: colors.black, opacity: 0.8, marginTop: spacing.xs },
