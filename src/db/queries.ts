@@ -27,6 +27,8 @@ export interface Order {
   refund_amount: number;
   status: 'completed' | 'refunded';
   created_at: string;
+  card_last4: string | null;
+  card_brand: string | null;
 }
 
 export interface OrderItem {
@@ -150,6 +152,8 @@ export interface CreateOrderInput {
   total: number;
   paymentMethod: 'cash' | 'card';
   stripePaymentId?: string;
+  cardLast4?: string;
+  cardBrand?: string;
   items: Array<{
     itemId: string;
     itemName: string;
@@ -167,8 +171,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   await db.execAsync('BEGIN TRANSACTION');
   try {
     await db.runAsync(
-      `INSERT INTO orders (id, subtotal, tax_rate, tax_amount, tip_amount, total, payment_method, stripe_payment_id, refund_status, refund_amount, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'none', 0, 'completed', ?)`,
+      `INSERT INTO orders (id, subtotal, tax_rate, tax_amount, tip_amount, total, payment_method, stripe_payment_id, refund_status, refund_amount, status, created_at, card_last4, card_brand)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'none', 0, 'completed', ?, ?, ?)`,
       [
         orderId,
         Math.round(input.subtotal),
@@ -179,6 +183,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         input.paymentMethod,
         input.stripePaymentId ?? null,
         now,
+        input.cardLast4 ?? null,
+        input.cardBrand ?? null,
       ]
     );
 

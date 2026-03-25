@@ -7,7 +7,6 @@ import {
   FlatList,
   SafeAreaView,
   Alert,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -165,7 +164,9 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
 
       {items.length === 0 ? (
         <View style={styles.emptyState}>
-          <Image source={require('../../assets/images/empty-menu-128.png')} style={{ width: 96, height: 96, resizeMode: 'contain', marginBottom: spacing.md }} />
+          <View style={styles.emptyIconContainer}>
+            <Ionicons name="storefront-outline" size={56} color={colors.primary} />
+          </View>
           <Text style={styles.emptyText}>{strings.menuBuilder.emptyState}</Text>
         </View>
       ) : (
@@ -268,6 +269,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.xxl,
+    gap: spacing.sm,
+  },
+  emptyIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   emptyText: {
     ...typography.body,

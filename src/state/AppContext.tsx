@@ -47,6 +47,7 @@ interface AppContextValue {
     createdAt: string;
     items: OrderState['items'];
     cardLast4?: string;
+    cardBrand?: string;
     subtotal: number;
     taxAmount: number;
     tipAmount: number;

@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
@@ -42,9 +43,12 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
   const { lastOrder, settings } = useApp();
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollView>(null);
   const [receiptMode, setReceiptMode] = useState<ReceiptMode>('none');
   const [recipient, setRecipient] = useState('');
   const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const sentScale = useRef(new Animated.Value(0)).current;
   const [printing, setPrinting] = useState(false);
   const isPaidTier = settings.tier === 'paid';
   const printerAvailable = isPrinterConnected();
@@ -98,9 +102,20 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
       const formattedRecipient = receiptMode === 'sms' ? formatPhoneE164(recipient) : recipient.trim();
       const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', formattedRecipient, settings.businessName || undefined, orderData);
       if (result.success) {
-        Alert.alert('Sent', `Receipt sent via ${receiptMode === 'sms' ? 'SMS' : 'email'}`);
-        setReceiptMode('none');
-        setRecipient('');
+        setSent(true);
+        Animated.spring(sentScale, {
+          toValue: 1,
+          friction: 4,
+          tension: 60,
+          useNativeDriver: true,
+        }).start();
+        successNotification();
+        setTimeout(() => {
+          setSent(false);
+          sentScale.setValue(0);
+          setReceiptMode('none');
+          setRecipient('');
+        }, 2500);
       } else {
         Alert.alert('Failed', 'Could not send receipt. Please try again.');
       }
@@ -132,8 +147,13 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Top: receipt details */}
-        <View style={styles.content}>
+        <ScrollView
+          ref={scrollRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Checkmark Animation */}
           <Animated.View
             style={[styles.checkmark, { transform: [{ scale: checkmarkScale }] }]}
@@ -163,7 +183,7 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                 {lastOrder.paymentMethod === 'cash'
                   ? 'Cash'
                   : lastOrder.cardLast4
-                    ? `Card ••••${lastOrder.cardLast4}`
+                    ? `${lastOrder.cardBrand ?? 'Card'} ••••${lastOrder.cardLast4}`
                     : 'Card'}
               </Text>
             </View>
@@ -239,10 +259,9 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
               <Text style={styles.receiptFooter}>{settings.receiptFooter}</Text>
             ) : null}
           </Animated.View>
-        </View>
 
-        {/* Bottom: action buttons — fixed above keyboard */}
-        <View style={styles.footer}>
+          {/* Action buttons — flow naturally below receipt */}
+          <View style={styles.footer}>
           {/* Print receipt (if printer connected) */}
           {printerAvailable ? (
             <TouchableOpacity
@@ -286,13 +305,22 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
           ) : null}
 
           {/* Receipt delivery options - SMS disabled pending carrier approval */}
-          {receiptMode === 'none' ? (
+          {sent ? (
+              <View style={styles.sentConfirmation}>
+                <Animated.View style={[styles.sentIcon, { transform: [{ scale: sentScale }] }]}>
+                  <Ionicons name="mail" size={28} color={colors.primary} />
+                </Animated.View>
+                <Text style={styles.sentTitle}>Receipt Sent</Text>
+                <Text style={styles.sentSubtitle}>{recipient}</Text>
+              </View>
+            ) : receiptMode === 'none' ? (
               <TouchableOpacity
                 style={styles.receiptButton}
                 onPress={() => setReceiptMode('email')}
                 accessibilityLabel="Send receipt via email"
                 accessibilityRole="button"
               >
+                <Ionicons name="mail-outline" size={18} color={colors.primary} style={{ marginRight: spacing.sm }} />
                 <Text style={styles.receiptButtonText}>Email Receipt</Text>
               </TouchableOpacity>
             ) : (
@@ -308,6 +336,7 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoFocus
+                    onFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300)}
                   />
                   {sending ? (
                     <View style={styles.sendButton}>
@@ -360,6 +389,7 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
             <Text style={styles.newOrderText}>{strings.receipt.newOrder}</Text>
           </TouchableOpacity>
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -378,11 +408,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: spacing.xxl,
     paddingTop: spacing.xxxl,
-    overflow: 'hidden',
+    paddingBottom: spacing.xxl,
   },
   checkmark: {
     width: 80,
@@ -469,10 +501,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   footer: {
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.xxl,
-    paddingBottom: spacing.xxl,
-    paddingTop: spacing.md,
+    marginTop: spacing.xxl,
     gap: spacing.md,
   },
   receiptButtonRow: {
@@ -481,6 +510,7 @@ const styles = StyleSheet.create({
   },
   receiptButton: {
     flex: 1,
+    flexDirection: 'row',
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
@@ -493,6 +523,28 @@ const styles = StyleSheet.create({
   receiptButtonText: {
     ...typography.bodyBold,
     color: colors.primary,
+  },
+  sentConfirmation: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    gap: spacing.xs,
+  },
+  sentIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  sentTitle: {
+    ...typography.title3,
+    color: colors.primary,
+  },
+  sentSubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   recipientSection: {
     gap: spacing.sm,

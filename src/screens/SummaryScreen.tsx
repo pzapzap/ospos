@@ -10,7 +10,6 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -168,7 +167,11 @@ export default function SummaryScreen() {
           {formatCurrency(item.total, settings.currency)}
         </Text>
         <Text style={styles.orderMethod}>
-          {item.payment_method === 'cash' ? 'Cash' : 'Card'}
+          {item.payment_method === 'cash'
+            ? 'Cash'
+            : item.card_last4
+              ? `${item.card_brand ?? ''} ••••${item.card_last4}`.trim()
+              : 'Card'}
         </Text>
       </TouchableOpacity>
     );
@@ -214,7 +217,7 @@ export default function SummaryScreen() {
             <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xxxl }} />
           ) : (
             <View style={styles.emptyContainer}>
-              <Image source={require('../../assets/images/empty-history-128.png')} style={{ width: 96, height: 96, resizeMode: 'contain', marginBottom: spacing.md }} />
+              <Ionicons name="receipt-outline" size={56} color={colors.primary} style={{ marginBottom: spacing.md }} />
               <Text style={styles.emptyText}>{strings.summary.noTransactions}</Text>
             </View>
           )
@@ -330,7 +333,7 @@ const styles = StyleSheet.create({
   },
   orderMethod: {
     ...typography.caption,
-    width: 50,
+    width: 100,
     textAlign: 'right',
   },
   emptyContainer: {

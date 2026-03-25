@@ -9,13 +9,17 @@ import {
   TextInput,
   ActivityIndicator,
   FlatList,
+  Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { formatCurrency, getCurrencyDecimals } from '../utils/currency';
+import { successNotification } from '../utils/haptics';
+import { validateEmail } from '../utils/validation';
 import { useApp } from '../state/AppContext';
 import { getOrderWithItems, type OrderWithItems } from '../db/queries';
-import { issueRefund } from '../services/api';
+import { issueRefund, sendReceipt, type ReceiptOrderData } from '../services/api';
 import { getDatabase } from '../db/database';
 
 interface TransactionDetailScreenProps {
@@ -35,6 +39,11 @@ export default function TransactionDetailScreen({
   const [refundAmount, setRefundAmount] = useState('');
   const [isFullRefund, setIsFullRefund] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const sentScale = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     (async () => {
@@ -68,6 +77,53 @@ export default function TransactionDetailScreen({
       </SafeAreaView>
     );
   }
+
+  const handleEmailReceipt = async () => {
+    if (!emailAddress.trim() || !order) return;
+    if (!validateEmail(emailAddress)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      const orderData: ReceiptOrderData = {
+        subtotal: order.subtotal,
+        taxAmount: order.tax_amount,
+        tipAmount: order.tip_amount,
+        total: order.total,
+        paymentMethod: order.payment_method,
+        createdAt: order.created_at,
+        items: order.items.map(item => ({
+          name: item.item_name,
+          price: item.item_price,
+          quantity: item.quantity,
+        })),
+      };
+      const result = await sendReceipt(order.id, 'email', emailAddress.trim(), settings.businessName || undefined, orderData);
+      if (result.success) {
+        setEmailSent(true);
+        successNotification();
+        Animated.spring(sentScale, {
+          toValue: 1,
+          friction: 4,
+          tension: 60,
+          useNativeDriver: true,
+        }).start();
+        setTimeout(() => {
+          setEmailSent(false);
+          sentScale.setValue(0);
+          setShowEmail(false);
+          setEmailAddress('');
+        }, 2500);
+      } else {
+        Alert.alert('Failed', 'Could not send receipt. Please try again.');
+      }
+    } catch {
+      Alert.alert(strings.errors.generic);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   const isCard = order.payment_method === 'card';
   const hasRefund = order.refund_status !== 'none';
@@ -172,7 +228,11 @@ export default function TransactionDetailScreen({
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Payment</Text>
             <Text style={styles.infoValue}>
-              {order.payment_method === 'cash' ? 'Cash' : 'Card'}
+              {order.payment_method === 'cash'
+                ? 'Cash'
+                : order.card_last4
+                  ? `${order.card_brand ?? 'Card'} ••••${order.card_last4}`
+                  : 'Card'}
             </Text>
           </View>
           <View style={styles.infoRow}>
@@ -217,6 +277,56 @@ export default function TransactionDetailScreen({
             )}
           />
         </View>
+
+        {/* Email receipt */}
+        {emailSent ? (
+          <View style={styles.sentConfirmation}>
+            <Animated.View style={[styles.sentIcon, { transform: [{ scale: sentScale }] }]}>
+              <Ionicons name="mail" size={24} color={colors.primary} />
+            </Animated.View>
+            <Text style={styles.sentTitle}>Receipt Sent</Text>
+            <Text style={styles.sentSubtitle}>{emailAddress}</Text>
+          </View>
+        ) : showEmail ? (
+          <View style={styles.emailSection}>
+            <View style={styles.emailRow}>
+              <TextInput
+                style={styles.emailInput}
+                value={emailAddress}
+                onChangeText={setEmailAddress}
+                placeholder="customer@email.com"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoFocus
+              />
+              {sendingEmail ? (
+                <View style={styles.emailSendButton}>
+                  <ActivityIndicator color={colors.black} size="small" />
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.emailSendButton, !emailAddress.trim() && styles.emailSendDisabled]}
+                  onPress={handleEmailReceipt}
+                  disabled={!emailAddress.trim()}
+                >
+                  <Text style={styles.emailSendText}>Send</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <TouchableOpacity onPress={() => { setShowEmail(false); setEmailAddress(''); }}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.emailButton}
+            onPress={() => setShowEmail(true)}
+          >
+            <Ionicons name="mail-outline" size={18} color={colors.primary} />
+            <Text style={styles.emailButtonText}>Email Receipt</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Refund button — card transactions only */}
         {isCard && order.refund_status !== 'full' ? (
@@ -350,6 +460,85 @@ const styles = StyleSheet.create({
   },
   lineItemPrice: {
     ...typography.priceMuted,
+  },
+  emailButton: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: touchTargets.minimum,
+    marginBottom: spacing.md,
+  },
+  emailButtonText: {
+    ...typography.bodyBold,
+    color: colors.primary,
+  },
+  emailSection: {
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  emailRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  emailInput: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    ...typography.body,
+    color: colors.text,
+  },
+  emailSendButton: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.xl,
+    justifyContent: 'center',
+    minHeight: touchTargets.minimum,
+  },
+  emailSendDisabled: {
+    opacity: 0.5,
+  },
+  emailSendText: {
+    ...typography.bodyBold,
+    color: colors.black,
+  },
+  cancelText: {
+    ...typography.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+  },
+  sentConfirmation: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  sentIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  sentTitle: {
+    ...typography.title3,
+    color: colors.primary,
+  },
+  sentSubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   refundSection: {
     marginTop: spacing.md,

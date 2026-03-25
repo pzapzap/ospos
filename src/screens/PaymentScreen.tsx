@@ -288,7 +288,13 @@ function CardButton({
         throw new Error(`Payment status: ${confirmedPI.status}`);
       }
 
-      const cardLast4 = (confirmedPI as { cardDetails?: { last4?: string } }).cardDetails?.last4 ?? undefined;
+      // Stripe Terminal SDK: card info is in charges[0].paymentMethodDetails.cardPresentDetails
+      const piAny = confirmedPI as Record<string, unknown>;
+      const charges = piAny.charges as Array<{ paymentMethodDetails?: { cardPresentDetails?: { last4?: string; brand?: string }; interacPresentDetails?: { last4?: string; brand?: string } } }> | undefined;
+      const methodDetails = charges?.[0]?.paymentMethodDetails;
+      const cardLast4 = methodDetails?.cardPresentDetails?.last4 ?? methodDetails?.interacPresentDetails?.last4 ?? undefined;
+      const rawBrand = methodDetails?.cardPresentDetails?.brand ?? methodDetails?.interacPresentDetails?.brand ?? undefined;
+      const cardBrand = rawBrand ? rawBrand.charAt(0).toUpperCase() + rawBrand.slice(1) : undefined;
 
       if (!mountedRef.current) return;
       const orderResult = await createOrder({
@@ -299,7 +305,8 @@ function CardButton({
         total: order.total,
         paymentMethod: 'card',
         stripePaymentId: paymentIntentId,
-        // card_last4 intentionally NOT persisted to SQLite — PCI scope minimization
+        cardLast4,
+        cardBrand,
         items: order.items.map((item) => ({
           itemId: item.itemId,
           itemName: item.itemName,
@@ -317,6 +324,7 @@ function CardButton({
         createdAt: orderResult.created_at,
         items: order.items,
         cardLast4,
+        cardBrand,
         subtotal: order.subtotal,
         taxAmount: order.taxAmount,
         tipAmount: order.tipAmount,

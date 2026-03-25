@@ -109,6 +109,11 @@ UPDATE order_items SET item_price = CAST(ROUND(item_price) AS INTEGER)
   WHERE typeof(item_price) != 'integer';
 `;
 
+// Migration v6: Add card_brand column to orders
+export const MIGRATION_V6 = `
+ALTER TABLE orders ADD COLUMN card_brand TEXT;
+`;
+
 // Default settings inserted on first launch
 export const DEFAULT_SETTINGS = [
   { key: 'tax_rate', value: '0' },

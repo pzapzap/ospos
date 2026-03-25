@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Mock mode: points to mock-backend for development/contribution
 // Production mode: points to real server
 // Toggle via EXPO_PUBLIC_API_MODE env var or defaults based on __DEV__
-const API_MODE = process.env.EXPO_PUBLIC_API_MODE ?? (__DEV__ ? 'mock' : 'production');
+const API_MODE = process.env.EXPO_PUBLIC_API_MODE ?? 'production';
 const API_BASE_URL = API_MODE === 'mock'
   ? (process.env.EXPO_PUBLIC_MOCK_API_URL ?? 'http://localhost:3000')
   : (process.env.EXPO_PUBLIC_API_URL ?? 'https://api.ospos.app');

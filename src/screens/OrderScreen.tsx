@@ -8,10 +8,10 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
-  Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { colors, typography, spacing, touchTargets } from '../constants/theme';
+import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
 import { getActiveItems, type Item } from '../db/queries';
@@ -115,10 +115,14 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
               <ActivityIndicator size="large" color={colors.primary} />
             ) : (
               <View style={styles.emptyGrid}>
-                <Image source={require('../../assets/images/empty-menu-128.png')} style={styles.emptyGridImage} />
-                <Text style={styles.emptyGridText}>No menu items yet</Text>
-                <TouchableOpacity onPress={onMenuEdit}>
-                  <Text style={styles.emptyGridLink}>Tap Edit Menu to add items</Text>
+                <View style={styles.emptyIconContainer}>
+                  <Ionicons name="storefront-outline" size={56} color={colors.primary} />
+                </View>
+                <Text style={styles.emptyGridTitle}>Your menu is empty</Text>
+                <Text style={styles.emptyGridText}>Add items to start taking orders</Text>
+                <TouchableOpacity onPress={onMenuEdit} style={styles.emptyGridButton}>
+                  <Ionicons name="add-circle-outline" size={20} color={colors.black} />
+                  <Text style={styles.emptyGridButtonText}>Edit Menu</Text>
                 </TouchableOpacity>
               </View>
             )
@@ -193,19 +197,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  emptyGridImage: {
+  emptyIconContainer: {
     width: 96,
     height: 96,
-    resizeMode: 'contain',
+    borderRadius: 48,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: spacing.md,
+  },
+  emptyGridTitle: {
+    ...typography.title3,
+    color: colors.text,
   },
   emptyGridText: {
     ...typography.body,
     color: colors.textSecondary,
   },
-  emptyGridLink: {
-    ...typography.body,
-    color: colors.primary,
+  emptyGridButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.md,
+  },
+  emptyGridButtonText: {
+    ...typography.bodyBold,
+    color: colors.black,
   },
   panelSection: {
     flex: 4, // 40%
