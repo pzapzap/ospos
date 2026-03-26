@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { batchSetSettings } from '../db/queries';
 import { getDefaultCurrency } from '../utils/currency';
 
@@ -84,6 +85,9 @@ export function OnboardingProvider({ children, onComplete }: OnboardingProviderP
     if (effective.stripeAccountId) settings['stripe_account_id'] = effective.stripeAccountId;
 
     await batchSetSettings(settings);
+    // Reset TTPOi awareness flag so the modal triggers after fresh onboarding
+    await SecureStore.deleteItemAsync('ttpoi_awareness_shown').catch(() => {});
+    await SecureStore.deleteItemAsync('ttpoi_setup_complete').catch(() => {});
     await AsyncStorage.setItem('onboardingComplete', 'true');
     onComplete(options);
   }, [state, onComplete]);
