@@ -329,6 +329,7 @@ function AppContent() {
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [initialTab, setInitialTab] = useState<string | undefined>();
   const [showTTPOiAwareness, setShowTTPOiAwareness] = useState(false);
+  const [launchTTPOiSetup, setLaunchTTPOiSetup] = useState(false);
 
   useEffect(() => {
     if (!dbReady) return;
@@ -355,13 +356,11 @@ function AppContent() {
     })();
   }, [dbReady]);
 
-  // Show TTPOi awareness modal once for paid tier users who haven't seen it
+  // Show TTPOi awareness modal for paid tier users who relaunch
   useEffect(() => {
     if (onboardingComplete && settings.tier === 'paid' && settings.ttpOiSetupComplete !== 'true') {
       SecureStore.getItemAsync('ttpoi_awareness_shown').then((shown) => {
-        if (!shown) {
-          setShowTTPOiAwareness(true);
-        }
+        if (!shown) setShowTTPOiAwareness(true);
       }).catch(() => {});
     }
   }, [onboardingComplete, settings.tier, settings.ttpOiSetupComplete]);
@@ -379,6 +378,7 @@ function AppContent() {
       <OnboardingProvider onComplete={async (options) => {
         await reloadSettings();
         setInitialTab(options?.initialTab);
+        setShowTTPOiAwareness(true);
         setOnboardingComplete(true);
       }}>
         <NavigationContainer>
@@ -396,8 +396,7 @@ function AppContent() {
   const handleTTPOiAwarenessEnable = async () => {
     await SecureStore.setItemAsync('ttpoi_awareness_shown', 'true');
     setShowTTPOiAwareness(false);
-    // User will navigate to TTPOi setup from within the app
-    setInitialTab('Settings');
+    setLaunchTTPOiSetup(true);
   };
 
   const isPaidTier = settings.tier === 'paid';
@@ -406,7 +405,14 @@ function AppContent() {
     setOnboardingComplete(false);
   };
 
-  const content = (
+  const content = launchTTPOiSetup ? (
+    <NavigationContainer>
+      <TTPOiSetupScreen
+        onComplete={() => setLaunchTTPOiSetup(false)}
+        onBack={() => setLaunchTTPOiSetup(false)}
+      />
+    </NavigationContainer>
+  ) : (
     <>
       <NavigationContainer>
         <MainTabs initialTab={initialTab} onAccountDeleted={handleAccountDeleted} />

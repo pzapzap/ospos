@@ -15,13 +15,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ospos.app",
-      "buildNumber": "1",
+      "buildNumber": "3",
       "config": {
         "usesNonExemptEncryption": false
       },
       "entitlements": {
         "com.apple.developer.proximity-reader.payment.acceptance": true,
-        "com.apple.developer.applesignin": ["Default"]
+        "com.apple.developer.applesignin": [
+          "Default"
+        ]
       },
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "OSPOS uses Bluetooth to connect to card readers and receipt printers.",

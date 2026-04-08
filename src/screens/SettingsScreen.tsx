@@ -13,6 +13,7 @@ import {
   Keyboard,
   ActivityIndicator,
 } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearToken, deleteAccount } from '../services/api';
 import { useFocusEffect } from '@react-navigation/native';
@@ -543,6 +544,20 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
         >
           <Text style={styles.linkText}>{strings.settings.helpSupport}</Text>
         </TouchableOpacity>
+
+        {/* DEBUG: Reset TTPOi flags — remove before production */}
+        {__DEV__ ? (
+          <TouchableOpacity
+            style={[styles.linkRow, { borderColor: colors.warning }]}
+            onPress={async () => {
+              await SecureStore.deleteItemAsync('ttpoi_awareness_shown');
+              await SecureStore.deleteItemAsync('ttpoi_setup_complete');
+              Alert.alert('Reset', 'TTPOi flags cleared. Delete app and reinstall to test the full flow.');
+            }}
+          >
+            <Text style={[styles.linkText, { color: colors.warning }]}>DEV: Reset TTPOi Flags</Text>
+          </TouchableOpacity>
+        ) : null}
 
         {/* Legal */}
         <View style={styles.legalRow}>
