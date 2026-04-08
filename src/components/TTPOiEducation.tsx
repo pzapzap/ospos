@@ -6,9 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  Platform,
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../constants/theme';
 import { strings } from '../constants/strings';
@@ -20,23 +23,41 @@ interface TTPOiEducationProps {
   showTryItNow?: boolean;
 }
 
+// SF Symbol names for iOS, Ionicons fallback for Android
 const PAGES = [
   {
-    icon: 'card-outline' as const,
+    sfSymbol: 'wave.3.right.circle.fill' as const,
+    ionicon: 'card-outline' as const,
     title: strings.ttpoi.educationCard,
     description: strings.ttpoi.educationCardDesc,
   },
   {
-    icon: 'wallet-outline' as const,
+    sfSymbol: 'apple.logo' as const,
+    ionicon: 'wallet-outline' as const,
     title: strings.ttpoi.educationWallet,
     description: strings.ttpoi.educationWalletDesc,
   },
   {
-    icon: 'shield-checkmark-outline' as const,
+    sfSymbol: 'lock.shield.fill' as const,
+    ionicon: 'shield-checkmark-outline' as const,
     title: strings.ttpoi.educationTips,
     description: strings.ttpoi.educationTipsDesc,
   },
 ];
+
+function PageIcon({ sfSymbol, ionicon, size = 48 }: { sfSymbol: string; ionicon: string; size?: number }) {
+  if (Platform.OS === 'ios') {
+    return (
+      <SymbolView
+        name={sfSymbol as any}
+        size={size}
+        tintColor={colors.primary}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return <Ionicons name={ionicon as any} size={size} color={colors.primary} />;
+}
 
 export default function TTPOiEducation({ onComplete, showTryItNow = false }: TTPOiEducationProps) {
   const [currentPage, setCurrentPage] = useState(0);
@@ -71,7 +92,7 @@ export default function TTPOiEducation({ onComplete, showTryItNow = false }: TTP
         {PAGES.map((page, index) => (
           <View key={index} style={styles.page}>
             <View style={styles.iconCircle}>
-              <Ionicons name={page.icon} size={48} color={colors.primary} />
+              <PageIcon sfSymbol={page.sfSymbol} ionicon={page.ionicon} />
             </View>
             <Text style={styles.pageTitle}>{page.title}</Text>
             <Text style={styles.pageDescription}>{page.description}</Text>

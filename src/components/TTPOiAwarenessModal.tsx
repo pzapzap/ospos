@@ -12,7 +12,7 @@ import {
 import { colors, typography, spacing, borderRadius } from '../constants/theme';
 import { strings } from '../constants/strings';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface TTPOiAwarenessModalProps {
   visible: boolean;
@@ -29,8 +29,12 @@ export default function TTPOiAwarenessModal({
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.title}>{strings.ttpoi.awarenessTitle}</Text>
-          <Text style={styles.subtitle}>{strings.ttpoi.awarenessSubtitle}</Text>
+          {/* Apple Hero banner — required marketing asset */}
+          <Image
+            source={require('../../assets/images/ttpoi-hero-9x16.jpg')}
+            style={styles.heroImage}
+            resizeMode="contain"
+          />
 
           <View style={styles.actions}>
             <TouchableOpacity
@@ -68,7 +72,7 @@ export default function TTPOiAwarenessModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -76,21 +80,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.xxxl,
   },
-  iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.xxxl,
-  },
-  title: {
-    ...typography.title1,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
+  heroImage: {
+    width: SCREEN_WIDTH * 0.85,
+    height: SCREEN_HEIGHT * 0.55,
     marginBottom: spacing.xxl,
   },
   actions: {
@@ -98,14 +90,14 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   enableButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#000000',
     borderRadius: borderRadius.md,
     paddingVertical: spacing.xl,
     alignItems: 'center',
   },
   enableButtonText: {
     ...typography.bodyBold,
-    color: colors.black,
+    color: '#FFFFFF',
     fontSize: 18,
   },
   dismissButton: {
@@ -114,11 +106,11 @@ const styles = StyleSheet.create({
   },
   dismissButtonText: {
     ...typography.body,
-    color: colors.textSecondary,
+    color: '#666666',
   },
   disclaimer: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: '#999999',
     textAlign: 'center',
     marginTop: spacing.lg,
   },
