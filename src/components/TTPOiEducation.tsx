@@ -1,20 +1,24 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+  ActivityIndicator,
   Dimensions,
-  Platform,
-  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../constants/theme';
 import { strings } from '../constants/strings';
+import {
+  isAppleEducationSupported,
+  showHowToTap,
+} from '../../modules/ttpoi-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -23,8 +27,11 @@ interface TTPOiEducationProps {
   showTryItNow?: boolean;
 }
 
-// SF Symbol names for iOS, Ionicons fallback for Android
-const PAGES = [
+// Legacy carousel used on Android and iOS < 18. Apple asked us not to use this
+// on iOS 18+ because static slides don't "demonstrate" contactless cards or
+// digital wallets per requirements 4.4 / 4.5 — use ProximityReaderDiscovery
+// instead, which is what the iOS 18+ branch below does.
+const LEGACY_PAGES = [
   {
     sfSymbol: 'wave.3.right.circle.fill' as const,
     ionicon: 'card-outline' as const,
@@ -45,7 +52,15 @@ const PAGES = [
   },
 ];
 
-function PageIcon({ sfSymbol, ionicon, size = 48 }: { sfSymbol: string; ionicon: string; size?: number }) {
+function PageIcon({
+  sfSymbol,
+  ionicon,
+  size = 48,
+}: {
+  sfSymbol: string;
+  ionicon: string;
+  size?: number;
+}) {
   if (Platform.OS === 'ios') {
     return (
       <SymbolView
@@ -59,10 +74,107 @@ function PageIcon({ sfSymbol, ionicon, size = 48 }: { sfSymbol: string; ionicon:
   return <Ionicons name={ionicon as any} size={size} color={colors.primary} />;
 }
 
-export default function TTPOiEducation({ onComplete, showTryItNow = false }: TTPOiEducationProps) {
+export default function TTPOiEducation({
+  onComplete,
+  showTryItNow = false,
+}: TTPOiEducationProps) {
+  const useAppleEducation = isAppleEducationSupported();
+
+  if (useAppleEducation) {
+    return (
+      <AppleEducation onComplete={onComplete} showTryItNow={showTryItNow} />
+    );
+  }
+  return <LegacyEducation onComplete={onComplete} showTryItNow={showTryItNow} />;
+}
+
+// ---------- iOS 18+ branch ----------
+// Auto-presents Apple's ProximityReaderDiscovery overlay on mount. That overlay
+// is Apple-authored animated content covering contactless cards + digital
+// wallets — it's the only education UI Apple pre-approves, so using it closes
+// the feedback loop on requirements 4.3 / 4.4 / 4.5.
+function AppleEducation({ onComplete, showTryItNow }: TTPOiEducationProps) {
+  const [presented, setPresented] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const hasPresented = useRef(false);
+
+  const present = async () => {
+    try {
+      await showHowToTap();
+      setError(null);
+    } catch (e: any) {
+      setError(e?.message ?? 'Unable to present education overlay.');
+    } finally {
+      setPresented(true);
+    }
+  };
+
+  useEffect(() => {
+    if (hasPresented.current) return;
+    hasPresented.current = true;
+    void present();
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.sectionTitle}>{strings.ttpoi.educationTitle}</Text>
+
+      <View style={styles.applePage}>
+        {!presented ? (
+          <ActivityIndicator size="large" color={colors.primary} />
+        ) : (
+          <>
+            <View style={styles.iconCircle}>
+              <PageIcon
+                sfSymbol="checkmark.seal.fill"
+                ionicon="checkmark-circle"
+                size={56}
+              />
+            </View>
+            <Text style={styles.pageTitle}>
+              {strings.ttpoi.educationReadyTitle}
+            </Text>
+            <Text style={styles.pageDescription}>
+              {strings.ttpoi.educationReadyDesc}
+            </Text>
+            <TouchableOpacity
+              style={styles.watchAgainButton}
+              onPress={() => {
+                void present();
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.watchAgainText}>
+                {strings.ttpoi.educationWatchAgain}
+              </Text>
+            </TouchableOpacity>
+            {error !== null && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
+          </>
+        )}
+      </View>
+
+      <TouchableOpacity
+        style={styles.nextButton}
+        onPress={onComplete}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.nextButtonText}>
+          {showTryItNow ? strings.ttpoi.tryItNow : strings.ttpoi.configDone}
+        </Text>
+      </TouchableOpacity>
+
+      <Text style={styles.disclaimer}>{strings.ttpoi.disclaimerShort}</Text>
+    </View>
+  );
+}
+
+// ---------- Legacy branch (Android + iOS < 18) ----------
+function LegacyEducation({ onComplete, showTryItNow }: TTPOiEducationProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
-  const isLastPage = currentPage === PAGES.length - 1;
+  const isLastPage = currentPage === LEGACY_PAGES.length - 1;
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const page = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
@@ -73,7 +185,10 @@ export default function TTPOiEducation({ onComplete, showTryItNow = false }: TTP
     if (isLastPage) {
       onComplete();
     } else {
-      scrollRef.current?.scrollTo({ x: (currentPage + 1) * SCREEN_WIDTH, animated: true });
+      scrollRef.current?.scrollTo({
+        x: (currentPage + 1) * SCREEN_WIDTH,
+        animated: true,
+      });
     }
   };
 
@@ -89,7 +204,7 @@ export default function TTPOiEducation({ onComplete, showTryItNow = false }: TTP
         onMomentumScrollEnd={handleScroll}
         style={styles.scrollView}
       >
-        {PAGES.map((page, index) => (
+        {LEGACY_PAGES.map((page, index) => (
           <View key={index} style={styles.page}>
             <View style={styles.iconCircle}>
               <PageIcon sfSymbol={page.sfSymbol} ionicon={page.ionicon} />
@@ -100,9 +215,8 @@ export default function TTPOiEducation({ onComplete, showTryItNow = false }: TTP
         ))}
       </ScrollView>
 
-      {/* Page dots */}
       <View style={styles.dots}>
-        {PAGES.map((_, index) => (
+        {LEGACY_PAGES.map((_, index) => (
           <View
             key={index}
             style={[styles.dot, currentPage === index && styles.dotActive]}
@@ -148,6 +262,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: spacing.xxxl,
   },
+  applePage: {
+    flex: 1,
+    paddingHorizontal: spacing.xxxl,
+    paddingVertical: spacing.xxxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   iconCircle: {
     width: 96,
     height: 96,
@@ -168,6 +289,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: spacing.lg,
+  },
+  watchAgainButton: {
+    marginTop: spacing.xl,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  watchAgainText: {
+    ...typography.body,
+    color: colors.primary,
+    textAlign: 'center',
+  },
+  errorText: {
+    ...typography.caption,
+    color: colors.danger,
+    textAlign: 'center',
+    marginTop: spacing.md,
   },
   dots: {
     flexDirection: 'row',

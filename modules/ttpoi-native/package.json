@@ -1,0 +1,7 @@
+{
+  "name": "ttpoi-native",
+  "version": "1.0.0",
+  "description": "Local Expo module: bridges Apple ProximityReaderDiscovery (iOS 18+ merchant education) into React Native.",
+  "main": "index.ts",
+  "private": true
+}

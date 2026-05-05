@@ -1,6 +1,6 @@
 # Apple Tap to Pay on iPhone Requirements (v1.5, March 2025)
 
-Case-ID: 18719391 | Contact: ttpoientitlements@apple.com (Avinash, Wallet Entitlements)
+Case-ID: 18719391 | Contact: ttpoientitlements@apple.com (Cherie, Wallet Entitlements — Avinash rotated out Apr 2026)
 
 ## Entitlement Process
 1. Development entitlement ✅ (granted, dev profiles only)
@@ -52,6 +52,15 @@ Upload via Apple's File Uploader, reply to Case-ID email.
 - 4.5 Required: Demo how to accept Apple Pay + digital wallets
 - 4.6 Conditional: PIN entry education (US = yes, required for all regions except JP, TW)
 - 4.7 Conditional: Fallback payment method education (UK, IE, CAN only)
+
+### Implementation (post–Apr 2026 review)
+Cherie rejected the first submission's education screens (static SF Symbols +
+text were not a "demonstration" per 4.4 / 4.5). We now use Apple's
+`ProximityReaderDiscovery.presentContent(_:from:)` on iOS 18+, bridged via the
+local Expo module at `modules/ttpoi-native/`. Legacy 3-slide carousel remains
+as the fallback for Android and iOS < 18.
+- iOS 18+ branch: `src/components/TTPOiEducation.tsx` → `AppleEducation` auto-presents the system overlay on mount.
+- "Watch the guide again" button re-presents it on demand, which also covers 4.2 (accessible from Settings).
 
 ## Checking Out (Section 5)
 - 5.1 Required: Obvious, prominent TTPOi button during checkout

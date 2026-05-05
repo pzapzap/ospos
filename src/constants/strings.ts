@@ -255,6 +255,10 @@ export const strings = {
     educationWalletDesc: 'Your customer holds their device at the top of your iPhone, over the contactless symbol for a few seconds. When you see the Done checkmark, the transaction is being processed.',
     educationTips: 'Privacy and security built in.',
     educationTipsDesc: 'Tap to Pay on iPhone uses the built-in security and privacy features of iPhone to help protect your business and customer data. Apple doesn\'t store card numbers on Apple servers.',
+    // iOS 18+ branch: shown behind Apple's ProximityReaderDiscovery overlay
+    educationReadyTitle: 'You\'re ready to accept payments.',
+    educationReadyDesc: 'You\'ve just seen how to accept contactless cards and Apple Pay with Tap to Pay on iPhone. You can review this guide any time from Settings.',
+    educationWatchAgain: 'Watch the guide again',
     tryItNow: 'Try It Now',
     // Legal disclaimers (Apple-required)
     disclaimerShort: 'Terms apply.',
