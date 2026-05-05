@@ -115,8 +115,13 @@ async function request<T>(options: RequestOptions): Promise<T> {
     const response = await fetch(`${API_BASE_URL}${options.path}`, fetchOptions);
 
     if (response.status === 401) {
-      await clearToken();
-      onAuthExpired?.();
+      // Only treat as expired session if we actually sent a token. A 401 on an
+      // unauthenticated request just means "you need to sign in" — clearing
+      // the token here would wipe a freshly-set token from a parallel request.
+      if (token) {
+        await clearToken();
+        onAuthExpired?.();
+      }
       throw new Error('Authentication expired');
     }
 
