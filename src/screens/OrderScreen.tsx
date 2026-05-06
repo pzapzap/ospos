@@ -97,13 +97,9 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
       {/* Top 60%: Item Grid */}
       <View style={styles.gridSection}>
         <View style={styles.gridHeader}>
-          <TouchableOpacity onPress={onMenuEdit} accessibilityLabel="Go to menu editor" accessibilityRole="button">
-            <Text style={styles.editMenuLink}>{strings.order.editMenu}</Text>
-          </TouchableOpacity>
+          <Button label={strings.order.editMenu} variant="ghost" size="sm" onPress={onMenuEdit} accessibilityLabel="Go to menu editor" />
           {order.items.length > 0 ? (
-            <TouchableOpacity onPress={handleClear} accessibilityLabel="Clear all items from order" accessibilityRole="button">
-              <Text style={styles.clearText}>{strings.order.clear}</Text>
-            </TouchableOpacity>
+            <Button label={strings.order.clear} variant="destructive" size="sm" onPress={handleClear} accessibilityLabel="Clear all items from order" />
           ) : null}
         </View>
         <FlatList

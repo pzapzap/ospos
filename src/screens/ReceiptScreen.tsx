@@ -369,9 +369,9 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                       ))}
                   </View>
                 ) : null}
-                <TouchableOpacity onPress={() => { setReceiptMode('none'); setRecipient(''); }}>
-                  <Text style={styles.cancelText}>Cancel</Text>
-                </TouchableOpacity>
+                <View style={{ alignItems: 'center', marginTop: spacing.sm }}>
+                  <Button label="Cancel" variant="ghost" size="sm" onPress={() => { setReceiptMode('none'); setRecipient(''); }} />
+                </View>
               </View>
             )}
 

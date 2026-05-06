@@ -315,9 +315,9 @@ export default function TransactionDetailScreen({
                 />
               </View>
             </View>
-            <TouchableOpacity onPress={() => { setShowEmail(false); setEmailAddress(''); }}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
+            <View style={{ alignItems: 'center', marginTop: spacing.sm }}>
+              <Button label="Cancel" variant="ghost" size="sm" onPress={() => { setShowEmail(false); setEmailAddress(''); }} />
+            </View>
           </View>
         ) : (
           <Button

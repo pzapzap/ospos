@@ -758,6 +758,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     gap: spacing.md,
+    borderWidth: 2,
+    borderColor: colors.cashDark,
+    borderBottomWidth: 4,
   },
   cashButtonText: {
     ...typography.bodyBold,
@@ -778,8 +781,9 @@ const styles = StyleSheet.create({
   cardButtonEnabled: {
     backgroundColor: colors.surfaceLight,
     opacity: 1,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.primaryDark,
+    borderBottomWidth: 4,
   },
   cardButtonText: {
     ...typography.bodyBold,

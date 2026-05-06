@@ -329,9 +329,9 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
                 <Text style={[styles.syncText, { color: colors.primary, textAlign: 'center' }]}>
                   Tap to Pay on iPhone is ready
                 </Text>
-                <TouchableOpacity onPress={onTTPOiEducation}>
-                  <Text style={[styles.syncRetryText, { textAlign: 'center' }]}>View Guide</Text>
-                </TouchableOpacity>
+                <View style={{ marginTop: spacing.sm }}>
+                  <Button label="View Guide" variant="ghost" size="sm" onPress={() => onTTPOiEducation?.()} />
+                </View>
               </View>
             ) : (
               <Button

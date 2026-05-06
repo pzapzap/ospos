@@ -221,9 +221,9 @@ export default function AddItemModal({
                 </View>
               ))}
               {stickerId ? (
-                <TouchableOpacity onPress={() => setStickerId(null)} style={styles.stickerClear}>
-                  <Text style={styles.stickerClearText}>Clear sticker (use letterform)</Text>
-                </TouchableOpacity>
+                <View style={styles.stickerClearRow}>
+                  <Button label="Clear sticker" variant="ghost" size="sm" onPress={() => setStickerId(null)} />
+                </View>
               ) : null}
             </View>
 
@@ -371,13 +371,8 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: colors.primaryLight,
   },
-  stickerClear: {
+  stickerClearRow: {
     marginTop: spacing.sm,
-    paddingVertical: spacing.sm,
     alignItems: 'center',
-  },
-  stickerClearText: {
-    ...typography.caption,
-    color: colors.textMuted,
   },
 });
