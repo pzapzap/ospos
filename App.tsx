@@ -16,8 +16,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
-import { Bitter_400Regular, Bitter_500Medium, Bitter_600SemiBold, Bitter_700Bold } from '@expo-google-fonts/bitter';
+import { Bitter_400Regular, Bitter_500Medium, Bitter_500Medium_Italic, Bitter_600SemiBold, Bitter_700Bold } from '@expo-google-fonts/bitter';
 import { Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold, Archivo_700Bold } from '@expo-google-fonts/archivo';
+import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { Ionicons } from '@expo/vector-icons';
 import { AppProvider, useApp } from './src/state/AppContext';
 import { StripeTerminalProvider, useStripeTerminal } from './src/services/terminal';
@@ -38,6 +39,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import TransactionDetailScreen from './src/screens/TransactionDetailScreen';
 import DisputesScreen from './src/screens/DisputesScreen';
 import TTPOiSetupScreen from './src/screens/TTPOiSetupScreen';
+import ButtonShowcaseScreen from './src/screens/ButtonShowcaseScreen';
 import StatusBanner from './src/components/StatusBanner';
 import TTPOiAwarenessModal from './src/components/TTPOiAwarenessModal';
 import TTPOiEducation from './src/components/TTPOiEducation';
@@ -121,6 +123,7 @@ type SettingsStackParamList = {
   Disputes: undefined;
   TTPOiSetup: undefined;
   TTPOiEducation: undefined;
+  ButtonShowcase: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -209,6 +212,7 @@ function SettingsStackNavigator({ onAccountDeleted }: { onAccountDeleted?: () =>
             onDisputesTap={() => navigation.navigate('Disputes')}
             onTTPOiSetup={() => navigation.navigate('TTPOiSetup')}
             onTTPOiEducation={() => navigation.navigate('TTPOiEducation')}
+            onButtonShowcase={() => navigation.navigate('ButtonShowcase')}
             onAccountDeleted={onAccountDeleted}
             onUpgrade={() => {
               Alert.alert(
@@ -248,6 +252,13 @@ function SettingsStackNavigator({ onAccountDeleted }: { onAccountDeleted?: () =>
           <TTPOiEducation onComplete={() => navigation.goBack()} />
         )}
       </SettingsStack.Screen>
+      {__DEV__ ? (
+        <SettingsStack.Screen name="ButtonShowcase">
+          {({ navigation }) => (
+            <ButtonShowcaseScreen onBack={() => navigation.goBack()} />
+          )}
+        </SettingsStack.Screen>
+      ) : null}
     </SettingsStack.Navigator>
   );
 }
@@ -446,12 +457,14 @@ function App() {
   const [fontsLoaded, fontError] = useFonts({
     Bitter_400Regular,
     Bitter_500Medium,
+    Bitter_500Medium_Italic,
     Bitter_600SemiBold,
     Bitter_700Bold,
     Archivo_400Regular,
     Archivo_500Medium,
     Archivo_600SemiBold,
     Archivo_700Bold,
+    JetBrainsMono_500Medium,
   });
 
   if (!fontsLoaded && !fontError) {

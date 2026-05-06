@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '../constants/theme';
+import { View, Text, StyleSheet, Pressable, Animated, Image } from 'react-native';
+import { colors, fonts, typography, spacing } from '../constants/theme';
 import { formatCurrency } from '../utils/currency';
 import { lightTap } from '../utils/haptics';
+import Sticker from './Sticker';
 
 interface ItemButtonProps {
   name: string;
@@ -10,25 +11,42 @@ interface ItemButtonProps {
   currency: string;
   onPress: () => void;
   selected?: boolean;
+  imageUri?: string | null;
+  stickerId?: string | null;
 }
 
-export default function ItemButton({ name, price, currency, onPress, selected }: ItemButtonProps) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+const SHADOW_HEIGHT = 2;
+const PRESS_DURATION = 80;
+const RADIUS = 18;
+const MIN_HEIGHT = 110;
+
+// Three-layer visual: photo → sticker → glyph (Bitter italic letterform).
+// Universal chunky-card frame: 2px border + 2px bottom-edge shadow that
+// compresses on press, just like the Button component.
+export default function ItemButton({
+  name,
+  price,
+  currency,
+  onPress,
+  selected,
+  imageUri,
+  stickerId,
+}: ItemButtonProps) {
+  const translateY = useRef(new Animated.Value(0)).current;
+  const shadowOpacity = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.timing(scaleAnim, {
-      toValue: 0.95,
-      duration: 50,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: SHADOW_HEIGHT, duration: PRESS_DURATION, useNativeDriver: true }),
+      Animated.timing(shadowOpacity, { toValue: 0, duration: PRESS_DURATION, useNativeDriver: true }),
+    ]).start();
   };
 
   const handlePressOut = () => {
-    Animated.timing(scaleAnim, {
-      toValue: 1,
-      duration: 50,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(translateY, { toValue: 0, duration: PRESS_DURATION, useNativeDriver: true }),
+      Animated.timing(shadowOpacity, { toValue: 1, duration: PRESS_DURATION, useNativeDriver: true }),
+    ]).start();
   };
 
   const handlePress = async () => {
@@ -36,23 +54,53 @@ export default function ItemButton({ name, price, currency, onPress, selected }:
     onPress();
   };
 
+  // Resolve visual layer: photo → sticker → glyph
+  const hasPhoto = !!imageUri;
+  const hasSticker = !!stickerId && stickerId !== 'custom';
+  const glyph = (name?.[0] ?? '·').toUpperCase();
+
+  const borderColor = selected ? colors.primaryDark : colors.border;
+  const fillColor = selected ? colors.primaryLight : colors.surface;
+
   return (
-    <Animated.View style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }]}>
-      <Pressable
-        onPress={handlePress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        accessibilityLabel={`${name}, ${formatCurrency(price, currency)}`}
-        accessibilityRole="button"
-      >
-        <View style={[styles.button, selected && styles.buttonSelected]}>
-          <Text style={styles.name} numberOfLines={2}>
-            {name}
-          </Text>
-          <Text style={styles.price}>{formatCurrency(price, currency)}</Text>
-        </View>
-      </Pressable>
-    </Animated.View>
+    <View style={styles.wrapper}>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.shadow,
+          {
+            backgroundColor: borderColor,
+            opacity: shadowOpacity,
+          },
+        ]}
+      />
+      <Animated.View style={{ transform: [{ translateY }] }}>
+        <Pressable
+          onPress={handlePress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          accessibilityLabel={`${name}, ${formatCurrency(price, currency)}`}
+          accessibilityRole="button"
+          style={[styles.card, { backgroundColor: fillColor, borderColor }]}
+        >
+          <View style={styles.visual}>
+            {hasPhoto ? (
+              <Image source={{ uri: imageUri! }} style={styles.photo} resizeMode="cover" />
+            ) : hasSticker ? (
+              <Sticker id={stickerId!} size={56} />
+            ) : (
+              <Text style={styles.glyph}>{glyph}</Text>
+            )}
+          </View>
+          <View style={styles.meta}>
+            <Text style={styles.name} numberOfLines={2}>
+              {name}
+            </Text>
+            <Text style={styles.price}>{formatCurrency(price, currency)}</Text>
+          </View>
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -60,30 +108,57 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     margin: spacing.xs,
+    height: MIN_HEIGHT + SHADOW_HEIGHT,
   },
-  button: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.sm,
+  shadow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: SHADOW_HEIGHT,
+    height: MIN_HEIGHT,
+    borderRadius: RADIUS,
+  },
+  card: {
+    borderWidth: 2,
+    borderRadius: RADIUS,
+    height: MIN_HEIGHT,
+    overflow: 'hidden',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    justifyContent: 'flex-end',
+  },
+  visual: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 88,
+    paddingTop: spacing.sm,
   },
-  buttonSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
+  photo: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  glyph: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 56,
+    color: colors.primary,
+    lineHeight: 60,
+  },
+  meta: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(9,9,11,0.55)',
   },
   name: {
     ...typography.bodyBold,
-    fontSize: 13,
+    fontSize: 12,
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   price: {
     ...typography.priceSmall,
-    fontSize: 13,
+    fontSize: 12,
+    textAlign: 'center',
   },
 });

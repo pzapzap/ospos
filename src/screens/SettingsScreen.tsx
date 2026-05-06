@@ -41,9 +41,10 @@ interface SettingsScreenProps {
   onTTPOiSetup?: () => void;
   onTTPOiEducation?: () => void;
   onAccountDeleted?: () => void;
+  onButtonShowcase?: () => void;
 }
 
-export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup, onTTPOiEducation, onAccountDeleted }: SettingsScreenProps) {
+export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup, onTTPOiEducation, onAccountDeleted, onButtonShowcase }: SettingsScreenProps) {
   const { settings, updateSetting, isTestMode, stripeRequirements, checkStripeRequirements } = useApp();
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showTaxRateModal, setShowTaxRateModal] = useState(false);
@@ -552,10 +553,21 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
             onPress={async () => {
               await SecureStore.deleteItemAsync('ttpoi_awareness_shown');
               await SecureStore.deleteItemAsync('ttpoi_setup_complete');
-              Alert.alert('Reset', 'TTPOi flags cleared. Delete app and reinstall to test the full flow.');
+              const { setSetting } = require('../db/queries');
+              await setSetting('ttpoi_setup_complete', 'false');
+              Alert.alert('Reset', 'TTPOi flags cleared. Hard close and reopen the app.');
             }}
           >
             <Text style={[styles.linkText, { color: colors.warning }]}>DEV: Reset TTPOi Flags</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {__DEV__ ? (
+          <TouchableOpacity
+            style={[styles.linkRow, { borderColor: colors.warning }]}
+            onPress={onButtonShowcase}
+          >
+            <Text style={[styles.linkText, { color: colors.warning }]}>DEV: Button Showcase</Text>
           </TouchableOpacity>
         ) : null}
 
@@ -681,7 +693,7 @@ const styles = StyleSheet.create({
   legalRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, paddingVertical: spacing.md, gap: spacing.sm },
   legalLink: { ...typography.caption, color: colors.textMuted },
   legalDot: { ...typography.caption, color: colors.textMuted },
-  upgradeButton: { backgroundColor: colors.primary, borderRadius: borderRadius.md, paddingVertical: spacing.lg, paddingHorizontal: spacing.xl, alignItems: 'center', marginBottom: spacing.xxl },
+  upgradeButton: { backgroundColor: colors.primary, borderRadius: borderRadius.lg, paddingVertical: spacing.lg, paddingHorizontal: spacing.xl, alignItems: 'center', marginBottom: spacing.xxl, borderWidth: 2, borderColor: colors.primaryDark, borderBottomWidth: 4 },
   upgradeButtonText: { ...typography.bodyBold, color: colors.black, fontSize: 16 },
   upgradeHint: { ...typography.caption, color: colors.black, opacity: 0.8, marginTop: spacing.xs },
   aboutSection: { paddingTop: spacing.lg, gap: spacing.xs },

@@ -1,17 +1,24 @@
 import ExpoModulesCore
-import ProximityReader
 import UIKit
+
+#if !targetEnvironment(simulator)
+import ProximityReader
+#endif
 
 public class OsposTtpoiModule: Module {
   public func definition() -> ModuleDefinition {
     Name("OsposTtpoi")
 
     // Synchronous probe the JS layer calls on mount to decide which education
-    // UI to render. True only on iOS 18+, where Apple's ProximityReaderDiscovery
-    // provides an Apple-authored, pre-approved merchant education overlay.
+    // UI to render. True only on iOS 18+ on a real device — ProximityReader
+    // is unavailable in the simulator so we always return false there.
     Function("isAppleEducationSupported") { () -> Bool in
+      #if targetEnvironment(simulator)
+      return false
+      #else
       if #available(iOS 18.0, *) { return true }
       return false
+      #endif
     }
 
     // Presents Apple's ProximityReaderDiscovery "How to Tap" overlay.
@@ -19,11 +26,10 @@ public class OsposTtpoiModule: Module {
     //   - 4.3 marketing-approved visuals (Apple ships the content)
     //   - 4.4 how to accept contactless cards
     //   - 4.5 how to accept Apple Pay + digital wallets
-    //
-    // The promise resolves as soon as the overlay is presented; dismissal is
-    // handled by the system UI ("Done" button). JS code should render its
-    // "Continue" screen behind it.
     AsyncFunction("showHowToTap") { (promise: Promise) in
+      #if targetEnvironment(simulator)
+      promise.reject("E_SIMULATOR", "Tap to Pay education is not available in the iOS Simulator.")
+      #else
       guard #available(iOS 18.0, *) else {
         promise.reject("E_UNSUPPORTED", "Apple merchant education requires iOS 18 or later.")
         return
@@ -42,6 +48,7 @@ public class OsposTtpoiModule: Module {
           promise.reject("E_PRESENT_FAILED", error.localizedDescription)
         }
       }
+      #endif
     }
   }
 

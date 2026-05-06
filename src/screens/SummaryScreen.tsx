@@ -324,16 +324,17 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   orderTime: {
-    ...typography.body,
-    color: colors.textSecondary,
+    ...typography.eyebrow,
+    fontSize: 12,
   },
   orderTotal: {
     ...typography.priceMuted,
     marginRight: spacing.md,
   },
   orderMethod: {
-    ...typography.caption,
-    width: 100,
+    ...typography.eyebrow,
+    fontSize: 11,
+    width: 110,
     textAlign: 'right',
   },
   emptyContainer: {

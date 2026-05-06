@@ -12,6 +12,7 @@ import {
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { formatCurrency, parseCurrencyInput, getCurrencyDecimals } from '../utils/currency';
+import Button from './Button';
 
 interface CashPaymentModalProps {
   visible: boolean;
@@ -79,16 +80,16 @@ export default function CashPaymentModal({
             <Text style={styles.totalAmount}>{formatCurrency(total, currency)}</Text>
           </View>
 
-          <TouchableOpacity
-            style={[styles.exactCashButton, submitting && styles.confirmDisabled]}
-            onPress={handleExactCash}
-            activeOpacity={0.7}
-            disabled={submitting}
-            accessibilityLabel="Pay exact amount"
-            accessibilityRole="button"
-          >
-            <Text style={styles.exactCashText}>{strings.payment.exactCash}</Text>
-          </TouchableOpacity>
+          <View style={styles.exactCashRow}>
+            <Button
+              label={strings.payment.exactCash}
+              variant="cash"
+              size="lg"
+              onPress={handleExactCash}
+              disabled={submitting}
+              accessibilityLabel="Pay exact amount"
+            />
+          </View>
 
           <Text style={styles.orText}>or enter amount</Text>
 
@@ -105,15 +106,14 @@ export default function CashPaymentModal({
           {quickAmounts.length > 0 ? (
             <View style={styles.quickAmounts}>
               {quickAmounts.slice(0, 4).map((amount) => (
-                <TouchableOpacity
-                  key={amount}
-                  style={styles.quickButton}
-                  onPress={() => setCashInput(decimals === 0 ? String(amount) : (amount / 100).toFixed(decimals))}
-                >
-                  <Text style={styles.quickButtonText}>
-                    {formatCurrency(amount, currency)}
-                  </Text>
-                </TouchableOpacity>
+                <View key={amount} style={{ flex: 1 }}>
+                  <Button
+                    label={formatCurrency(amount, currency)}
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => setCashInput(decimals === 0 ? String(amount) : (amount / 100).toFixed(decimals))}
+                  />
+                </View>
               ))}
             </View>
           ) : null}
@@ -128,16 +128,18 @@ export default function CashPaymentModal({
           ) : null}
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelText}>{strings.menuBuilder.cancel}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.confirmButton, ((!canConfirm && cashInput.length > 0) || submitting) && styles.confirmDisabled]}
-              onPress={handleConfirm}
-              disabled={(!canConfirm && cashInput.length > 0) || submitting}
-            >
-              <Text style={styles.confirmText}>{strings.payment.confirm}</Text>
-            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Button label={strings.menuBuilder.cancel} variant="ghost" size="md" onPress={onClose} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button
+                label={strings.payment.confirm}
+                variant="cash"
+                size="md"
+                onPress={handleConfirm}
+                disabled={(!canConfirm && cashInput.length > 0) || submitting}
+              />
+            </View>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -174,19 +176,8 @@ const styles = StyleSheet.create({
   totalAmount: {
     ...typography.total,
   },
-  exactCashButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
+  exactCashRow: {
     marginBottom: spacing.lg,
-    minHeight: touchTargets.minimum,
-    justifyContent: 'center',
-  },
-  exactCashText: {
-    ...typography.bodyBold,
-    color: colors.black,
-    fontSize: 18,
   },
   orText: {
     ...typography.caption,
@@ -209,17 +200,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.lg,
   },
-  quickButton: {
-    flex: 1,
-    backgroundColor: colors.cardHighlight,
-    borderRadius: borderRadius.sm,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  quickButtonText: {
-    ...typography.priceSmall,
-    color: colors.textSecondary,
-  },
   changeSection: {
     alignItems: 'center',
     marginBottom: spacing.xl,
@@ -240,34 +220,5 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: spacing.md,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: colors.cardHighlight,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    minHeight: touchTargets.minimum,
-    justifyContent: 'center',
-  },
-  cancelText: {
-    ...typography.bodyBold,
-    color: colors.textSecondary,
-  },
-  confirmButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    minHeight: touchTargets.minimum,
-    justifyContent: 'center',
-  },
-  confirmDisabled: {
-    opacity: 0.5,
-  },
-  confirmText: {
-    ...typography.bodyBold,
-    color: colors.black,
   },
 });

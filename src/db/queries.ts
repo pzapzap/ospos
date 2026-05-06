@@ -8,6 +8,7 @@ export interface Item {
   price: number;
   category: string | null;
   image_uri: string | null;
+  sticker_id: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -77,7 +78,8 @@ export async function createItem(
   name: string,
   price: number,
   category?: string,
-  imageUri?: string
+  imageUri?: string,
+  stickerId?: string
 ): Promise<Item> {
   const db = getDatabase();
   const now = new Date().toISOString();
@@ -89,8 +91,8 @@ export async function createItem(
   const sortOrder = (maxSort?.max_sort ?? -1) + 1;
 
   await db.runAsync(
-    'INSERT INTO items (id, name, price, category, image_uri, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [id, name, Math.round(price), category ?? null, imageUri ?? null, sortOrder, now, now]
+    'INSERT INTO items (id, name, price, category, image_uri, sticker_id, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [id, name, Math.round(price), category ?? null, imageUri ?? null, stickerId ?? null, sortOrder, now, now]
   );
 
   const item = await db.getFirstAsync<Item>(
@@ -102,7 +104,7 @@ export async function createItem(
 
 export async function updateItem(
   id: string,
-  updates: { name?: string; price?: number; category?: string | null; image_uri?: string | null }
+  updates: { name?: string; price?: number; category?: string | null; image_uri?: string | null; sticker_id?: string | null }
 ): Promise<void> {
   const db = getDatabase();
   const now = new Date().toISOString();
@@ -124,6 +126,10 @@ export async function updateItem(
   if (updates.image_uri !== undefined) {
     sets.push('image_uri = ?');
     values.push(updates.image_uri);
+  }
+  if (updates.sticker_id !== undefined) {
+    sets.push('sticker_id = ?');
+    values.push(updates.sticker_id);
   }
 
   values.push(id);

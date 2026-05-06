@@ -23,6 +23,7 @@ import { useStripeTerminal } from '../services/terminal';
 import { lightTap, successNotification, errorNotification } from '../utils/haptics';
 import CashPaymentModal from '../components/CashPaymentModal';
 import ContactlessIcon from '../components/ContactlessIcon';
+import Button from '../components/Button';
 
 interface PaymentScreenProps {
   onPaymentComplete: () => void;
@@ -600,12 +601,13 @@ export default function PaymentScreen({ onPaymentComplete, onBack, onTTPOiSetup,
                 autoFocus
                 accessibilityLabel="Custom tip amount"
               />
-              <TouchableOpacity
-                style={styles.customTipConfirm}
+              <Button
+                label="OK"
+                variant="primary"
+                size="md"
                 onPress={handleCustomTipConfirm}
-              >
-                <Text style={styles.customTipConfirmText}>OK</Text>
-              </TouchableOpacity>
+                style={{ minWidth: 80 }}
+              />
             </View>
           ) : null}
         </View>
@@ -705,14 +707,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.border,
     minHeight: touchTargets.minimum,
     justifyContent: 'center',
   },
   tipButtonSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surfaceLight,
+    borderColor: colors.primaryDark,
+    backgroundColor: colors.primary,
   },
   tipButtonText: {
     ...typography.bodyBold,
@@ -720,7 +722,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   tipButtonTextSelected: {
-    color: colors.primary,
+    color: colors.background,
   },
   tipAmountText: {
     ...typography.priceMuted,
@@ -743,16 +745,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     ...typography.body,
     color: colors.text,
-  },
-  customTipConfirm: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.xl,
-    justifyContent: 'center',
-  },
-  customTipConfirmText: {
-    ...typography.bodyBold,
-    color: colors.black,
   },
   paymentMethods: {
     gap: spacing.md,

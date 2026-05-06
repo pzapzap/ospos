@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
+import { colors, fonts, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
 import { getActiveItems, type Item } from '../db/queries';
@@ -85,6 +85,8 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
       name={item.name}
       price={item.price}
       currency={settings.currency}
+      imageUri={item.image_uri}
+      stickerId={item.sticker_id}
       onPress={() => handleItemPress(item)}
     />
   ), [settings.currency, handleItemPress]);
@@ -115,8 +117,8 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
               <ActivityIndicator size="large" color={colors.primary} />
             ) : (
               <View style={styles.emptyGrid}>
-                <View style={styles.emptyIconContainer}>
-                  <Ionicons name="storefront-outline" size={56} color={colors.primary} />
+                <View style={styles.emptyHero}>
+                  <Text style={styles.emptyHeroGlyph}>M</Text>
                 </View>
                 <Text style={styles.emptyGridTitle}>Your menu is empty</Text>
                 <Text style={styles.emptyGridText}>Add items to start taking orders</Text>
@@ -197,14 +199,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  emptyIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.primaryLight,
+  emptyHero: {
+    width: 140,
+    height: 140,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  emptyHeroGlyph: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 96,
+    color: colors.primary,
+    lineHeight: 100,
   },
   emptyGridTitle: {
     ...typography.title3,

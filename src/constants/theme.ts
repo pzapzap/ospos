@@ -11,12 +11,16 @@ export const fonts = {
   displaySemiBold: 'Bitter_600SemiBold',
   body: 'Bitter_500Medium',
   bodyRegular: 'Bitter_400Regular',
+  bodyItalic: 'Bitter_500Medium_Italic',
 
   // Archivo: grotesque sans — ALL prices, totals, dollar amounts
   num: 'Archivo_700Bold',
   numSemiBold: 'Archivo_600SemiBold',
   numMedium: 'Archivo_500Medium',
   numRegular: 'Archivo_400Regular',
+
+  // JetBrains Mono: eyebrows, IDs, timestamps, technical metadata
+  mono: 'JetBrainsMono_500Medium',
 } as const;
 
 export const colors = {
@@ -40,20 +44,28 @@ export const colors = {
   success: '#22D3EE',
   successLight: 'rgba(34,211,238,0.12)',
   danger: '#EF4444',
-  dangerDark: '#DC2626',
+  dangerDark: '#B83838',
   dangerLight: 'rgba(239,68,68,0.12)',
   warning: '#F59E0B',
   warningLight: 'rgba(245,158,11,0.12)',
+  green: '#34C759',
+  greenDark: '#1F9D44',
 
   // Functional
   cash: '#F59E0B',
+  cashDark: '#C77C0A',
   card: '#18181B',
   cardHighlight: '#27272A',
   disabled: '#3F3F46',
 
   // Accent — warm sand/gold
   accent: '#D4A574',
+  accentDark: '#B8895E',
   accentLight: 'rgba(212,165,116,0.1)',
+
+  // Tinted surfaces — pre-computed amber/gold over surface (no color-mix in RN)
+  surfaceCash: '#221F1B',
+  surfacePremium: '#1F1D1B',
 
   white: '#FFFFFF',
   black: '#000000',
@@ -68,6 +80,15 @@ export const typography: Record<string, TextStyle> = {
   body: { fontSize: 17, fontFamily: fonts.body, color: colors.text },
   bodyBold: { fontSize: 17, fontFamily: fonts.displaySemiBold, color: colors.text },
   caption: { fontSize: 13, fontFamily: fonts.bodyRegular, color: colors.textSecondary },
+
+  // Eyebrow — JetBrains Mono caps for metadata above titles
+  eyebrow: {
+    fontSize: 11,
+    fontFamily: fonts.mono,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: colors.textSecondary,
+  },
 
   // NUMBER STYLES — Archivo
   price: { fontSize: 20, fontFamily: fonts.num, color: colors.primary },

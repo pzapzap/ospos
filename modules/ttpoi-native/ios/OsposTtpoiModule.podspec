@@ -20,6 +20,10 @@ Pod::Spec.new do |s|
 
   s.dependency 'ExpoModulesCore'
 
+  # ProximityReader is iOS-device-only. Weak-linking lets the app launch in the
+  # simulator (where the framework is unavailable) without dyld crashes.
+  s.weak_frameworks = ['ProximityReader']
+
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
     'SWIFT_COMPILATION_MODE' => 'wholemodule'

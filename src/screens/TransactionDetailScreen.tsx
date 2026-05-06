@@ -19,6 +19,7 @@ import { successNotification } from '../utils/haptics';
 import { validateEmail } from '../utils/validation';
 import { useApp } from '../state/AppContext';
 import { getOrderWithItems, type OrderWithItems } from '../db/queries';
+import Eyebrow from '../components/Eyebrow';
 import { issueRefund, sendReceipt, type ReceiptOrderData } from '../services/api';
 import { getDatabase } from '../db/database';
 
@@ -205,6 +206,9 @@ export default function TransactionDetailScreen({
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
 
+        <Eyebrow style={{ marginBottom: 4 }}>
+          {`ORDER ${order.id.substring(0, 8).toUpperCase()} · ${formattedDate}`}
+        </Eyebrow>
         <Text style={styles.title}>Transaction Details</Text>
 
         <View style={styles.totalSection}>

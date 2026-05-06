@@ -5,10 +5,11 @@ import {
   Pressable,
   Animated,
   ActivityIndicator,
+  View,
 } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '../constants/theme';
+import { colors, fonts } from '../constants/theme';
 import { formatCurrency } from '../utils/currency';
-import { successNotification, errorNotification } from '../utils/haptics';
+import { successNotification, errorNotification, lightTap } from '../utils/haptics';
 
 // 5-state state machine: disabled → ready → processing → success|error
 export type ChargeButtonState = 'disabled' | 'ready' | 'processing' | 'success' | 'error';
@@ -21,6 +22,11 @@ interface ChargeButtonProps {
   errorMessage?: string;
 }
 
+const HEIGHT = 64;
+const RADIUS = 24;
+const SHADOW_HEIGHT = 2;
+const PRESS_DURATION = 80;
+
 export default function ChargeButton({
   state,
   total,
@@ -30,6 +36,8 @@ export default function ChargeButton({
 }: ChargeButtonProps) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  const pressTranslateY = useRef(new Animated.Value(0)).current;
+  const shadowOpacity = useRef(new Animated.Value(1)).current;
 
   // Pulse animation for ready state
   useEffect(() => {
@@ -84,6 +92,11 @@ export default function ChargeButton({
     state === 'processing' ? colors.primaryDark :
     colors.primary;
 
+  const borderColor =
+    state === 'disabled' ? colors.disabled :
+    state === 'error' ? colors.dangerDark :
+    colors.primaryDark;
+
   const textColor =
     state === 'disabled' ? colors.textMuted :
     colors.black;
@@ -94,6 +107,27 @@ export default function ChargeButton({
     state === 'processing' ? 'Processing...' :
     total > 0 ? `Charge ${formatCurrency(total, currency)}` :
     'Charge';
+
+  const handlePressIn = () => {
+    if (isDisabled) return;
+    Animated.parallel([
+      Animated.timing(pressTranslateY, { toValue: SHADOW_HEIGHT, duration: PRESS_DURATION, useNativeDriver: true }),
+      Animated.timing(shadowOpacity, { toValue: 0, duration: PRESS_DURATION, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    if (isDisabled) return;
+    Animated.parallel([
+      Animated.timing(pressTranslateY, { toValue: 0, duration: PRESS_DURATION, useNativeDriver: true }),
+      Animated.timing(shadowOpacity, { toValue: 1, duration: PRESS_DURATION, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const handlePress = () => {
+    lightTap();
+    onPress();
+  };
 
   return (
     <Animated.View
@@ -107,21 +141,37 @@ export default function ChargeButton({
         },
       ]}
     >
-      <Pressable
-        style={[styles.button, { backgroundColor: bgColor }]}
-        onPress={isDisabled ? undefined : onPress}
-        disabled={isDisabled}
-        accessibilityLabel={label}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: isDisabled }}
-      >
-        {state === 'processing' ? (
-          <ActivityIndicator color={colors.black} size="small" style={{ marginRight: spacing.sm }} />
-        ) : null}
-        <Text style={[styles.buttonText, { color: textColor }]}>
-          {label}
-        </Text>
-      </Pressable>
+      {/* Bottom-edge shadow */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.shadow,
+          {
+            backgroundColor: borderColor,
+            borderRadius: RADIUS,
+            opacity: shadowOpacity,
+          },
+        ]}
+      />
+      <Animated.View style={{ transform: [{ translateY: pressTranslateY }] }}>
+        <Pressable
+          style={[styles.button, { backgroundColor: bgColor, borderColor }]}
+          onPress={isDisabled ? undefined : handlePress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          disabled={isDisabled}
+          accessibilityLabel={label}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isDisabled }}
+        >
+          {state === 'processing' ? (
+            <ActivityIndicator color={colors.black} size="small" style={{ marginRight: 8 }} />
+          ) : null}
+          <Text style={[styles.buttonText, { color: textColor }]}>
+            {label}
+          </Text>
+        </Pressable>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -129,16 +179,25 @@ export default function ChargeButton({
 const styles = StyleSheet.create({
   wrapper: {
     width: '100%',
+    height: HEIGHT + SHADOW_HEIGHT,
+  },
+  shadow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: SHADOW_HEIGHT,
+    height: HEIGHT,
   },
   button: {
-    borderRadius: borderRadius.md,
+    borderWidth: 2,
+    borderRadius: RADIUS,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.lg,
     flexDirection: 'row',
-    minHeight: 56,
+    height: HEIGHT,
   },
   buttonText: {
-    ...typography.price,
+    fontSize: 20,
+    fontFamily: fonts.num,
   },
 });

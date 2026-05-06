@@ -1,7 +1,8 @@
 .git
 android
-ios
 .expo
 server
 website
 *.md
+ios/build
+ios/Pods

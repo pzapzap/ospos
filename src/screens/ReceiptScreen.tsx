@@ -22,6 +22,7 @@ import { successNotification } from '../utils/haptics';
 import { useApp } from '../state/AppContext';
 import { sendReceipt, type ReceiptOrderData } from '../services/api';
 import { validateEmail, validatePhone, formatPhoneE164 } from '../utils/validation';
+import Eyebrow from '../components/Eyebrow';
 import { isPrinterConnected, printReceipt } from '../services/printer';
 
 interface ReceiptScreenProps {
@@ -161,6 +162,13 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
             <Ionicons name="checkmark" size={40} color={colors.primary} />
           </Animated.View>
 
+          <Eyebrow style={{ marginBottom: 4 }}>
+            {lastOrder.paymentMethod === 'cash'
+              ? 'CASH · APPROVED'
+              : lastOrder.cardLast4
+                ? `${(lastOrder.cardBrand ?? 'CARD').toUpperCase()} ••••${lastOrder.cardLast4} · APPROVED`
+                : 'CARD · APPROVED'}
+          </Eyebrow>
           <Text style={styles.title}>{strings.receipt.title}</Text>
 
           <Animated.View style={[styles.details, { opacity: contentOpacity }]}>

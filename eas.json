@@ -21,5 +21,12 @@
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "6766436501"
+      }
+    }
   }
 }

@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
-import { MIGRATION_V1, MIGRATION_V2, MIGRATION_V3, MIGRATION_V4, MIGRATION_V5, MIGRATION_V6, DEFAULT_SETTINGS } from './schema';
+import { MIGRATION_V1, MIGRATION_V2, MIGRATION_V3, MIGRATION_V4, MIGRATION_V5, MIGRATION_V6, MIGRATION_V7, DEFAULT_SETTINGS } from './schema';
 
 interface Migration {
   version: number;
@@ -40,6 +40,10 @@ const migrations: Migration[] = [
   {
     version: 6,
     up: MIGRATION_V6,
+  },
+  {
+    version: 7,
+    up: MIGRATION_V7,
   },
 ];
 

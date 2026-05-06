@@ -114,6 +114,13 @@ export const MIGRATION_V6 = `
 ALTER TABLE orders ADD COLUMN card_brand TEXT;
 `;
 
+// Migration v7: Add sticker_id column to items for the three-layer visual system
+// (photo → sticker → glyph). Existing items resolve to glyph (Bitter italic
+// letterform of name[0]) when sticker_id is null.
+export const MIGRATION_V7 = `
+ALTER TABLE items ADD COLUMN sticker_id TEXT;
+`;
+
 // Default settings inserted on first launch
 export const DEFAULT_SETTINGS = [
   { key: 'tax_rate', value: '0' },

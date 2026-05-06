@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
-import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
+import { colors, fonts, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
 import { formatCurrency } from '../utils/currency';
@@ -62,6 +62,7 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
     price: number;
     category?: string;
     imageUri?: string;
+    stickerId?: string;
   }) => {
     try {
       if (editingItem) {
@@ -70,9 +71,10 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
           price: data.price,
           category: data.category ?? null,
           image_uri: data.imageUri ?? null,
+          sticker_id: data.stickerId ?? null,
         });
       } else {
-        await createItem(data.name, data.price, data.category, data.imageUri);
+        await createItem(data.name, data.price, data.category, data.imageUri, data.stickerId);
       }
       setModalVisible(false);
       await loadItems();
@@ -164,8 +166,8 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
 
       {items.length === 0 ? (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIconContainer}>
-            <Ionicons name="storefront-outline" size={56} color={colors.primary} />
+          <View style={styles.emptyHero}>
+            <Text style={styles.emptyHeroGlyph}>M</Text>
           </View>
           <Text style={styles.emptyText}>{strings.menuBuilder.emptyState}</Text>
         </View>
@@ -271,14 +273,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     gap: spacing.sm,
   },
-  emptyIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.primaryLight,
+  emptyHero: {
+    width: 140,
+    height: 140,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  emptyHeroGlyph: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 96,
+    color: colors.primary,
+    lineHeight: 100,
   },
   emptyText: {
     ...typography.body,

@@ -13,8 +13,11 @@ import {
   Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
+import { colors, fonts, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
+import Button from './Button';
+import Sticker from './Sticker';
+import { STICKERS_BY_CATEGORY } from '../assets/stickers';
 import { lightTap } from '../utils/haptics';
 import { validatePrice, MAX_ITEM_NAME_LENGTH, MAX_CATEGORY_LENGTH } from '../utils/validation';
 import type { Item } from '../db/queries';
@@ -22,7 +25,7 @@ import type { Item } from '../db/queries';
 interface AddItemModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (data: { name: string; price: number; category?: string; imageUri?: string }) => void;
+  onSave: (data: { name: string; price: number; category?: string; imageUri?: string; stickerId?: string }) => void;
   onDelete?: () => void;
   editItem?: Item | null;
 }
@@ -38,6 +41,7 @@ export default function AddItemModal({
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [stickerId, setStickerId] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ name?: string; price?: string }>({});
 
   useEffect(() => {
@@ -46,11 +50,13 @@ export default function AddItemModal({
       setPrice((editItem.price / 100).toFixed(2));
       setCategory(editItem.category ?? '');
       setImageUri(editItem.image_uri);
+      setStickerId(editItem.sticker_id);
     } else {
       setName('');
       setPrice('');
       setCategory('');
       setImageUri(null);
+      setStickerId(null);
     }
     setErrors({});
   }, [editItem, visible]);
@@ -97,6 +103,7 @@ export default function AddItemModal({
       price: priceResult.parsed,
       category: category.trim() || undefined,
       imageUri: imageUri ?? undefined,
+      stickerId: stickerId ?? undefined,
     });
   };
 
@@ -163,6 +170,22 @@ export default function AddItemModal({
               />
             </View>
 
+            {/* Live preview — shows the resolved visual */}
+            <View style={styles.previewRow}>
+              <Text style={styles.label}>Preview</Text>
+              <View style={styles.previewCard}>
+                {imageUri ? (
+                  <Image source={{ uri: imageUri }} style={styles.previewPhoto} resizeMode="cover" />
+                ) : stickerId && stickerId !== 'custom' ? (
+                  <Sticker id={stickerId} size={56} />
+                ) : (
+                  <Text style={styles.previewGlyph}>
+                    {(name?.[0] ?? '·').toUpperCase()}
+                  </Text>
+                )}
+              </View>
+            </View>
+
             <TouchableOpacity style={styles.photoButton} onPress={handlePickImage}>
               {imageUri ? (
                 <Image source={{ uri: imageUri }} style={styles.photoPreview} />
@@ -171,19 +194,52 @@ export default function AddItemModal({
               )}
             </TouchableOpacity>
 
+            {/* Sticker picker — falls through to glyph if 'custom' or none */}
+            <View style={styles.field}>
+              <Text style={styles.label}>Sticker</Text>
+              {(['drinks', 'food', 'retail', 'service'] as const).map((cat) => (
+                <View key={cat} style={styles.stickerCategory}>
+                  <Text style={styles.stickerCategoryLabel}>{cat.toUpperCase()}</Text>
+                  <View style={styles.stickerRow}>
+                    {STICKERS_BY_CATEGORY[cat].map((s) => {
+                      const isSelected = stickerId === s.id;
+                      return (
+                        <TouchableOpacity
+                          key={s.id}
+                          style={[styles.stickerCell, isSelected && styles.stickerCellSelected]}
+                          onPress={() => {
+                            setStickerId(isSelected ? null : s.id);
+                            // If selecting a sticker, clear photo so sticker wins
+                            if (!isSelected && imageUri) setImageUri(null);
+                          }}
+                        >
+                          <Sticker id={s.id} size={32} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))}
+              {stickerId ? (
+                <TouchableOpacity onPress={() => setStickerId(null)} style={styles.stickerClear}>
+                  <Text style={styles.stickerClearText}>Clear sticker (use letterform)</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
             <View style={styles.actions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                <Text style={styles.cancelText}>{strings.menuBuilder.cancel}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>{strings.menuBuilder.save}</Text>
-              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <Button label={strings.menuBuilder.cancel} variant="ghost" size="md" onPress={onClose} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label={strings.menuBuilder.save} variant="primary" size="md" onPress={handleSave} />
+              </View>
             </View>
 
             {editItem && onDelete ? (
-              <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
-                <Text style={styles.deleteText}>{strings.menuBuilder.delete}</Text>
-              </TouchableOpacity>
+              <View style={{ marginTop: spacing.md }}>
+                <Button label={strings.menuBuilder.delete} variant="destructive" size="md" onPress={onDelete} />
+              </View>
             ) : null}
           </ScrollView>
         </View>
@@ -261,41 +317,66 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
   },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: colors.cardHighlight,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
+  previewRow: {
     alignItems: 'center',
-    minHeight: touchTargets.minimum,
+    marginBottom: spacing.lg,
+  },
+  previewCard: {
+    width: 96,
+    height: 96,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    marginTop: spacing.sm,
+  },
+  previewPhoto: {
+    width: '100%',
+    height: '100%',
+  },
+  previewGlyph: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 56,
+    color: colors.primary,
+    lineHeight: 60,
+  },
+  stickerCategory: {
+    marginBottom: spacing.md,
+  },
+  stickerCategoryLabel: {
+    ...typography.eyebrow,
+    fontSize: 10,
+    marginBottom: spacing.xs,
+  },
+  stickerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  stickerCell: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelText: {
-    ...typography.bodyBold,
-    color: colors.textSecondary,
+  stickerCellSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
-  saveButton: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
+  stickerClear: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
     alignItems: 'center',
-    minHeight: touchTargets.minimum,
-    justifyContent: 'center',
   },
-  saveText: {
-    ...typography.bodyBold,
-    color: colors.black,
-  },
-  deleteButton: {
-    marginTop: spacing.lg,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    minHeight: touchTargets.minimum,
-    justifyContent: 'center',
-  },
-  deleteText: {
-    ...typography.bodyBold,
-    color: colors.danger,
+  stickerClearText: {
+    ...typography.caption,
+    color: colors.textMuted,
   },
 });
