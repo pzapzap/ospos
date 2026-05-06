@@ -1,14 +1,9 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, borderRadius } from '../constants/theme';
+import { colors, typography, spacing } from '../constants/theme';
 import { strings } from '../constants/strings';
+import Button from './Button';
 
 interface TTPOiConfigProgressProps {
   isComplete: boolean;
@@ -27,13 +22,14 @@ export default function TTPOiConfigProgress({
             <Ionicons name="checkmark" size={48} color={colors.primary} />
           </View>
           <Text style={styles.title}>{strings.ttpoi.configured}</Text>
-          <TouchableOpacity
-            style={styles.doneButton}
-            onPress={onDone}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.doneButtonText}>{strings.ttpoi.configDone}</Text>
-          </TouchableOpacity>
+          <View style={styles.doneRow}>
+            <Button
+              label={strings.ttpoi.configDone}
+              variant="primary"
+              size="lg"
+              onPress={onDone}
+            />
+          </View>
         </>
       ) : (
         <>
@@ -64,15 +60,7 @@ const styles = StyleSheet.create({
     ...typography.title3,
     textAlign: 'center',
   },
-  doneButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xxxl,
-  },
-  doneButtonText: {
-    ...typography.bodyBold,
-    color: colors.black,
-    fontSize: 16,
+  doneRow: {
+    minWidth: 200,
   },
 });

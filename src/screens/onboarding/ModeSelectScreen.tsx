@@ -91,8 +91,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.xxl,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.border,
+    borderBottomWidth: 4,
   },
   iconContainer: {
     alignItems: 'center',

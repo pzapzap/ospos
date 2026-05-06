@@ -10,6 +10,7 @@ import {
   taxRateStringToDigits,
 } from '../utils/numericPad';
 import { lightTap } from '../utils/haptics';
+import Button from './Button';
 
 interface TaxRateModalProps {
   visible: boolean;
@@ -56,13 +57,9 @@ export default function TaxRateModal({
         <View style={styles.modal}>
           {/* Header with Cancel / Save */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={styles.cancelText}>{strings.menuBuilder.cancel}</Text>
-            </TouchableOpacity>
+            <Button label={strings.menuBuilder.cancel} variant="ghost" size="sm" onPress={onClose} />
             <Text style={styles.headerTitle}>{strings.settings.taxRate}</Text>
-            <TouchableOpacity onPress={handleSave}>
-              <Text style={styles.saveText}>{strings.menuBuilder.save}</Text>
-            </TouchableOpacity>
+            <Button label={strings.menuBuilder.save} variant="primary" size="sm" onPress={handleSave} />
           </View>
 
           {/* Display */}
@@ -104,16 +101,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
   },
-  cancelText: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
   headerTitle: {
     ...typography.bodyBold,
-  },
-  saveText: {
-    ...typography.bodyBold,
-    color: colors.primary,
   },
   displayArea: {
     alignItems: 'center',

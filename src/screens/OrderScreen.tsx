@@ -16,6 +16,7 @@ import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
 import { getActiveItems, type Item } from '../db/queries';
 import ItemButton from '../components/ItemButton';
+import Button from '../components/Button';
 import OrderPanel from '../components/OrderPanel';
 import ChargeButton, { type ChargeButtonState } from '../components/ChargeButton';
 
@@ -122,10 +123,9 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
                 </View>
                 <Text style={styles.emptyGridTitle}>Your menu is empty</Text>
                 <Text style={styles.emptyGridText}>Add items to start taking orders</Text>
-                <TouchableOpacity onPress={onMenuEdit} style={styles.emptyGridButton}>
-                  <Ionicons name="add-circle-outline" size={20} color={colors.black} />
-                  <Text style={styles.emptyGridButtonText}>Edit Menu</Text>
-                </TouchableOpacity>
+                <View style={{ marginTop: spacing.md, minWidth: 180 }}>
+                  <Button label="Edit Menu" variant="primary" size="md" onPress={onMenuEdit} />
+                </View>
               </View>
             )
           }

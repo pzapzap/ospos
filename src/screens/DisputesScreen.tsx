@@ -20,6 +20,7 @@ import {
   submitDisputeEvidence,
   type DisputeRecord,
 } from '../services/api';
+import Button from '../components/Button';
 
 interface DisputesScreenProps {
   onBack: () => void;
@@ -212,23 +213,23 @@ export default function DisputesScreen({ onBack }: DisputesScreenProps) {
                 textAlignVertical="top"
               />
 
-              <TouchableOpacity style={styles.photoButton} onPress={handlePickImage}>
-                <Text style={styles.photoButtonText}>
-                  {evidenceImageUri ? 'Photo selected ✓' : 'Take Photo of Evidence'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.submitButton, submitting && styles.submitDisabled]}
-                onPress={handleSubmitEvidence}
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.submitText}>Submit Evidence</Text>
-                )}
-              </TouchableOpacity>
+              <View style={{ marginTop: spacing.md }}>
+                <Button
+                  label={evidenceImageUri ? 'Photo selected ✓' : 'Take Photo of Evidence'}
+                  variant="ghost"
+                  size="md"
+                  onPress={handlePickImage}
+                />
+              </View>
+              <View style={{ marginTop: spacing.md }}>
+                <Button
+                  label={submitting ? '…' : 'Submit Evidence'}
+                  variant="primary"
+                  size="lg"
+                  onPress={handleSubmitEvidence}
+                  disabled={submitting}
+                />
+              </View>
             </View>
           ) : null}
         </View>
@@ -250,9 +251,7 @@ export default function DisputesScreen({ onBack }: DisputesScreenProps) {
         ) : loadError ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Failed to load disputes</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={loadDisputes}>
-              <Text style={styles.retryText}>Retry</Text>
-            </TouchableOpacity>
+            <Button label="Retry" variant="ghost" size="md" onPress={loadDisputes} />
           </View>
         ) : disputes.length === 0 ? (
           <Text style={styles.emptyText}>No active disputes</Text>

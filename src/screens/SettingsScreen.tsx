@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import Button from '../components/Button';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearToken, deleteAccount } from '../services/api';
 import { useFocusEffect } from '@react-navigation/native';
@@ -272,7 +273,7 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={[styles.upgradeButton, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}
+            style={[styles.upgradeButton, { backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.border, borderBottomWidth: 4 }]}
             onPress={() => {
               Alert.alert(
                 'Sign Out',
@@ -333,15 +334,12 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
                 </TouchableOpacity>
               </View>
             ) : (
-              <>
-                <TouchableOpacity
-                  style={styles.backupButton}
-                  onPress={onTTPOiSetup}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.backupButtonText}>Set Up Tap to Pay on iPhone</Text>
-                </TouchableOpacity>
-              </>
+              <Button
+                label="Set Up Tap to Pay on iPhone"
+                variant="primary"
+                size="lg"
+                onPress={() => onTTPOiSetup?.()}
+              />
             )}
           </View>
         ) : null}
@@ -529,13 +527,12 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
               thumbColor={colors.white}
             />
           </View>
-          <TouchableOpacity
-            style={styles.backupButton}
+          <Button
+            label={strings.settings.backupNow}
+            variant="ghost"
+            size="md"
             onPress={handleBackupNow}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.backupButtonText}>{strings.settings.backupNow}</Text>
-          </TouchableOpacity>
+          />
         </View>
 
         {/* Help & Support */}
@@ -599,35 +596,36 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
             <Text style={styles.linkText}>GitHub</Text>
           </TouchableOpacity>
           {isPaidTier ? (
-            <TouchableOpacity
-              style={[styles.sentryTestButton, { borderColor: colors.danger, marginTop: spacing.lg }]}
-              onPress={() => {
-                Alert.alert(
-                  'Delete Account',
-                  'This will permanently delete your account and all associated data. This action cannot be undone.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Delete Account',
-                      style: 'destructive',
-                      onPress: async () => {
-                        try {
-                          await deleteAccount();
-                          await AsyncStorage.removeItem('onboardingComplete');
-                          await clearToken();
-                          onAccountDeleted?.();
-                        } catch (err) {
-                          Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete account. Please try again.');
-                        }
+            <View style={{ marginTop: spacing.lg }}>
+              <Button
+                label="Delete Account"
+                variant="destructive"
+                size="md"
+                onPress={() => {
+                  Alert.alert(
+                    'Delete Account',
+                    'This will permanently delete your account and all associated data. This action cannot be undone.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Delete Account',
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            await deleteAccount();
+                            await AsyncStorage.removeItem('onboardingComplete');
+                            await clearToken();
+                            onAccountDeleted?.();
+                          } catch (err) {
+                            Alert.alert('Error', err instanceof Error ? err.message : 'Failed to delete account. Please try again.');
+                          }
+                        },
                       },
-                    },
-                  ]
-                );
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.sentryTestText, { color: colors.danger }]}>Delete Account</Text>
-            </TouchableOpacity>
+                    ]
+                  );
+                }}
+              />
+            </View>
           ) : null}
           {__DEV__ ? (
             <TouchableOpacity

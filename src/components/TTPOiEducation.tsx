@@ -13,8 +13,9 @@ import {
 } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, borderRadius } from '../constants/theme';
+import { colors, typography, spacing } from '../constants/theme';
 import { strings } from '../constants/strings';
+import Button from './Button';
 import {
   isAppleEducationSupported,
   showHowToTap,
@@ -137,17 +138,14 @@ function AppleEducation({ onComplete, showTryItNow }: TTPOiEducationProps) {
             <Text style={styles.pageDescription}>
               {strings.ttpoi.educationReadyDesc}
             </Text>
-            <TouchableOpacity
-              style={styles.watchAgainButton}
-              onPress={() => {
-                void present();
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.watchAgainText}>
-                {strings.ttpoi.educationWatchAgain}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.watchAgainRow}>
+              <Button
+                label={strings.ttpoi.educationWatchAgain}
+                variant="ghost"
+                size="md"
+                onPress={() => { void present(); }}
+              />
+            </View>
             {error !== null && (
               <Text style={styles.errorText}>{error}</Text>
             )}
@@ -155,15 +153,14 @@ function AppleEducation({ onComplete, showTryItNow }: TTPOiEducationProps) {
         )}
       </View>
 
-      <TouchableOpacity
-        style={styles.nextButton}
-        onPress={onComplete}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.nextButtonText}>
-          {showTryItNow ? strings.ttpoi.tryItNow : strings.ttpoi.configDone}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.nextRow}>
+        <Button
+          label={showTryItNow ? strings.ttpoi.tryItNow : strings.ttpoi.configDone}
+          variant="primary"
+          size="lg"
+          onPress={onComplete}
+        />
+      </View>
 
       <Text style={styles.disclaimer}>{strings.ttpoi.disclaimerShort}</Text>
     </View>
@@ -224,19 +221,18 @@ function LegacyEducation({ onComplete, showTryItNow }: TTPOiEducationProps) {
         ))}
       </View>
 
-      <TouchableOpacity
-        style={styles.nextButton}
-        onPress={handleNext}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.nextButtonText}>
-          {isLastPage
+      <View style={styles.nextRow}>
+        <Button
+          label={isLastPage
             ? showTryItNow
               ? strings.ttpoi.tryItNow
               : strings.ttpoi.configDone
             : 'Next'}
-        </Text>
-      </TouchableOpacity>
+          variant="primary"
+          size="lg"
+          onPress={handleNext}
+        />
+      </View>
 
       <Text style={styles.disclaimer}>{strings.ttpoi.disclaimerShort}</Text>
     </View>
@@ -290,15 +286,9 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     paddingHorizontal: spacing.lg,
   },
-  watchAgainButton: {
+  watchAgainRow: {
     marginTop: spacing.xl,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  watchAgainText: {
-    ...typography.body,
-    color: colors.primary,
-    textAlign: 'center',
+    alignItems: 'center',
   },
   errorText: {
     ...typography.caption,
@@ -322,18 +312,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     width: 24,
   },
-  nextButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
+  nextRow: {
     marginHorizontal: spacing.xxxl,
-    alignItems: 'center',
     marginBottom: spacing.xl,
-  },
-  nextButtonText: {
-    ...typography.bodyBold,
-    color: colors.black,
-    fontSize: 16,
   },
   disclaimer: {
     ...typography.caption,

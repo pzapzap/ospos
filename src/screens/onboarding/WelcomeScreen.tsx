@@ -1,11 +1,11 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, Image, Animated } from 'react-native';
 import { SafeAreaView as SafeAreaViewCompat } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, typography, spacing, borderRadius, touchTargets } from '../../constants/theme';
-import { lightTap } from '../../utils/haptics';
+import { colors, typography, spacing } from '../../constants/theme';
 import type { OnboardingStackParamList } from '../../navigation/OnboardingNavigator';
+import Button from '../../components/Button';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Welcome'>;
 
@@ -46,16 +46,12 @@ export default function WelcomeScreen() {
         </Text>
 
         <Animated.View style={[styles.bottom, { opacity: contentOpacity }]}>
-          <TouchableOpacity
-            style={styles.getStartedButton}
-            onPress={async () => {
-              await lightTap();
-              navigation.navigate('ModeSelect');
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.getStartedText}>Get Started</Text>
-          </TouchableOpacity>
+          <Button
+            label="Get Started"
+            variant="primary"
+            size="lg"
+            onPress={() => navigation.navigate('ModeSelect')}
+          />
         </Animated.View>
       </View>
     </SafeAreaViewCompat>
@@ -97,18 +93,5 @@ const styles = StyleSheet.create({
     bottom: spacing.xxxl,
     left: spacing.xxl,
     right: spacing.xxl,
-  },
-  getStartedButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    minHeight: touchTargets.chargeButton,
-    justifyContent: 'center',
-  },
-  getStartedText: {
-    ...typography.bodyBold,
-    color: colors.black,
-    fontSize: 18,
   },
 });

@@ -20,6 +20,7 @@ import { validateEmail } from '../utils/validation';
 import { useApp } from '../state/AppContext';
 import { getOrderWithItems, type OrderWithItems } from '../db/queries';
 import Eyebrow from '../components/Eyebrow';
+import Button from '../components/Button';
 import { issueRefund, sendReceipt, type ReceiptOrderData } from '../services/api';
 import { getDatabase } from '../db/database';
 
@@ -304,32 +305,28 @@ export default function TransactionDetailScreen({
                 autoCapitalize="none"
                 autoFocus
               />
-              {sendingEmail ? (
-                <View style={styles.emailSendButton}>
-                  <ActivityIndicator color={colors.black} size="small" />
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.emailSendButton, !emailAddress.trim() && styles.emailSendDisabled]}
+              <View style={{ minWidth: 90 }}>
+                <Button
+                  label={sendingEmail ? '…' : 'Send'}
+                  variant="primary"
+                  size="md"
                   onPress={handleEmailReceipt}
-                  disabled={!emailAddress.trim()}
-                >
-                  <Text style={styles.emailSendText}>Send</Text>
-                </TouchableOpacity>
-              )}
+                  disabled={!emailAddress.trim() || sendingEmail}
+                />
+              </View>
             </View>
             <TouchableOpacity onPress={() => { setShowEmail(false); setEmailAddress(''); }}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity
-            style={styles.emailButton}
+          <Button
+            label="Email Receipt"
+            variant="ghost"
+            size="md"
             onPress={() => setShowEmail(true)}
-          >
-            <Ionicons name="mail-outline" size={18} color={colors.primary} />
-            <Text style={styles.emailButtonText}>Email Receipt</Text>
-          </TouchableOpacity>
+            leftIcon={<Ionicons name="mail-outline" size={18} color={colors.primary} />}
+          />
         )}
 
         {/* Refund button — card transactions only */}
@@ -362,25 +359,21 @@ export default function TransactionDetailScreen({
                   />
                 ) : null}
 
-                <TouchableOpacity
-                  style={[styles.refundConfirm, processing && styles.refundDisabled]}
+                <Button
+                  label={processing ? '…' : 'Process Refund'}
+                  variant="destructive"
+                  size="lg"
                   onPress={handleRefund}
                   disabled={processing}
-                >
-                  {processing ? (
-                    <ActivityIndicator color={colors.white} />
-                  ) : (
-                    <Text style={styles.refundConfirmText}>Process Refund</Text>
-                  )}
-                </TouchableOpacity>
+                />
               </View>
             ) : (
-              <TouchableOpacity
-                style={styles.issueRefundButton}
+              <Button
+                label="Issue Refund"
+                variant="destructive"
+                size="md"
                 onPress={() => setShowRefund(true)}
-              >
-                <Text style={styles.issueRefundText}>Issue Refund</Text>
-              </TouchableOpacity>
+              />
             )}
           </View>
         ) : null}

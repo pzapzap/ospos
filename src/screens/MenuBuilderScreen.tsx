@@ -13,6 +13,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { colors, fonts, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
+import Button from '../components/Button';
 import { formatCurrency } from '../utils/currency';
 import { lightTap } from '../utils/haptics';
 import {
@@ -181,27 +182,20 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
       )}
 
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.addButton}
+        <Button
+          label={strings.menuBuilder.addItem}
+          variant="ghost"
+          size="lg"
           onPress={handleAddItem}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.addButtonText}>{strings.menuBuilder.addItem}</Text>
-        </TouchableOpacity>
+        />
 
         {items.length > 0 ? (
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={async () => {
-              await lightTap();
-              onStartSelling();
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.startButtonText}>
-              {strings.menuBuilder.startSelling}
-            </Text>
-          </TouchableOpacity>
+          <Button
+            label={strings.menuBuilder.startSelling}
+            variant="primary"
+            size="lg"
+            onPress={onStartSelling}
+          />
         ) : null}
       </View>
 
@@ -300,33 +294,5 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
     paddingTop: spacing.lg,
     gap: spacing.md,
-  },
-  addButton: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-    minHeight: touchTargets.minimum,
-    justifyContent: 'center',
-  },
-  addButtonText: {
-    ...typography.bodyBold,
-    color: colors.primary,
-  },
-  startButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    minHeight: touchTargets.chargeButton,
-    justifyContent: 'center',
-  },
-  startButtonText: {
-    ...typography.bodyBold,
-    color: colors.black,
-    fontSize: 18,
   },
 });

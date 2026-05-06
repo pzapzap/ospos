@@ -12,6 +12,7 @@ import { colors, typography, spacing, borderRadius, touchTargets } from '../cons
 import { strings } from '../constants/strings';
 import { formatCurrency } from '../utils/currency';
 import type { OrderLineItem } from '../state/reducers';
+import Button from './Button';
 
 interface OrderPanelProps {
   items: OrderLineItem[];
@@ -104,31 +105,30 @@ export default function OrderPanel({
 
               {expandedId === item.itemId ? (
                 <View style={styles.controls}>
-                  <TouchableOpacity
-                    style={styles.controlButton}
+                  <Button
+                    label="−"
+                    variant="ghost"
+                    size="sm"
                     onPress={() => onDecrement(item.itemId)}
                     accessibilityLabel={`Decrease ${item.itemName} quantity`}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.controlText}>-</Text>
-                  </TouchableOpacity>
+                  />
                   <Text style={styles.controlQty} accessibilityLabel={`Quantity ${item.quantity}`}>{item.quantity}</Text>
-                  <TouchableOpacity
-                    style={styles.controlButton}
+                  <Button
+                    label="+"
+                    variant="ghost"
+                    size="sm"
                     onPress={() => onIncrement(item.itemId)}
                     accessibilityLabel={`Increase ${item.itemName} quantity`}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.controlText}>+</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.controlButton, styles.removeButton]}
-                    onPress={() => onRemove(item.itemId)}
-                    accessibilityLabel={`Remove ${item.itemName} from order`}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.removeText}>Remove</Text>
-                  </TouchableOpacity>
+                  />
+                  <View style={{ marginLeft: 'auto' }}>
+                    <Button
+                      label="Remove"
+                      variant="destructive"
+                      size="sm"
+                      onPress={() => onRemove(item.itemId)}
+                      accessibilityLabel={`Remove ${item.itemName} from order`}
+                    />
+                  </View>
                 </View>
               ) : null}
             </View>
@@ -220,31 +220,10 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     gap: spacing.sm,
   },
-  controlButton: {
-    backgroundColor: colors.cardHighlight,
-    borderRadius: borderRadius.sm,
-    width: touchTargets.minimum,
-    height: touchTargets.minimum,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  controlText: {
-    ...typography.bodyBold,
-    fontSize: 20,
-  },
   controlQty: {
     ...typography.bodyBold,
-    width: 24,
+    width: 32,
     textAlign: 'center',
-  },
-  removeButton: {
-    width: 'auto' as unknown as number,
-    paddingHorizontal: spacing.md,
-    marginLeft: spacing.sm,
-  },
-  removeText: {
-    ...typography.caption,
-    color: colors.danger,
   },
   totals: {
     borderTopWidth: 1,

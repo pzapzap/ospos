@@ -17,6 +17,7 @@ import { startOnboarding, getAccountStatus, getAccountDetails } from '../service
 import { useOnboarding } from '../state/OnboardingContext';
 import { lookupTaxRateByState } from '../utils/taxLookup';
 import type { OnboardingStackParamList } from '../navigation/OnboardingNavigator';
+import Button from '../components/Button';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'StripeOnboarding'>;
 
@@ -143,9 +144,7 @@ export default function StripeOnboardingScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.retryText}>Go Back</Text>
-          </TouchableOpacity>
+          <Button label="Go Back" variant="ghost" size="md" onPress={() => navigation.goBack()} />
         </View>
       </SafeAreaView>
     );
@@ -249,17 +248,5 @@ const styles = StyleSheet.create({
     color: colors.danger,
     textAlign: 'center',
     marginBottom: spacing.xl,
-  },
-  retryButton: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xxl,
-    minHeight: touchTargets.minimum,
-    justifyContent: 'center',
-  },
-  retryText: {
-    ...typography.bodyBold,
-    color: colors.primary,
   },
 });

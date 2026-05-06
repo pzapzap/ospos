@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../constants/theme';
 import { SUPPORTED_CURRENCIES } from '../utils/currency';
 import { strings } from '../constants/strings';
+import Button from './Button';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -120,9 +121,9 @@ export default function CurrencyPickerModal({
             keyboardShouldPersistTaps="handled"
           />
 
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <Text style={styles.closeButtonText}>{strings.menuBuilder.cancel}</Text>
-          </TouchableOpacity>
+          <View style={styles.closeRow}>
+            <Button label={strings.menuBuilder.cancel} variant="ghost" size="md" onPress={handleClose} />
+          </View>
         </View>
       </View>
     </Modal>
@@ -215,15 +216,7 @@ const styles = StyleSheet.create({
   check: {
     marginLeft: spacing.xs,
   },
-  closeButton: {
+  closeRow: {
     marginTop: spacing.lg,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    backgroundColor: colors.cardHighlight,
-    borderRadius: borderRadius.md,
-  },
-  closeButtonText: {
-    ...typography.bodyBold,
-    color: colors.textSecondary,
   },
 });

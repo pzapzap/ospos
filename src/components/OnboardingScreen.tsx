@@ -1,10 +1,11 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView as SafeAreaViewCompat } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native';
-import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
+import { colors, typography, spacing, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
+import Button from './Button';
 
 interface OnboardingScreenProps {
   title: string;
@@ -52,27 +53,6 @@ export default function OnboardingScreen({
     Animated.parallel(animations).start();
   }, [currentStep]);
 
-  // --- Animated primary button ---
-  const buttonScale = useRef(new Animated.Value(1)).current;
-
-  const handleButtonPressIn = () => {
-    if (primaryDisabled) return;
-    Animated.timing(buttonScale, {
-      toValue: 0.97,
-      duration: 50,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleButtonPressOut = () => {
-    if (primaryDisabled) return;
-    Animated.timing(buttonScale, {
-      toValue: 1,
-      duration: 50,
-      useNativeDriver: true,
-    }).start();
-  };
-
   return (
     <SafeAreaViewCompat style={styles.container} edges={['top', 'bottom']}>
       {/* Back button */}
@@ -112,25 +92,19 @@ export default function OnboardingScreen({
         ))}
       </View>
 
-      {/* Animated primary button */}
-      <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-        <Pressable
-          style={[styles.primaryButton, primaryDisabled && styles.primaryButtonDisabled]}
-          onPress={onPrimary}
-          onPressIn={handleButtonPressIn}
-          onPressOut={handleButtonPressOut}
-          disabled={primaryDisabled}
-        >
-          <Text style={[styles.primaryButtonText, primaryDisabled && styles.primaryButtonTextDisabled]}>
-            {primaryLabel}
-          </Text>
-        </Pressable>
-      </Animated.View>
+      {/* Primary CTA */}
+      <Button
+        label={primaryLabel}
+        variant="primary"
+        size="lg"
+        onPress={onPrimary}
+        disabled={primaryDisabled}
+      />
 
       {skipLabel && onSkip ? (
-        <TouchableOpacity style={styles.skipButton} onPress={onSkip} activeOpacity={0.7}>
-          <Text style={styles.skipText}>{skipLabel}</Text>
-        </TouchableOpacity>
+        <View style={styles.skipRow}>
+          <Button label={skipLabel} variant="ghost" size="md" onPress={onSkip} />
+        </View>
       ) : (
         <View style={styles.skipPlaceholder} />
       )}
@@ -187,32 +161,9 @@ const styles = StyleSheet.create({
     height: DOT_SIZE,
     borderRadius: DOT_SIZE / 2,
   },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
+  skipRow: {
+    marginTop: spacing.md,
     alignItems: 'center',
-    minHeight: touchTargets.chargeButton,
-    justifyContent: 'center',
-  },
-  primaryButtonDisabled: {
-    backgroundColor: colors.disabled,
-  },
-  primaryButtonText: {
-    ...typography.bodyBold,
-    color: colors.black,
-    fontSize: 18,
-  },
-  primaryButtonTextDisabled: {
-    color: colors.textMuted,
-  },
-  skipButton: {
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-  },
-  skipText: {
-    ...typography.body,
-    color: colors.primary,
   },
   skipPlaceholder: {
     height: spacing.lg,

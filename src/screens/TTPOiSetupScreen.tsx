@@ -17,6 +17,7 @@ import { useApp } from '../state/AppContext';
 import { useStripeTerminal } from '../services/terminal';
 import { getTerminalLocationId } from '../services/api';
 import ContactlessIcon from '../components/ContactlessIcon';
+import Button from '../components/Button';
 import TTPOiConfigProgress from '../components/TTPOiConfigProgress';
 import TTPOiEducation from '../components/TTPOiEducation';
 
@@ -262,21 +263,14 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
           <View style={styles.section}>
             <Text style={styles.termsNote}>{strings.ttpoi.setupAcceptTermsNote}</Text>
 
-            <TouchableOpacity
-              style={[
-                styles.acceptButton,
-                deviceCompatible === false && styles.acceptButtonDisabled,
-              ]}
+            <Button
+              label={strings.ttpoi.setupAcceptTerms}
+              variant="primary"
+              size="lg"
               onPress={handleAcceptTerms}
-              activeOpacity={0.7}
               disabled={deviceCompatible === false}
               accessibilityLabel="Accept Terms and Conditions for Tap to Pay on iPhone"
-              accessibilityRole="button"
-            >
-              <Text style={styles.acceptButtonText}>
-                {strings.ttpoi.setupAcceptTerms}
-              </Text>
-            </TouchableOpacity>
+            />
 
             {deviceCompatible === false ? (
               <Text style={styles.incompatibleText}>{strings.ttpoi.incompatible}</Text>
@@ -344,23 +338,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 22,
     marginBottom: spacing.xl,
-  },
-  acceptButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-    minHeight: touchTargets.chargeButton,
-    justifyContent: 'center',
-  },
-  acceptButtonDisabled: {
-    backgroundColor: colors.disabled,
-    opacity: 0.5,
-  },
-  acceptButtonText: {
-    ...typography.bodyBold,
-    color: colors.black,
-    fontSize: 18,
   },
   incompatibleText: {
     ...typography.caption,

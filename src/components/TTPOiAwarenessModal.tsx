@@ -3,14 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Modal,
   SafeAreaView,
   Image,
   Dimensions,
 } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '../constants/theme';
+import { typography, spacing } from '../constants/theme';
 import { strings } from '../constants/strings';
+import Button from './Button';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -37,29 +37,22 @@ export default function TTPOiAwarenessModal({
           />
 
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={styles.enableButton}
+            <Button
+              label={strings.ttpoi.awarenessEnable}
+              variant="primary"
+              size="lg"
               onPress={onEnable}
-              activeOpacity={0.7}
               accessibilityLabel="Enable Tap to Pay on iPhone"
-              accessibilityRole="button"
-            >
-              <Text style={styles.enableButtonText}>
-                {strings.ttpoi.awarenessEnable}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.dismissButton}
-              onPress={onDismiss}
-              activeOpacity={0.7}
-              accessibilityLabel="Not now, dismiss"
-              accessibilityRole="button"
-            >
-              <Text style={styles.dismissButtonText}>
-                {strings.ttpoi.awarenessNotNow}
-              </Text>
-            </TouchableOpacity>
+            />
+            <View style={{ alignItems: 'center', marginTop: spacing.sm }}>
+              <Button
+                label={strings.ttpoi.awarenessNotNow}
+                variant="ghost"
+                size="md"
+                onPress={onDismiss}
+                accessibilityLabel="Not now, dismiss"
+              />
+            </View>
           </View>
 
           <Text style={styles.disclaimer}>{strings.ttpoi.disclaimerShort}</Text>
@@ -88,25 +81,6 @@ const styles = StyleSheet.create({
   actions: {
     width: '100%',
     gap: spacing.md,
-  },
-  enableButton: {
-    backgroundColor: '#000000',
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-  },
-  enableButtonText: {
-    ...typography.bodyBold,
-    color: '#FFFFFF',
-    fontSize: 18,
-  },
-  dismissButton: {
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-  },
-  dismissButtonText: {
-    ...typography.body,
-    color: '#666666',
   },
   disclaimer: {
     ...typography.caption,

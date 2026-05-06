@@ -416,23 +416,23 @@ function DisabledCardButton({ onUpgrade }: { onUpgrade?: () => void }) {
           <View style={styles.upgradeModal}>
             <Text style={styles.upgradeTitle}>{strings.payment.card}</Text>
             <Text style={styles.upgradeBody}>{strings.payment.cardComingSoon}</Text>
-            <TouchableOpacity
-              style={styles.upgradeSetupButton}
+            <Button
+              label="Set Up"
+              variant="primary"
+              size="lg"
               onPress={() => {
                 setShowModal(false);
                 onUpgrade?.();
               }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.upgradeSetupText}>Set Up</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.upgradeDismissButton}
-              onPress={() => setShowModal(false)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.upgradeDismissText}>Not Now</Text>
-            </TouchableOpacity>
+            />
+            <View style={{ alignItems: 'center', marginTop: spacing.sm }}>
+              <Button
+                label="Not Now"
+                variant="ghost"
+                size="md"
+                onPress={() => setShowModal(false)}
+              />
+            </View>
           </View>
         </View>
       </Modal>

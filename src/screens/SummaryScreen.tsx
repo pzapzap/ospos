@@ -25,6 +25,7 @@ import {
 } from '../db/queries';
 import { shareCSV, generateTextSummary } from '../utils/export';
 import DaySummaryCard from '../components/DaySummaryCard';
+import Button from '../components/Button';
 
 function formatDateStr(d: Date): string {
   return d.toISOString().split('T')[0];
@@ -225,25 +226,18 @@ export default function SummaryScreen() {
       />
 
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.shareButton}
-          onPress={handleShare}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.shareButtonText}>{strings.summary.share}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.exportButton}
-          onPress={handleExportCSV}
-          activeOpacity={0.7}
-          disabled={exporting}
-        >
-          {exporting ? (
-            <ActivityIndicator color={colors.black} size="small" />
-          ) : (
-            <Text style={styles.exportButtonText}>{strings.summary.exportCsv}</Text>
-          )}
-        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Button label={strings.summary.share} variant="ghost" size="md" onPress={handleShare} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            label={exporting ? '…' : strings.summary.exportCsv}
+            variant="primary"
+            size="md"
+            onPress={handleExportCSV}
+            disabled={exporting}
+          />
+        </View>
       </View>
 
       {/* Date Range Picker Modal (paid tier) */}

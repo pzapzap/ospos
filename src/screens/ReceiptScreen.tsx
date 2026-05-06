@@ -23,6 +23,7 @@ import { useApp } from '../state/AppContext';
 import { sendReceipt, type ReceiptOrderData } from '../services/api';
 import { validateEmail, validatePhone, formatPhoneE164 } from '../utils/validation';
 import Eyebrow from '../components/Eyebrow';
+import Button from '../components/Button';
 import { isPrinterConnected, printReceipt } from '../services/printer';
 
 interface ReceiptScreenProps {
@@ -132,9 +133,7 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
           <Text style={styles.errorText}>{strings.errors.generic}</Text>
-          <TouchableOpacity style={styles.newOrderButton} onPress={onNewOrder}>
-            <Text style={styles.newOrderText}>{strings.receipt.newOrder}</Text>
-          </TouchableOpacity>
+          <Button label={strings.receipt.newOrder} variant="primary" size="lg" onPress={onNewOrder} />
         </View>
       </SafeAreaView>
     );
@@ -272,10 +271,12 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
           <View style={styles.footer}>
           {/* Print receipt (if printer connected) */}
           {printerAvailable ? (
-            <TouchableOpacity
-              style={styles.receiptButton}
+            <Button
+              label={printing ? '…' : 'Print Receipt'}
+              variant="ghost"
+              size="md"
+              disabled={printing}
               accessibilityLabel="Print receipt"
-              accessibilityRole="button"
               onPress={async () => {
                 if (!lastOrder) return;
                 setPrinting(true);
@@ -302,14 +303,7 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                   setPrinting(false);
                 }
               }}
-              disabled={printing}
-            >
-              {printing ? (
-                <ActivityIndicator color={colors.primary} size="small" />
-              ) : (
-                <Text style={styles.receiptButtonText}>Print Receipt</Text>
-              )}
-            </TouchableOpacity>
+            />
           ) : null}
 
           {/* Receipt delivery options - SMS disabled pending carrier approval */}
@@ -322,15 +316,14 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                 <Text style={styles.sentSubtitle}>{recipient}</Text>
               </View>
             ) : receiptMode === 'none' ? (
-              <TouchableOpacity
-                style={styles.receiptButton}
+              <Button
+                label="Email Receipt"
+                variant="ghost"
+                size="md"
                 onPress={() => setReceiptMode('email')}
                 accessibilityLabel="Send receipt via email"
-                accessibilityRole="button"
-              >
-                <Ionicons name="mail-outline" size={18} color={colors.primary} style={{ marginRight: spacing.sm }} />
-                <Text style={styles.receiptButtonText}>Email Receipt</Text>
-              </TouchableOpacity>
+                leftIcon={<Ionicons name="mail-outline" size={18} color={colors.primary} />}
+              />
             ) : (
               <View style={styles.recipientSection}>
                 <Text style={styles.recipientLabel}>Email address</Text>
@@ -346,22 +339,15 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                     autoFocus
                     onFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300)}
                   />
-                  {sending ? (
-                    <View style={styles.sendButton}>
-                      <ActivityIndicator color={colors.black} size="small" />
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      style={[
-                        styles.sendButton,
-                        !recipient.trim() && styles.sendButtonDisabled,
-                      ]}
+                  <View style={{ minWidth: 90 }}>
+                    <Button
+                      label={sending ? '…' : 'Send'}
+                      variant="primary"
+                      size="md"
                       onPress={handleSendReceipt}
-                      disabled={!recipient.trim()}
-                    >
-                      <Text style={styles.sendButtonText}>Send</Text>
-                    </TouchableOpacity>
-                  )}
+                      disabled={!recipient.trim() || sending}
+                    />
+                  </View>
                 </View>
                 {/* Email domain suggestions */}
                 {recipient.includes('@') && !recipient.includes('.', recipient.indexOf('@')) ? (
@@ -389,13 +375,9 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
               </View>
             )}
 
-          <TouchableOpacity
-            style={styles.newOrderButton}
-            onPress={onNewOrder}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.newOrderText}>{strings.receipt.newOrder}</Text>
-          </TouchableOpacity>
+          <View style={{ marginTop: spacing.md }}>
+            <Button label={strings.receipt.newOrder} variant="primary" size="lg" onPress={onNewOrder} />
+          </View>
         </View>
         </ScrollView>
       </KeyboardAvoidingView>

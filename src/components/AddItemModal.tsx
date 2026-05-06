@@ -295,8 +295,9 @@ const styles = StyleSheet.create({
   photoButton: {
     backgroundColor: colors.background,
     borderRadius: borderRadius.md,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.border,
+    borderBottomWidth: 4,
     borderStyle: 'dashed',
     height: 100,
     justifyContent: 'center',

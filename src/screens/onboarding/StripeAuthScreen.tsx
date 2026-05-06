@@ -18,6 +18,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../../constants/theme';
 import { strings } from '../../constants/strings';
 import { register, login, loginWithApple } from '../../services/api';
+import Button from '../../components/Button';
 import { lightTap } from '../../utils/haptics';
 import type { OnboardingStackParamList } from '../../navigation/OnboardingNavigator';
 
@@ -167,30 +168,32 @@ export default function StripeAuthScreen() {
             onSubmitEditing={handleSubmit}
           />
 
-          <TouchableOpacity
-            style={[styles.submitButton, !isValid && styles.submitButtonDisabled]}
+          <Button
+            label={
+              loading
+                ? '…'
+                : mode === 'register'
+                  ? strings.stripeAuth.registerButton
+                  : strings.stripeAuth.loginButton
+            }
+            variant="primary"
+            size="lg"
             onPress={handleSubmit}
             disabled={!isValid || loading}
-            activeOpacity={0.7}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.black} />
-            ) : (
-              <Text style={[styles.submitButtonText, !isValid && styles.submitButtonTextDisabled]}>
-                {mode === 'register'
-                  ? strings.stripeAuth.registerButton
-                  : strings.stripeAuth.loginButton}
-              </Text>
-            )}
-          </TouchableOpacity>
+          />
 
-          <TouchableOpacity style={styles.switchButton} onPress={toggleMode}>
-            <Text style={styles.switchText}>
-              {mode === 'register'
-                ? strings.stripeAuth.switchToLogin
-                : strings.stripeAuth.switchToRegister}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.switchRow}>
+            <Button
+              label={
+                mode === 'register'
+                  ? strings.stripeAuth.switchToLogin
+                  : strings.stripeAuth.switchToRegister
+              }
+              variant="ghost"
+              size="md"
+              onPress={toggleMode}
+            />
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaViewCompat>
@@ -263,32 +266,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.md,
   },
-  submitButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    minHeight: touchTargets.chargeButton,
-    justifyContent: 'center',
+  switchRow: {
     marginTop: spacing.md,
-  },
-  submitButtonDisabled: {
-    backgroundColor: colors.disabled,
-  },
-  submitButtonText: {
-    ...typography.bodyBold,
-    color: colors.black,
-    fontSize: 18,
-  },
-  submitButtonTextDisabled: {
-    color: colors.textMuted,
-  },
-  switchButton: {
-    paddingVertical: spacing.lg,
     alignItems: 'center',
-  },
-  switchText: {
-    ...typography.body,
-    color: colors.primary,
   },
 });
