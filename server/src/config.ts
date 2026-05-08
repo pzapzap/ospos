@@ -45,4 +45,9 @@ export const config = {
     apiKey: optionalEnv('SENDGRID_API_KEY', ''),
     fromEmail: optionalEnv('SENDGRID_FROM_EMAIL', ''),
   },
+
+  resend: {
+    apiKey: optionalEnv('RESEND_API_KEY', ''),
+    fromEmail: optionalEnv('RESEND_FROM_EMAIL', ''),
+  },
 };
