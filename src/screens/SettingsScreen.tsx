@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import Button from '../components/Button';
+import { stepUpAuth } from '../utils/stepUpAuth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearToken, deleteAccount } from '../services/api';
 import { useFocusEffect } from '@react-navigation/native';
@@ -418,6 +419,10 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
                       text: 'Delete Account',
                       style: 'destructive',
                       onPress: async () => {
+                        const ok = await stepUpAuth({
+                          promptMessage: 'Confirm account deletion',
+                        });
+                        if (!ok) return;
                         try {
                           await deleteAccount();
                           await AsyncStorage.removeItem('onboardingComplete');

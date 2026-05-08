@@ -199,6 +199,7 @@ router.post('/delete-account', authMiddleware, async (req: Request, res: Respons
     }
 
     // CASCADE deletes all related data (synced_orders, receipt_logs, dispute_records)
+    // The CASCADE on revoked_tokens.user_id also drops any pending revocations.
     await deleteUser(user.id);
 
     console.log(`[AUTH] Account deleted: ${user.id}`);
@@ -206,6 +207,30 @@ router.post('/delete-account', authMiddleware, async (req: Request, res: Respons
   } catch (error) {
     console.error('[AUTH] Delete account error:', error);
     res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
+// POST /auth/logout — Revoke the caller's JWT server-side. Client should
+// also clearToken() locally; this guarantees the JWT can't be replayed even
+// if exfiltrated before its natural 24h expiry.
+router.post('/logout', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user || !req.jwtJti || !req.jwtExp) {
+      // Legacy tokens without jti can't be revoked; they expire on their own.
+      res.json({ success: true });
+      return;
+    }
+    const { query } = await import('../db/connection');
+    await query(
+      'INSERT INTO revoked_tokens (jti, user_id, expires_at, reason) VALUES ($1, $2, to_timestamp($3), $4) ON CONFLICT (jti) DO NOTHING',
+      [req.jwtJti, req.user.userId, req.jwtExp, 'logout']
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[AUTH] Logout error:', error);
+    // Don't fail the user's logout flow over a server hiccup — the token is
+    // short-lived anyway.
+    res.json({ success: true });
   }
 });
 

@@ -19,6 +19,7 @@ import { successNotification } from '../utils/haptics';
 import { validateEmail } from '../utils/validation';
 import { useApp } from '../state/AppContext';
 import { getOrderWithItems, type OrderWithItems } from '../db/queries';
+import { stepUpAuth } from '../utils/stepUpAuth';
 import Eyebrow from '../components/Eyebrow';
 import Button from '../components/Button';
 import { issueRefund, sendReceipt, type ReceiptOrderData } from '../services/api';
@@ -156,6 +157,12 @@ export default function TransactionDetailScreen({
     const amountDisplay = isFullRefund
       ? formatCurrency(order.total, settings.currency)
       : formatCurrency(partialCents, settings.currency);
+
+    // Step-up auth — Face ID / passcode confirmation before destructive Stripe op.
+    const ok = await stepUpAuth({
+      promptMessage: `Confirm refund of ${amountDisplay}`,
+    });
+    if (!ok) return;
 
     Alert.alert(
       'Confirm Refund',

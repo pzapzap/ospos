@@ -44,6 +44,21 @@ async function setToken(token: string): Promise<void> {
 }
 
 export async function clearToken(): Promise<void> {
+  // Best-effort server-side revocation. Fires before we wipe the local token
+  // so the request still has the Authorization header. Failures (offline,
+  // server error, legacy token without jti) don't block the logout flow —
+  // worst case the JWT expires naturally within 24h.
+  try {
+    if (authToken) {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken}` },
+      }).catch(() => {});
+    }
+  } catch {
+    // ignore
+  }
+
   authToken = null;
   terminalLocationId = null;
   await SecureStore.deleteItemAsync(TOKEN_KEY);
