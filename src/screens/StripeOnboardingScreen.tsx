@@ -47,13 +47,29 @@ export default function StripeOnboardingScreen() {
   }, [dispatch]);
 
   // Listen for deep links from system browser (Safari)
+  // Parse a deep link strictly: only accept the exact ospos://stripe/return
+  // and ospos://stripe/refresh paths. Using URL() instead of startsWith
+  // prevents the handler from firing on lookalikes (ospos://stripe/returnXYZ,
+  // ospos://stripe/return.evil, etc.).
+  type DeepLinkAction = 'return' | 'refresh' | null;
+  const parseDeepLink = (url: string): DeepLinkAction => {
+    try {
+      const u = new URL(url);
+      if (u.protocol !== 'ospos:' || u.host !== 'stripe') return null;
+      if (u.pathname === '/return') return 'return';
+      if (u.pathname === '/refresh') return 'refresh';
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
   // When Stripe finishes onboarding, it opens the return URL in Safari,
   // which redirects to ospos://stripe/return, which opens the app.
   useEffect(() => {
     const sub = Linking.addEventListener('url', ({ url }) => {
-      if (url.startsWith('ospos://stripe/')) {
-        handleDeepLink(url);
-      }
+      const action = parseDeepLink(url);
+      if (action) handleDeepLink(action);
     });
     return () => sub.remove();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -80,8 +96,8 @@ export default function StripeOnboardingScreen() {
     navigation.navigate('BusinessName');
   };
 
-  const handleDeepLink = async (url: string) => {
-    if (url.startsWith('ospos://stripe/return')) {
+  const handleDeepLink = async (action: DeepLinkAction) => {
+    if (action === 'return') {
       try {
         const status = await getAccountStatus();
         if (status.charges_enabled) {
@@ -96,7 +112,7 @@ export default function StripeOnboardingScreen() {
       } catch {
         await prefillAndNavigate();
       }
-    } else if (url.startsWith('ospos://stripe/refresh')) {
+    } else if (action === 'refresh') {
       if (!mountedRef.current) return;
       setLoading(true);
       try {
@@ -112,17 +128,18 @@ export default function StripeOnboardingScreen() {
 
   // Intercept navigation BEFORE the WebView tries to load custom schemes
   const handleShouldStartLoad = (event: { url: string }): boolean => {
-    if (event.url.startsWith('ospos://')) {
-      handleDeepLink(event.url);
+    const action = parseDeepLink(event.url);
+    if (action) {
+      handleDeepLink(action);
       return false;
     }
     // Catch the server redirect URLs too
     if (event.url.includes('/stripe/return')) {
-      handleDeepLink('ospos://stripe/return');
+      handleDeepLink('return');
       return false;
     }
     if (event.url.includes('/stripe/refresh')) {
-      handleDeepLink('ospos://stripe/refresh');
+      handleDeepLink('refresh');
       return false;
     }
     return true;
@@ -165,14 +182,23 @@ export default function StripeOnboardingScreen() {
       </View>
       <WebView
         source={{ uri: onboardingUrl }}
-        originWhitelist={['https://*', 'ospos://*']}
+        // Tightened from `https://*` to Stripe-controlled domains. The
+        // initial URL is server-issued by /stripe/onboarding (always Stripe);
+        // these patterns cover the redirect chain Stripe walks through during
+        // KYC + identity verification (connect, hooks, js, verify, files).
+        originWhitelist={[
+          'https://*.stripe.com',
+          'https://stripe.com',
+          'https://*.stripe.network',
+          'ospos://*',
+        ]}
         onShouldStartLoadWithRequest={handleShouldStartLoad}
         onMessage={(event) => {
           const msg = event.nativeEvent.data;
           if (msg === 'stripe-return') {
-            handleDeepLink('ospos://stripe/return');
+            handleDeepLink('return');
           } else if (msg === 'stripe-refresh') {
-            handleDeepLink('ospos://stripe/refresh');
+            handleDeepLink('refresh');
           }
         }}
         style={styles.webview}

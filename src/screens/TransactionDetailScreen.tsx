@@ -20,6 +20,7 @@ import { validateEmail } from '../utils/validation';
 import { useApp } from '../state/AppContext';
 import { getOrderWithItems, type OrderWithItems } from '../db/queries';
 import { stepUpAuth } from '../utils/stepUpAuth';
+import { useScreenCaptureGuard } from '../utils/useScreenCaptureGuard';
 import Eyebrow from '../components/Eyebrow';
 import Button from '../components/Button';
 import { issueRefund, sendReceipt, type ReceiptOrderData } from '../services/api';
@@ -34,6 +35,7 @@ export default function TransactionDetailScreen({
   orderId,
   onBack,
 }: TransactionDetailScreenProps) {
+  useScreenCaptureGuard();
   const { settings, isTestMode } = useApp();
   const mountedRef = useRef(true);
   const [order, setOrder] = useState<OrderWithItems | null>(null);

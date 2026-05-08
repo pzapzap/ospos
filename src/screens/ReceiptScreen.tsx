@@ -24,6 +24,7 @@ import { sendReceipt, type ReceiptOrderData } from '../services/api';
 import { validateEmail, validatePhone, formatPhoneE164 } from '../utils/validation';
 import Eyebrow from '../components/Eyebrow';
 import Button from '../components/Button';
+import { useScreenCaptureGuard } from '../utils/useScreenCaptureGuard';
 import { isPrinterConnected, printReceipt } from '../services/printer';
 
 interface ReceiptScreenProps {
@@ -42,6 +43,7 @@ const EMAIL_DOMAINS = [
 ];
 
 export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
+  useScreenCaptureGuard();
   const { lastOrder, settings } = useApp();
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;

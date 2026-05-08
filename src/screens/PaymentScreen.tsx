@@ -24,6 +24,7 @@ import { lightTap, successNotification, errorNotification } from '../utils/hapti
 import CashPaymentModal from '../components/CashPaymentModal';
 import ContactlessIcon from '../components/ContactlessIcon';
 import Button from '../components/Button';
+import { useScreenCaptureGuard } from '../utils/useScreenCaptureGuard';
 
 interface PaymentScreenProps {
   onPaymentComplete: () => void;
@@ -444,6 +445,7 @@ function DisabledCardButton({ onUpgrade }: { onUpgrade?: () => void }) {
 
 // ── Main PaymentScreen ──
 export default function PaymentScreen({ onPaymentComplete, onBack, onTTPOiSetup, onUpgrade }: PaymentScreenProps) {
+  useScreenCaptureGuard();
   const { order, orderDispatch, settings, setLastOrder, isTestMode, isOnline } = useApp();
   const ttpOiSetupComplete = settings.ttpOiSetupComplete === 'true';
   const [selectedTip, setSelectedTip] = useState(0);
