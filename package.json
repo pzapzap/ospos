@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@expo-google-fonts/archivo": "^0.4.2",
@@ -29,7 +30,7 @@
     "expo-image-picker": "~55.0.10",
     "expo-local-authentication": "~55.0.13",
     "expo-localization": "~55.0.8",
-    "expo-notifications": "~55.0.10",
+    "expo-notifications": "~55.0.22",
     "expo-screen-capture": "~55.0.13",
     "expo-secure-store": "~55.0.8",
     "expo-sharing": "~55.0.11",
@@ -51,6 +52,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
   },
   "expo": {
