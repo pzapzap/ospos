@@ -201,9 +201,9 @@ function formatReceiptHtml(
           </td></tr>
         </table>` : ''}
 
-        <!-- Closing italic glyph signature — same italic Bitter as the in-app glyph layer -->
+        <!-- Closing italic glyph signature — gold/mustard for warmth, mirrors the in-app italic glyph layer -->
         <div style="margin-top:36px;text-align:center">
-          <div style="font-family:${SERIF};font-style:italic;font-weight:500;font-size:28px;color:#22D3EE;line-height:1">Thank you.</div>
+          <div style="font-family:${SERIF};font-style:italic;font-weight:500;font-size:30px;color:#D4A574;line-height:1;letter-spacing:-0.3px">Thank you.</div>
         </div>
 
       </td>

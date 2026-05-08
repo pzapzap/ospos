@@ -58,9 +58,11 @@ interface CardButtonProps {
     createdAt: string;
     items: OrderState['items'];
     cardLast4?: string;
+    cardBrand?: string;
     subtotal: number;
     taxAmount: number;
     tipAmount: number;
+    cashTendered?: number;
   } | null) => void;
   onPaymentComplete: () => void;
 }
@@ -290,7 +292,7 @@ function CardButton({
       }
 
       // Stripe Terminal SDK: card info is in charges[0].paymentMethodDetails.cardPresentDetails
-      const piAny = confirmedPI as Record<string, unknown>;
+      const piAny = confirmedPI as unknown as Record<string, unknown>;
       const charges = piAny.charges as Array<{ paymentMethodDetails?: { cardPresentDetails?: { last4?: string; brand?: string }; interacPresentDetails?: { last4?: string; brand?: string } } }> | undefined;
       const methodDetails = charges?.[0]?.paymentMethodDetails;
       const cardLast4 = methodDetails?.cardPresentDetails?.last4 ?? methodDetails?.interacPresentDetails?.last4 ?? undefined;
