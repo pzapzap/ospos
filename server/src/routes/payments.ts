@@ -48,8 +48,18 @@ router.post('/create-intent', async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // In test mode, create a simulated payment intent without connected account
+    const user = await findUserById(req.user.userId);
+
+    // In test mode, create a simulated payment intent without connected account.
+    // Only allowed for users WITHOUT a connected Stripe account — otherwise a
+    // paid-tier merchant could flip test_mode mid-session and end up with a
+    // payment intent on the platform account but a refund routed at the
+    // connected account, breaking reconciliation.
     if (test_mode === true) {
+      if (user?.stripe_account_id) {
+        res.status(400).json({ error: 'Test mode is unavailable for connected Stripe accounts' });
+        return;
+      }
       const testIntent = await stripe.paymentIntents.create({
         amount: tip_amount ? amount + tip_amount : amount,
         currency: currency.toLowerCase(),
@@ -63,7 +73,6 @@ router.post('/create-intent', async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const user = await findUserById(req.user.userId);
     if (!user?.stripe_account_id) {
       res.status(400).json({ error: 'Stripe account not set up' });
       return;
@@ -99,8 +108,15 @@ router.post('/refund', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // In test mode, refund on platform account
+    // In test mode, refund on platform account. Same guard as create-intent:
+    // only allowed for users without a connected Stripe account.
     if (test_mode === true) {
+      const testUser = await findUserById(req.user.userId);
+      if (testUser?.stripe_account_id) {
+        res.status(400).json({ error: 'Test mode is unavailable for connected Stripe accounts' });
+        return;
+      }
+
       let pi;
       try {
         pi = await stripe.paymentIntents.retrieve(paymentIntentId);

@@ -272,12 +272,49 @@ router.post('/send', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Use client-provided order data, or fall back to database query
+    // Ownership check first — verify the caller owns this order before
+    // accepting any data about it. Without this, a valid JWT could be used
+    // to send a phishing receipt branded as another merchant's transaction
+    // through our verified Resend domain.
+    //
+    // Two valid states:
+    //  (a) Order is in synced_orders for this user → use DB or client data
+    //  (b) Order hasn't synced yet (offline-first) → require orderData and
+    //      log a soft warning (we can't verify it, but the JWT proves the
+    //      caller is *some* legitimate user — they could only spam their
+    //      own customers, which is what /receipts/send is for anyway)
+    const dbOrder = await queryOne<OrderRow>(
+      'SELECT id, subtotal, tax_amount, tip_amount, total, payment_method, created_at FROM synced_orders WHERE id = $1 AND user_id = $2',
+      [orderId, req.user.userId]
+    );
+
     let order: OrderRow | null = null;
     let items: OrderItemRow[] = [];
 
-    if (orderData) {
-      // Use data sent from client (immediate, no sync delay)
+    if (dbOrder) {
+      // Order has synced. Prefer DB values to keep the receipt authoritative;
+      // fall back to client orderData only for fields we don't query (none
+      // currently — the SELECT covers everything).
+      order = dbOrder;
+      items = await query<OrderItemRow>(
+        'SELECT item_name, item_price, quantity FROM synced_order_items WHERE order_id = $1',
+        [orderId]
+      );
+    } else if (orderData) {
+      // Order isn't in DB yet (offline merchant, sync delay). Without a DB
+      // row we can't verify ownership — but we DO know the caller is
+      // authenticated. Verify no other user owns this orderId; if some
+      // OTHER user already has an order with this id, refuse outright.
+      const otherOwner = await queryOne<{ user_id: string }>(
+        'SELECT user_id FROM synced_orders WHERE id = $1',
+        [orderId]
+      );
+      if (otherOwner) {
+        // The id exists under a different user (covered by dbOrder query
+        // above returning null but this returning a row → ownership mismatch).
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
       order = {
         id: orderId,
         subtotal: orderData.subtotal,
@@ -293,17 +330,9 @@ router.post('/send', async (req: Request, res: Response): Promise<void> => {
         quantity: item.quantity,
       }));
     } else {
-      // Fall back to database (for older clients or re-sends)
-      order = await queryOne<OrderRow>(
-        'SELECT id, subtotal, tax_amount, tip_amount, total, payment_method, created_at FROM synced_orders WHERE id = $1 AND user_id = $2',
-        [orderId, req.user.userId]
-      );
-      items = order
-        ? await query<OrderItemRow>(
-            'SELECT item_name, item_price, quantity FROM synced_order_items WHERE order_id = $1',
-            [orderId]
-          )
-        : [];
+      // Neither DB row nor client data — nothing to send.
+      res.status(404).json({ error: 'Order not found' });
+      return;
     }
 
     // Get business name from request body, or fall back to email/OSPOS

@@ -201,15 +201,21 @@ router.get('/account-requirements', async (req: Request, res: Response): Promise
 router.post('/connection-token', async (req: Request, res: Response): Promise<void> => {
   try {
     const { test_mode } = req.body;
+    const user = await findUserById(req.user!.userId);
 
-    // In test mode, create token for platform account (no connected account)
+    // In test mode, create token for platform account. Only allowed if the
+    // user does NOT have a connected account — otherwise we'd hand out a
+    // platform token while the user is paid-tier, breaking reconciliation.
     if (test_mode === true) {
+      if (user?.stripe_account_id) {
+        res.status(400).json({ error: 'Test mode is unavailable for connected Stripe accounts' });
+        return;
+      }
       const token = await createConnectionToken();
       res.json(token);
       return;
     }
 
-    const user = await findUserById(req.user!.userId);
     if (!user?.stripe_account_id) {
       res.status(400).json({ error: 'Stripe account not set up' });
       return;

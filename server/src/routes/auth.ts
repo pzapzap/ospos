@@ -198,8 +198,22 @@ router.post('/delete-account', authMiddleware, async (req: Request, res: Respons
       return;
     }
 
-    // CASCADE deletes all related data (synced_orders, receipt_logs, dispute_records)
-    // The CASCADE on revoked_tokens.user_id also drops any pending revocations.
+    // Revoke the caller's JWT BEFORE deleting the user. Migration 005 changed
+    // the FK to ON DELETE SET NULL so the revocation row outlives the user
+    // and authMiddleware can keep matching the jti for the token's full
+    // 24h lifetime. Without this, a stolen token would replay against any
+    // /sync/pull, /payments/refund, etc. for hours after deletion.
+    if (req.jwtJti && req.jwtExp) {
+      const { query } = await import('../db/connection');
+      await query(
+        'INSERT INTO revoked_tokens (jti, user_id, expires_at, reason) VALUES ($1, $2, to_timestamp($3), $4) ON CONFLICT (jti) DO NOTHING',
+        [req.jwtJti, req.user.userId, req.jwtExp, 'account_deletion']
+      );
+    }
+
+    // CASCADE deletes all related data (synced_orders, receipt_logs, dispute_records).
+    // revoked_tokens.user_id is now ON DELETE SET NULL — the revocation we just
+    // inserted survives this delete.
     await deleteUser(user.id);
 
     console.log(`[AUTH] Account deleted: ${user.id}`);
