@@ -19,6 +19,14 @@ let authToken: string | null = null;
 let terminalLocationId: string | null = null;
 let onAuthExpired: (() => void) | null = null;
 
+// Pin Keychain items to this device only — prevents the JWT and other
+// secrets from being copied to a new device via iCloud Keychain sync.
+// AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY allows access while the device is
+// locked (needed for background sync), but never leaves the device.
+const SECURE_OPTS: SecureStore.SecureStoreOptions = {
+  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
+};
+
 export function setOnAuthExpired(callback: () => void): void {
   onAuthExpired = callback;
 }
@@ -31,7 +39,7 @@ async function getToken(): Promise<string | null> {
   // One-time migration from AsyncStorage → SecureStore
   const legacyToken = await AsyncStorage.getItem(TOKEN_KEY);
   if (legacyToken) {
-    await SecureStore.setItemAsync(TOKEN_KEY, legacyToken);
+    await SecureStore.setItemAsync(TOKEN_KEY, legacyToken, SECURE_OPTS);
     await AsyncStorage.removeItem(TOKEN_KEY);
     authToken = legacyToken;
   }
@@ -40,7 +48,7 @@ async function getToken(): Promise<string | null> {
 
 async function setToken(token: string): Promise<void> {
   authToken = token;
-  await SecureStore.setItemAsync(TOKEN_KEY, token);
+  await SecureStore.setItemAsync(TOKEN_KEY, token, SECURE_OPTS);
 }
 
 export async function clearToken(): Promise<void> {
@@ -70,7 +78,7 @@ export async function clearToken(): Promise<void> {
 async function setTerminalLocationId(locationId: string | null): Promise<void> {
   terminalLocationId = locationId;
   if (locationId) {
-    await SecureStore.setItemAsync(TERMINAL_LOCATION_KEY, locationId);
+    await SecureStore.setItemAsync(TERMINAL_LOCATION_KEY, locationId, SECURE_OPTS);
   } else {
     await SecureStore.deleteItemAsync(TERMINAL_LOCATION_KEY);
   }

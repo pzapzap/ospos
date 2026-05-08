@@ -66,13 +66,18 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 const TEST_MODE_KEY = 'ospos_test_mode';
 
+// Pin Keychain items to this device only — see services/api.ts SECURE_OPTS.
+const SECURE_OPTS: SecureStore.SecureStoreOptions = {
+  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
+};
+
 async function getTestMode(): Promise<string | null> {
   const value = await SecureStore.getItemAsync(TEST_MODE_KEY);
   if (value) return value;
   // One-time migration from AsyncStorage
   const legacy = await AsyncStorage.getItem(TEST_MODE_KEY);
   if (legacy) {
-    await SecureStore.setItemAsync(TEST_MODE_KEY, legacy);
+    await SecureStore.setItemAsync(TEST_MODE_KEY, legacy, SECURE_OPTS);
     await AsyncStorage.removeItem(TEST_MODE_KEY);
     return legacy;
   }
@@ -253,7 +258,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (key === 'testMode') {
-      await SecureStore.setItemAsync(TEST_MODE_KEY, value);
+      await SecureStore.setItemAsync(TEST_MODE_KEY, value, SECURE_OPTS);
       return;
     }
 

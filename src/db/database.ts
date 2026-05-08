@@ -3,6 +3,24 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { runMigrations } from './migrations';
 
 const DB_NAME = 'ospos.db';
+const DB_PATH = `${FileSystem.documentDirectory}SQLite/${DB_NAME}`;
+
+// Exclude the local SQLite DB from iCloud / iTunes backups. iOS auto-backs
+// up Documents/ by default, which would expose merchant order history,
+// totals, and card last4 to anyone with iCloud access. Best-effort — failures
+// are non-fatal (the file may not yet exist on first run).
+async function excludeDbFromBackup(): Promise<void> {
+  try {
+    const info = await FileSystem.getInfoAsync(DB_PATH);
+    if (info.exists) {
+      await (FileSystem as unknown as {
+        setExcludedFromBackupAsync?: (uri: string, excluded: boolean) => Promise<void>;
+      }).setExcludedFromBackupAsync?.(DB_PATH, true);
+    }
+  } catch {
+    // ignore
+  }
+}
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
@@ -62,6 +80,7 @@ export async function initDatabase(): Promise<InitResult> {
         await restoredDb.execAsync('PRAGMA foreign_keys = ON');
         await runMigrations(restoredDb);
         dbInstance = restoredDb;
+        await excludeDbFromBackup();
         return { status: 'recovered' };
       }
 
@@ -74,6 +93,8 @@ export async function initDatabase(): Promise<InitResult> {
     // Run migrations
     await runMigrations(db);
     dbInstance = db;
+    // Exclude DB file from iCloud backup (after migrations so the file exists)
+    await excludeDbFromBackup();
     return { status: 'ok' };
   } catch (error) {
     return {

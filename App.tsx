@@ -401,12 +401,12 @@ function AppContent() {
   }
 
   const handleTTPOiAwarenessDismiss = async () => {
-    await SecureStore.setItemAsync('ttpoi_awareness_shown', 'true');
+    await SecureStore.setItemAsync('ttpoi_awareness_shown', 'true', { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY });
     setShowTTPOiAwareness(false);
   };
 
   const handleTTPOiAwarenessEnable = async () => {
-    await SecureStore.setItemAsync('ttpoi_awareness_shown', 'true');
+    await SecureStore.setItemAsync('ttpoi_awareness_shown', 'true', { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY });
     setShowTTPOiAwareness(false);
     setLaunchTTPOiSetup(true);
   };
