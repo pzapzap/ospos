@@ -1,5 +1,5 @@
 diff --git a/node_modules/expo-notifications/ios/ExpoNotifications/Badge/BadgeModule.swift b/node_modules/expo-notifications/ios/ExpoNotifications/Badge/BadgeModule.swift
-index ad72042..bce4c13 100644
+index ad72042..4209a46 100644
 --- a/node_modules/expo-notifications/ios/ExpoNotifications/Badge/BadgeModule.swift
 +++ b/node_modules/expo-notifications/ios/ExpoNotifications/Badge/BadgeModule.swift
 @@ -9,7 +9,7 @@ public class BadgeModule: Module {
@@ -7,7 +7,7 @@ index ad72042..bce4c13 100644
  
      AsyncFunction("getBadgeCountAsync") { () -> Int in
 -      return RCTSharedApplication()?.applicationIconBadgeNumber ?? 0
-+      return UIApplication.shared?.applicationIconBadgeNumber ?? 0
++      return UIApplication.shared.applicationIconBadgeNumber
      }
      .runOnQueue(.main)
  
@@ -16,7 +16,7 @@ index ad72042..bce4c13 100644
          } else {
            await MainActor.run {
 -            RCTSharedApplication()?.applicationIconBadgeNumber = badgeCount
-+            UIApplication.shared?.applicationIconBadgeNumber = badgeCount
++            UIApplication.shared.applicationIconBadgeNumber = badgeCount
            }
          }
          return true
