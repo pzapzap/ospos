@@ -42,6 +42,7 @@ import TTPOiSetupScreen from './src/screens/TTPOiSetupScreen';
 import ButtonShowcaseScreen from './src/screens/ButtonShowcaseScreen';
 import StatusBanner from './src/components/StatusBanner';
 import TTPOiAwarenessModal from './src/components/TTPOiAwarenessModal';
+import PrivacyOverlay from './src/components/PrivacyOverlay';
 import TTPOiEducation from './src/components/TTPOiEducation';
 import * as SecureStore from 'expo-secure-store';
 import * as Sentry from '@sentry/react-native';
@@ -482,6 +483,7 @@ function App() {
         <ErrorBoundary>
           <AppContent />
         </ErrorBoundary>
+        <PrivacyOverlay />
       </AppProvider>
     </GestureHandlerRootView>
   );
