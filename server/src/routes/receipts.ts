@@ -87,69 +87,136 @@ function formatReceiptHtml(
   items: OrderItemRow[],
   cashTendered?: number
 ): string {
+  // OSPOS v1.1 aesthetic — dark venue mode + cyan + gold accent.
+  // Bitter slab serif for headers/body, Archivo for numbers, JetBrains Mono
+  // for metadata eyebrows. Web fonts via Google CDN with safe fallbacks.
+  const SERIF =
+    "'Bitter', Georgia, 'Times New Roman', serif";
+  const NUM =
+    "'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+  const MONO =
+    "'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace";
+
   const itemRows = items
     .map(
-      (item) =>
-        `<tr>
-          <td style="padding:12px 0;border-bottom:1px solid #27272a;color:#fafafa">${escapeHtml(`${item.quantity}x ${item.item_name}`)}</td>
-          <td style="padding:12px 0;text-align:right;border-bottom:1px solid #27272a;color:#fafafa;font-weight:500">$${formatMoney(item.item_price * item.quantity)}</td>
+      (item) => `
+        <tr>
+          <td style="padding:14px 0;border-bottom:2px solid #27272a;color:#fafafa;font-family:${SERIF};font-size:15px">
+            <span style="color:#a1a1aa;font-family:${NUM};font-weight:600;font-size:13px">${item.quantity}×</span>
+            &nbsp;${escapeHtml(item.item_name)}
+          </td>
+          <td style="padding:14px 0;text-align:right;border-bottom:2px solid #27272a;color:#fafafa;font-family:${NUM};font-weight:600;font-size:15px;white-space:nowrap">
+            $${formatMoney(item.item_price * item.quantity)}
+          </td>
         </tr>`
     )
     .join('');
 
   const safeName = businessName ? escapeHtml(businessName) : 'OSPOS';
+  const orderId = escapeHtml(order.id.substring(0, 8).toUpperCase());
+  const dateStr = escapeHtml(new Date(order.created_at).toLocaleString());
+  const isCash = order.payment_method === 'cash';
+  const paymentLabel = isCash ? 'CASH' : 'CARD';
+  const eyebrow = `RECEIPT · ${paymentLabel} · ORDER ${orderId}`;
 
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>
-    <body style="margin:0;padding:20px;background:#09090b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-      <div style="max-width:420px;margin:0 auto;background:#18181b;border-radius:16px;padding:32px;border:1px solid #27272a">
-        <!-- OSPOS Logo/Brand -->
-        <div style="text-align:center;margin-bottom:24px">
-          <div style="display:inline-block;background:#22D3EE;color:#09090b;font-weight:bold;font-size:14px;padding:6px 16px;border-radius:6px;letter-spacing:1px">OSPOS</div>
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <title>Receipt from ${safeName}</title>
+</head>
+<body style="margin:0;padding:32px 16px;background:#09090b;font-family:${SERIF};-webkit-font-smoothing:antialiased">
+
+  <!-- Outer table — chunky card architecture: 2px border + 6px solid bottom-edge depth in cyan-dark -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;max-width:480px;border-collapse:separate">
+    <tr>
+      <td style="background:#18181b;border:2px solid #06B6D4;border-bottom:6px solid #06B6D4;border-radius:24px;padding:32px">
+
+        <!-- Eyebrow -->
+        <div style="text-align:center;font-family:${MONO};font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#a1a1aa;margin-bottom:10px">
+          ${eyebrow}
         </div>
 
-        <!-- Business Name -->
-        <h1 style="text-align:center;margin:0 0 8px 0;font-size:28px;color:#fafafa;font-weight:600">${safeName}</h1>
-        <p style="text-align:center;color:#a1a1aa;font-size:14px;margin:0 0 24px 0">
-          ${escapeHtml(new Date(order.created_at).toLocaleString())}
-        </p>
-
-        <!-- Items -->
-        <div style="background:#09090b;border-radius:12px;padding:16px;margin-bottom:20px">
-          <table style="width:100%;border-collapse:collapse">
-            ${itemRows}
-          </table>
+        <!-- Business Name (display serif) -->
+        <div style="text-align:center;font-family:${SERIF};font-size:32px;font-weight:700;color:#fafafa;letter-spacing:-0.6px;line-height:1.05;margin-bottom:6px">
+          ${safeName}
         </div>
 
-        <!-- Totals -->
-        <div style="padding:16px 0;border-top:2px solid #22D3EE">
-          <table style="width:100%;border-collapse:collapse">
-            <tr><td style="padding:6px 0;color:#a1a1aa">Subtotal</td><td style="padding:6px 0;text-align:right;color:#fafafa">$${formatMoney(order.subtotal)}</td></tr>
-            ${order.tax_amount > 0 ? `<tr><td style="padding:6px 0;color:#a1a1aa">Tax</td><td style="padding:6px 0;text-align:right;color:#fafafa">$${formatMoney(order.tax_amount)}</td></tr>` : ''}
-            ${order.tip_amount > 0 ? `<tr><td style="padding:6px 0;color:#a1a1aa">Tip</td><td style="padding:6px 0;text-align:right;color:#fafafa">$${formatMoney(order.tip_amount)}</td></tr>` : ''}
-            <tr><td style="padding:12px 0 0 0;font-size:22px;font-weight:bold;color:#fafafa">Total</td><td style="padding:12px 0 0 0;text-align:right;font-size:22px;font-weight:bold;color:#22D3EE">$${formatMoney(order.total)}</td></tr>
-          </table>
+        <!-- Date in mono (eyebrow-style) -->
+        <div style="text-align:center;font-family:${MONO};font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#52525b;margin-bottom:28px">
+          ${dateStr}
         </div>
 
-        <!-- Payment Info -->
-        <div style="margin-top:20px;padding-top:20px;border-top:1px solid #27272a;text-align:center">
-          <p style="margin:0 0 8px 0;color:#a1a1aa;font-size:14px">Paid by ${escapeHtml(order.payment_method === 'card' ? 'Card' : 'Cash')}</p>
-          ${order.payment_method === 'cash' && cashTendered && cashTendered > order.total ? `
-          <p style="margin:8px 0 4px 0;color:#a1a1aa;font-size:14px">Cash Tendered: $${formatMoney(cashTendered)}</p>
-          <p style="margin:0 0 12px 0;color:#22D3EE;font-size:16px;font-weight:600">Change: $${formatMoney(cashTendered - order.total)}</p>
-          ` : ''}
-          <p style="margin:16px 0 0 0;color:#22D3EE;font-size:16px;font-weight:500">Thank you!</p>
+        <!-- Items panel — chunky inset frame -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#09090b;border:2px solid #27272a;border-bottom-width:4px;border-radius:14px;border-collapse:separate">
+          <tr><td style="padding:6px 16px">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              ${itemRows}
+            </table>
+          </td></tr>
+        </table>
+
+        <!-- Subtotal / Tax / Tip -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px">
+          <tr>
+            <td style="padding:6px 0;font-family:${SERIF};font-size:14px;color:#a1a1aa">Subtotal</td>
+            <td style="padding:6px 0;text-align:right;font-family:${NUM};font-weight:500;font-size:14px;color:#fafafa;white-space:nowrap">$${formatMoney(order.subtotal)}</td>
+          </tr>
+          ${order.tax_amount > 0 ? `<tr>
+            <td style="padding:6px 0;font-family:${SERIF};font-size:14px;color:#a1a1aa">Tax</td>
+            <td style="padding:6px 0;text-align:right;font-family:${NUM};font-weight:500;font-size:14px;color:#fafafa;white-space:nowrap">$${formatMoney(order.tax_amount)}</td>
+          </tr>` : ''}
+          ${order.tip_amount > 0 ? `<tr>
+            <td style="padding:6px 0;font-family:${SERIF};font-size:14px;color:#a1a1aa">Tip</td>
+            <td style="padding:6px 0;text-align:right;font-family:${NUM};font-weight:500;font-size:14px;color:#D4A574;white-space:nowrap">$${formatMoney(order.tip_amount)}</td>
+          </tr>` : ''}
+        </table>
+
+        <!-- Total — chunky cyan frame, biggest type element -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;background:#0e2a30;border:2px solid #22D3EE;border-bottom-width:4px;border-radius:14px;border-collapse:separate">
+          <tr>
+            <td style="padding:14px 18px;font-family:${SERIF};font-size:18px;font-weight:600;color:#fafafa">Total</td>
+            <td style="padding:14px 18px;text-align:right;font-family:${NUM};font-weight:700;font-size:32px;color:#22D3EE;letter-spacing:-1px;line-height:1;white-space:nowrap">$${formatMoney(order.total)}</td>
+          </tr>
+        </table>
+
+        ${isCash && cashTendered && cashTendered > order.total ? `
+        <!-- Cash details — gold chunky frame -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;background:#221F1B;border:2px solid #B8895E;border-bottom-width:4px;border-radius:14px;border-collapse:separate">
+          <tr><td style="padding:14px 18px">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="font-family:${MONO};font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#a1a1aa">Tendered</td>
+                <td style="text-align:right;font-family:${NUM};font-weight:500;font-size:14px;color:#fafafa;white-space:nowrap">$${formatMoney(cashTendered)}</td>
+              </tr>
+              <tr>
+                <td style="padding-top:8px;font-family:${MONO};font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#D4A574">Change Due</td>
+                <td style="padding-top:8px;text-align:right;font-family:${NUM};font-weight:700;font-size:22px;color:#D4A574;letter-spacing:-0.5px;white-space:nowrap">$${formatMoney(cashTendered - order.total)}</td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>` : ''}
+
+        <!-- Closing italic glyph signature — same italic Bitter as the in-app glyph layer -->
+        <div style="margin-top:36px;text-align:center">
+          <div style="font-family:${SERIF};font-style:italic;font-weight:500;font-size:28px;color:#22D3EE;line-height:1">Thank you.</div>
         </div>
-      </div>
-      <p style="text-align:center;color:#52525b;font-size:12px;margin-top:20px">Powered by <span style="color:#22D3EE">OSPOS</span></p>
-    </body>
-    </html>
-  `;
+
+      </td>
+    </tr>
+  </table>
+
+  <!-- Footer -->
+  <div style="text-align:center;margin-top:20px;font-family:${MONO};font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#52525b">
+    Powered by <span style="color:#D4A574;font-weight:500">OSPOS</span>
+  </div>
+
+</body>
+</html>`;
 }
 
 interface ClientOrderData {
