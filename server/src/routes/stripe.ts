@@ -14,15 +14,39 @@ import {
 
 const router = Router();
 
-// Redirect endpoints for Stripe Connect onboarding (no auth needed)
-// Stripe redirects here after onboarding → page auto-opens the app via deep link
-function deepLinkPage(deepLink: string, label: string): string {
+// Redirect endpoints for Stripe Connect onboarding (no auth needed).
+// Stripe redirects here after onboarding. Modern Safari blocks programmatic
+// navigation to custom URL schemes without a user gesture, so the page is
+// designed to work without any JS — a big tappable button is the primary UX.
+// The inline <script> remains as a best-effort auto-trigger that may or may
+// not fire depending on the browser's gesture policy.
+function deepLinkPage(deepLink: string, headline: string): string {
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Returning to OSPOS</title>
-<style>body{font-family:-apple-system,system-ui,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#09090B;color:#fff;text-align:center}
-a{display:inline-block;margin-top:20px;padding:14px 28px;background:#22D3EE;color:#000;border-radius:10px;text-decoration:none;font-weight:600}</style>
-</head><body><div><p>Redirecting back to OSPOS...</p><a href="${deepLink}">${label}</a></div>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090B">
+<title>${headline}</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#09090B;color:#FAFAFA;-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px;text-align:center}
+.wrap{max-width:380px;width:100%;display:flex;flex-direction:column;align-items:center;gap:20px}
+.eyebrow{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#22D3EE;font-weight:600;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+.headline{font-size:28px;line-height:1.15;font-weight:700;margin:0;letter-spacing:-0.02em}
+.body{font-size:17px;line-height:1.45;color:#A1A1AA;margin:0}
+.btn{display:block;width:100%;background:#22D3EE;color:#09090B;font-size:18px;font-weight:700;padding:18px 24px;border:2px solid #06B6D4;border-bottom-width:6px;border-radius:14px;text-decoration:none;letter-spacing:-0.01em;margin-top:8px}
+.btn:active{transform:translateY(2px);border-bottom-width:2px}
+.note{font-size:13px;line-height:1.5;color:#71717A;margin:8px 0 0 0}
+</style>
+</head><body>
+<div class="wrap">
+  <div class="eyebrow">OSPOS · STRIPE</div>
+  <h1 class="headline">${headline}</h1>
+  <p class="body">Tap the button below to return to OSPOS and finish setup.</p>
+  <a class="btn" href="${deepLink}">Open OSPOS</a>
+  <p class="note">If nothing happens, switch back to the OSPOS app from your home screen — your progress is saved.</p>
+</div>
 <script>
 setTimeout(function(){window.location.href="${deepLink}";},100);
 setTimeout(function(){var i=document.createElement("iframe");i.style.display="none";i.src="${deepLink}";document.body.appendChild(i);},200);
@@ -30,11 +54,26 @@ setTimeout(function(){var i=document.createElement("iframe");i.style.display="no
 </body></html>`;
 }
 
+// The bridge HTML uses an inline <script> to auto-trigger the ospos:// deep
+// link. The global Helmet CSP (default-src 'self') would block that inline
+// script and strand the user on api.ospos.app. These two routes serve a
+// trusted, server-only HTML literal with a hardcoded deep link — no user
+// input is reflected — so a route-scoped CSP that allows inline script and
+// style is safe.
+function setBridgeCsp(res: Response): void {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'self'"
+  );
+}
+
 router.get('/return', (_req: Request, res: Response) => {
-  res.type('html').send(deepLinkPage('ospos://stripe/return', 'Return to OSPOS'));
+  setBridgeCsp(res);
+  res.type('html').send(deepLinkPage('ospos://stripe/return', "You're done with Stripe"));
 });
 router.get('/refresh', (_req: Request, res: Response) => {
-  res.type('html').send(deepLinkPage('ospos://stripe/refresh', 'Return to OSPOS'));
+  setBridgeCsp(res);
+  res.type('html').send(deepLinkPage('ospos://stripe/refresh', 'Heading back to OSPOS'));
 });
 
 // Build the server's own return/refresh URLs for Stripe account links
