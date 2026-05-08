@@ -141,16 +141,19 @@ App uses `EXPO_PUBLIC_API_MODE=mock` in dev (points to mock-backend on localhost
 - Website pages (terms, privacy, help) uploaded
 - Integer cents end-to-end (no float money anywhere)
 
-### Waiting on external (David)
-- `ospos.app` root DNS A record → 157.180.82.227 (currently wrong IP)
-- SendGrid DNS verification for email receipts
-- Twilio/SendGrid credentials in server .env
+### Waiting on external
+- Twilio A2P registration if SMS receipts wanted at launch (optional —
+  SendGrid replaced by Resend for email; SMS still stubbed)
+
+### Done since last note
+- `ospos.app`, `www.ospos.app`, `api.ospos.app` all resolve to 157.180.82.227
+- Resend live for email receipts (3K/mo free tier, ospos.app DNS verified)
+- TTPOi Publishing Entitlement granted by Apple (Case-ID 18719391)
+- TestFlight builds live with chunky v1.1 design + ProximityReaderDiscovery
 
 ### Not yet started
-- Xcode build (needs Mac)
-- TTPOi demo videos for Apple (needs working build on real iPhone)
-- App Store Connect metadata
-- Apple TTPOi Publishing Entitlement submission (needs videos)
+- App Store Connect metadata (screenshots, description, keywords,
+  privacy questionnaire, App Review notes)
 
 ## Navigation Structure
 
