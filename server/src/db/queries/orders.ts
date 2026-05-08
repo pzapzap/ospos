@@ -26,6 +26,16 @@ export interface SyncedOrderItem {
   quantity: number;
 }
 
+// Thrown when a sync upsert would cross a tenant boundary (e.g. User A
+// trying to upsert an order whose id already exists under User B). The
+// route handler catches this and skips the record.
+export class SyncOwnershipError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SyncOwnershipError';
+  }
+}
+
 export async function upsertSyncedOrder(
   userId: string,
   order: {
@@ -43,6 +53,17 @@ export async function upsertSyncedOrder(
     created_at: string;
   }
 ): Promise<void> {
+  // Tenant isolation: if a row with this id already exists under a
+  // different user, refuse the upsert. Without this check, a client that
+  // exfiltrates another tenant's order UUID could overwrite their record.
+  const existing = await queryOne<{ user_id: string }>(
+    'SELECT user_id FROM synced_orders WHERE id = $1',
+    [order.id]
+  );
+  if (existing && existing.user_id !== userId) {
+    throw new SyncOwnershipError(`Order ${order.id} belongs to another user`);
+  }
+
   await query(
     `INSERT INTO synced_orders (id, user_id, subtotal, tax_rate, tax_amount, tip_amount, total, payment_method, stripe_payment_id, refund_status, refund_amount, status, created_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -68,6 +89,7 @@ export async function upsertSyncedOrder(
 }
 
 export async function upsertSyncedOrderItem(
+  userId: string,
   item: {
     id: string;
     order_id: string;
@@ -77,6 +99,20 @@ export async function upsertSyncedOrderItem(
     quantity: number;
   }
 ): Promise<void> {
+  // Tenant isolation: the parent order MUST belong to this user. If the
+  // order doesn't exist yet (race with the order's own sync record) or
+  // belongs to someone else, refuse the line item.
+  const parent = await queryOne<{ user_id: string }>(
+    'SELECT user_id FROM synced_orders WHERE id = $1',
+    [item.order_id]
+  );
+  if (!parent) {
+    throw new SyncOwnershipError(`Parent order ${item.order_id} not found`);
+  }
+  if (parent.user_id !== userId) {
+    throw new SyncOwnershipError(`Parent order ${item.order_id} belongs to another user`);
+  }
+
   await query(
     `INSERT INTO synced_order_items (id, order_id, item_id, item_name, item_price, quantity)
      VALUES ($1, $2, $3, $4, $5, $6)
