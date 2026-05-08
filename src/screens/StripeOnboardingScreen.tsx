@@ -25,25 +25,32 @@ export default function StripeOnboardingScreen() {
   const navigation = useNavigation<Nav>();
   const { dispatch } = useOnboarding();
   const mountedRef = useRef(true);
-  const [loading, setLoading] = useState(true);
+  // Show heads-up screen first so the merchant knows what to expect
+  // (Stripe-hosted form, possible captcha, automatic return) before the
+  // WebView opens. Fetching the onboarding URL waits for their tap so
+  // the network call happens within a user gesture.
+  const [started, setStarted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [onboardingUrl, setOnboardingUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const result = await startOnboarding();
-        if (mountedRef.current) {
-          dispatch({ type: 'SET_STRIPE_ACCOUNT_ID', payload: result.stripeAccountId });
-          setOnboardingUrl(result.url);
-        }
-      } catch (err) {
-        if (mountedRef.current) setError(err instanceof Error ? err.message : 'Failed to start onboarding');
-      } finally {
-        if (mountedRef.current) setLoading(false);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
+  const beginStripeFlow = useCallback(async () => {
+    setStarted(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await startOnboarding();
+      if (mountedRef.current) {
+        dispatch({ type: 'SET_STRIPE_ACCOUNT_ID', payload: result.stripeAccountId });
+        setOnboardingUrl(result.url);
       }
-    })();
-    return () => { mountedRef.current = false; };
+    } catch (err) {
+      if (mountedRef.current) setError(err instanceof Error ? err.message : 'Failed to start onboarding');
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
   }, [dispatch]);
 
   // Listen for deep links from system browser (Safari)
@@ -144,6 +151,35 @@ export default function StripeOnboardingScreen() {
     }
     return true;
   };
+
+  if (!started) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.headsUpHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.headsUp}>
+          <Text style={styles.eyebrow}>OSPOS · STRIPE</Text>
+          <Text style={styles.headsUpTitle}>Set up payments with Stripe</Text>
+          <Text style={styles.headsUpBody}>
+            We&rsquo;ll take you to Stripe to verify your business and connect a bank account. Usually 3&ndash;5 minutes.
+          </Text>
+          <View style={styles.bullets}>
+            <Text style={styles.bullet}>•  Stripe may ask you to confirm you&rsquo;re human (a quick captcha)</Text>
+            <Text style={styles.bullet}>•  You&rsquo;ll provide business details, ID, and a bank account</Text>
+            <Text style={styles.bullet}>•  When you&rsquo;re done, you&rsquo;ll come back to OSPOS automatically</Text>
+          </View>
+          <Text style={styles.headsUpNote}>Your information goes directly to Stripe. OSPOS never sees it.</Text>
+        </View>
+        <View style={styles.headsUpFooter}>
+          <Button label="Continue to Stripe" variant="primary" size="lg" onPress={beginStripeFlow} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (loading) {
     return (
@@ -250,6 +286,50 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 60,
+  },
+  headsUpHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  headsUp: {
+    flex: 1,
+    paddingHorizontal: spacing.xxl,
+    paddingTop: spacing.xxl,
+  },
+  eyebrow: {
+    ...typography.eyebrow,
+    color: colors.primary,
+    marginBottom: spacing.md,
+  },
+  headsUpTitle: {
+    ...typography.title1,
+    color: colors.text,
+    marginBottom: spacing.lg,
+  },
+  headsUpBody: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xxl,
+  },
+  bullets: {
+    gap: spacing.md,
+    marginBottom: spacing.xxl,
+  },
+  bullet: {
+    ...typography.body,
+    color: colors.text,
+    lineHeight: 24,
+  },
+  headsUpNote: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  headsUpFooter: {
+    paddingHorizontal: spacing.xxl,
+    paddingBottom: spacing.xxl,
   },
   webview: {
     flex: 1,
