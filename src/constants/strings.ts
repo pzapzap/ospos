@@ -49,6 +49,14 @@ export const strings = {
     registerFailed: 'Registration Failed',
     loginFailed: 'Login Failed',
   },
+  stripeOnboarding: {
+    cancelledTitle: 'Setup Cancelled',
+    cancelledBody: 'You can connect Stripe later from Settings.',
+    expiredTitle: 'Session Expired',
+    expiredBody: "Let's try that again.",
+    failedTitle: 'Setup Error',
+    failedBody: 'Something went wrong on Stripe’s side. Please try again.',
+  },
   menuBuilder: {
     title: 'Your Menu',
     addItem: '+ Add Item',

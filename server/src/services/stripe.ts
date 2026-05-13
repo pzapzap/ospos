@@ -2,6 +2,8 @@ import Stripe from 'stripe';
 import fs from 'fs';
 import { config } from '../config';
 
+const APPLE_PRIVATE_RELAY_SUFFIX = '@private.appleid.com';
+
 // Pin Stripe API version explicitly per design doc
 const stripe = new Stripe(config.stripe.secretKey, {
   apiVersion: '2024-12-18.acacia' as Stripe.LatestApiVersion,
@@ -126,6 +128,86 @@ export async function getAccountRequirements(accountId: string): Promise<{
     const stripeErr = error as Stripe.errors.StripeError;
     console.error('[STRIPE] Account requirements error:', stripeErr.code, stripeErr.message);
     throw error;
+  }
+}
+
+// ─── Connect OAuth (Standard accounts) ───────────────────────────────────────
+//
+// Standard accounts authorize the platform via OAuth instead of Express's
+// account-link onboarding form. The merchant signs in to their existing
+// stripe.com account (or creates a new one) and grants OSPOS read_write
+// access. The wire format of downstream API calls (PaymentIntent, refund,
+// Terminal connection token, dispute) is identical for Standard and Express
+// once we hold a stripe_user_id (`acct_xxx`) — both flow through the
+// `Stripe-Account` header.
+//
+// Stripe nested params (stripe_user[email]) must NOT be percent-encoded in
+// the brackets — using URLSearchParams here would over-encode and Stripe's
+// parser would not unwrap the prefill. Build the URL manually.
+
+export function buildOAuthAuthorizeUrl(state: string, prefillEmail?: string): string {
+  const params = [
+    'response_type=code',
+    `client_id=${encodeURIComponent(config.connect.clientId)}`,
+    'scope=read_write',
+    `redirect_uri=${encodeURIComponent(config.connect.redirectUri)}`,
+    `state=${encodeURIComponent(state)}`,
+    'suggested_capabilities[]=card_payments',
+    'suggested_capabilities[]=transfers',
+    'stripe_user[country]=US',
+  ];
+  // Private-relay addresses won't reach Stripe's verification — let Stripe
+  // collect a real email instead of pre-filling a useless forwarder.
+  if (prefillEmail && !prefillEmail.endsWith(APPLE_PRIVATE_RELAY_SUFFIX)) {
+    params.push(`stripe_user[email]=${encodeURIComponent(prefillEmail)}`);
+  }
+  return `https://connect.stripe.com/oauth/authorize?${params.join('&')}`;
+}
+
+export interface OAuthTokenResponse {
+  stripe_user_id: string;
+  livemode: boolean;
+  scope: string;
+  access_token?: string;
+  refresh_token?: string;
+}
+
+export async function exchangeOAuthCode(code: string): Promise<OAuthTokenResponse> {
+  try {
+    const resp = await stripe.oauth.token({
+      grant_type: 'authorization_code',
+      code,
+    });
+    if (!resp.stripe_user_id) {
+      throw new Error('OAuth token response missing stripe_user_id');
+    }
+    return {
+      stripe_user_id: resp.stripe_user_id,
+      livemode: resp.livemode ?? false,
+      scope: resp.scope ?? 'read_write',
+      access_token: resp.access_token,
+      refresh_token: resp.refresh_token,
+    };
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[OAUTH] Exchange code error:', stripeErr.code, stripeErr.message);
+    throw error;
+  }
+}
+
+// Revokes the platform's access to a connected account. Used by
+// /stripe/disconnect (user-initiated) and as best-effort cleanup. Stripe
+// errors here are not fatal — if Stripe says the grant is already gone we
+// still clear our local pointer.
+export async function revokeOAuthAccess(accountId: string): Promise<void> {
+  try {
+    await stripe.oauth.deauthorize({
+      client_id: config.connect.clientId,
+      stripe_user_id: accountId,
+    });
+  } catch (error) {
+    const stripeErr = error as Stripe.errors.StripeError;
+    console.error('[OAUTH] Deauthorize error (non-fatal):', stripeErr.code, stripeErr.message);
   }
 }
 

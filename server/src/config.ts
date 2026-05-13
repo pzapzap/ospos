@@ -34,6 +34,19 @@ export const config = {
     apiVersion: '2024-12-18.acacia' as const,
   },
 
+  connect: (() => {
+    const mode = optionalEnv('STRIPE_CONNECT_MODE', 'express');
+    if (mode !== 'express' && mode !== 'standard') {
+      throw new Error(`STRIPE_CONNECT_MODE must be 'express' or 'standard' (got: ${mode})`);
+    }
+    const clientId = optionalEnv('STRIPE_CONNECT_CLIENT_ID', '');
+    const redirectUri = optionalEnv('STRIPE_CONNECT_REDIRECT_URI', '');
+    if (mode === 'standard' && (!clientId || !redirectUri)) {
+      throw new Error('STRIPE_CONNECT_MODE=standard requires STRIPE_CONNECT_CLIENT_ID and STRIPE_CONNECT_REDIRECT_URI');
+    }
+    return { mode: mode as 'express' | 'standard', clientId, redirectUri };
+  })(),
+
   // Stubbed for Phase 2, implement Phase 3
   twilio: {
     accountSid: optionalEnv('TWILIO_ACCOUNT_SID', ''),

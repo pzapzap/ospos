@@ -227,8 +227,23 @@ export async function deleteAccount(): Promise<{ success: boolean }> {
 
 // ─── Stripe Connect ──────────────────────────────────────────────────────────
 
-export async function startOnboarding(): Promise<{ url: string; stripeAccountId: string; terminalLocationId?: string }> {
-  const result = await request<{ url: string; stripeAccountId: string; terminalLocationId?: string }>({
+// Both Express (legacy) and Standard (OAuth) modes return the same shape.
+// Under Standard, `url` is the OAuth authorize URL and `stripeAccountId` is
+// null until the merchant completes the OAuth callback. Under Express, the
+// account is pre-created server-side so `stripeAccountId` arrives populated.
+// `alreadyConnected: true` is the short-circuit when the merchant returns
+// to a session that already has a working connection — the app skips the
+// WebView entirely.
+export interface OnboardingStart {
+  url: string | null;
+  stripeAccountId: string | null;
+  terminalLocationId?: string | null;
+  mode?: 'express' | 'standard';
+  alreadyConnected?: boolean;
+}
+
+export async function startOnboarding(): Promise<OnboardingStart> {
+  const result = await request<OnboardingStart>({
     method: 'POST',
     path: '/stripe/onboarding',
   });
@@ -242,6 +257,13 @@ export async function refreshOnboarding(): Promise<{ url: string }> {
   return request({
     method: 'POST',
     path: '/stripe/onboarding/refresh',
+  });
+}
+
+export async function disconnectStripe(): Promise<{ success: boolean }> {
+  return request({
+    method: 'POST',
+    path: '/stripe/disconnect',
   });
 }
 

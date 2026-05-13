@@ -93,3 +93,10 @@ export async function updateUserTerminalLocation(
     [terminalLocationId, userId]
   );
 }
+
+export async function clearUserStripeAccount(userId: string): Promise<void> {
+  await query(
+    'UPDATE users SET stripe_account_id = NULL, terminal_location_id = NULL WHERE id = $1',
+    [userId]
+  );
+}

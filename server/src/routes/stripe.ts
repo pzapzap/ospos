@@ -1,6 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
-import { findUserById, updateUserStripeAccount, updateUserTerminalLocation } from '../db/queries/users';
+import {
+  findUserById,
+  updateUserStripeAccount,
+  updateUserTerminalLocation,
+  clearUserStripeAccount,
+} from '../db/queries/users';
+import { createOAuthState, consumeOAuthState } from '../db/queries/stripeOAuthState';
 import {
   createConnectedAccount,
   createAccountLink,
@@ -10,7 +16,11 @@ import {
   createRemediationLink,
   createConnectionToken,
   createTerminalLocation,
+  buildOAuthAuthorizeUrl,
+  exchangeOAuthCode,
+  revokeOAuthAccess,
 } from '../services/stripe';
+import { config } from '../config';
 
 const router = Router();
 
@@ -76,6 +86,70 @@ router.get('/refresh', (_req: Request, res: Response) => {
   res.type('html').send(deepLinkPage('ospos://stripe/refresh', 'Heading back to OSPOS'));
 });
 
+// GET /stripe/oauth/callback — Stripe redirects the merchant's browser here
+// after the OAuth consent screen. No auth middleware: this hop carries no
+// JWT (Stripe is the caller). CSRF/replay protection comes from the `state`
+// parameter we minted at /oauth/start and consume single-use here.
+router.get('/oauth/callback', async (req: Request, res: Response): Promise<void> => {
+  setBridgeCsp(res);
+
+  const renderError = (code: string, headline = 'Almost there'): void => {
+    res
+      .type('html')
+      .send(deepLinkPage(`ospos://stripe/return?error=${encodeURIComponent(code)}`, headline));
+  };
+
+  const state = typeof req.query.state === 'string' ? req.query.state : null;
+  if (!state) {
+    renderError('oauth_state_missing');
+    return;
+  }
+
+  const stored = await consumeOAuthState(state);
+  if (!stored) {
+    renderError('oauth_state_invalid');
+    return;
+  }
+
+  // Stripe surfaces user-cancellation as ?error=access_denied
+  if (typeof req.query.error === 'string') {
+    renderError(req.query.error === 'access_denied' ? 'access_denied' : 'oauth_denied');
+    return;
+  }
+
+  const code = typeof req.query.code === 'string' ? req.query.code : null;
+  if (!code) {
+    renderError('oauth_no_code');
+    return;
+  }
+
+  try {
+    const tokenResp = await exchangeOAuthCode(code);
+    await updateUserStripeAccount(stored.user_id, tokenResp.stripe_user_id);
+
+    // Best-effort: a Terminal Location is needed for TTPOi reader discovery
+    // but not for the basic charge flow. If creation fails (e.g., Standard
+    // accounts restrict platform-initiated location creation — see R1 in
+    // the migration plan), log and continue; the merchant can still onboard.
+    try {
+      const location = await createTerminalLocation(
+        tokenResp.stripe_user_id,
+        `OSPOS - ${tokenResp.stripe_user_id}`
+      );
+      await updateUserTerminalLocation(stored.user_id, location.id);
+    } catch (locErr) {
+      console.error('[OAUTH] Terminal location create failed (non-fatal):', locErr);
+    }
+
+    res
+      .type('html')
+      .send(deepLinkPage('ospos://stripe/return', "You're connected"));
+  } catch (err) {
+    console.error('[OAUTH] Code exchange failed:', err);
+    renderError('oauth_exchange_failed');
+  }
+});
+
 // Build the server's own return/refresh URLs for Stripe account links
 function buildServerUrl(req: Request, path: string): string {
   const proto = req.get('x-forwarded-proto') ?? req.protocol;
@@ -86,7 +160,76 @@ function buildServerUrl(req: Request, path: string): string {
 // All other Stripe routes require auth
 router.use(authMiddleware);
 
+// POST /stripe/oauth/start — authenticated. Mints a single-use state token
+// bound to the caller, returns Stripe's OAuth authorize URL. The app loads
+// this URL in the onboarding WebView. Only valid when mode=standard.
+router.post('/oauth/start', async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (config.connect.mode !== 'standard') {
+      res.status(400).json({ error: 'OAuth not enabled in this deployment' });
+      return;
+    }
+    const user = await findUserById(req.user!.userId);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Short-circuit if the merchant already has a working connection. The
+    // app uses this to skip the WebView entirely on subsequent launches.
+    if (user.stripe_account_id) {
+      res.json({
+        alreadyConnected: true,
+        url: null,
+        stripeAccountId: user.stripe_account_id,
+        terminalLocationId: user.terminal_location_id,
+        mode: 'standard',
+      });
+      return;
+    }
+
+    const state = await createOAuthState(user.id);
+    const url = buildOAuthAuthorizeUrl(state, user.email);
+
+    res.json({
+      alreadyConnected: false,
+      url,
+      stripeAccountId: null,
+      terminalLocationId: null,
+      mode: 'standard',
+    });
+  } catch (error) {
+    console.error('[OAUTH] Start error:', error);
+    res.status(500).json({ error: 'Failed to start OAuth flow' });
+  }
+});
+
+// POST /stripe/disconnect — wipes the local Stripe linkage and best-effort
+// revokes our platform's OAuth grant on Stripe's side. Used by the future
+// "Reset Stripe Connection" Settings escape and by support workflows.
+router.post('/disconnect', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await findUserById(req.user!.userId);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    if (user.stripe_account_id && config.connect.mode === 'standard') {
+      await revokeOAuthAccess(user.stripe_account_id);
+    }
+    await clearUserStripeAccount(user.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[OAUTH] Disconnect error:', error);
+    res.status(500).json({ error: 'Failed to disconnect Stripe' });
+  }
+});
+
 // POST /stripe/onboarding
+// Feature-flagged: under `mode=standard` this returns an OAuth authorize
+// URL (same response shape as before — `url` field). Under `mode=express`
+// it preserves the legacy account-link flow. The app code reads `url` in
+// both cases and is mode-agnostic.
 router.post('/onboarding', async (req: Request, res: Response): Promise<void> => {
   try {
     const user = await findUserById(req.user!.userId);
@@ -95,6 +238,30 @@ router.post('/onboarding', async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    if (config.connect.mode === 'standard') {
+      if (user.stripe_account_id) {
+        res.json({
+          alreadyConnected: true,
+          url: null,
+          stripeAccountId: user.stripe_account_id,
+          terminalLocationId: user.terminal_location_id,
+          mode: 'standard',
+        });
+        return;
+      }
+      const state = await createOAuthState(user.id);
+      const url = buildOAuthAuthorizeUrl(state, user.email);
+      res.json({
+        alreadyConnected: false,
+        url,
+        stripeAccountId: null,
+        terminalLocationId: null,
+        mode: 'standard',
+      });
+      return;
+    }
+
+    // Express mode (legacy)
     let stripeAccountId = user.stripe_account_id;
     let terminalLocationId = user.terminal_location_id;
 
@@ -124,6 +291,7 @@ router.post('/onboarding', async (req: Request, res: Response): Promise<void> =>
       url: accountLink.url,
       stripeAccountId,
       terminalLocationId,
+      mode: 'express',
     });
   } catch (error) {
     console.error('[STRIPE] Onboarding error:', error);
@@ -137,20 +305,33 @@ router.post('/onboarding', async (req: Request, res: Response): Promise<void> =>
 });
 
 // POST /stripe/onboarding/refresh
+// Under standard mode, OAuth has no "refresh" — we simply mint a fresh
+// authorize URL with a new state. Under express mode, regenerate the
+// account_link as before.
 router.post('/onboarding/refresh', async (req: Request, res: Response): Promise<void> => {
   try {
     const user = await findUserById(req.user!.userId);
+
+    if (config.connect.mode === 'standard') {
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+      const state = await createOAuthState(user.id);
+      const url = buildOAuthAuthorizeUrl(state, user.email);
+      res.json({ url });
+      return;
+    }
+
     if (!user?.stripe_account_id) {
       res.status(400).json({ error: 'No Stripe account found' });
       return;
     }
-
     const accountLink = await createAccountLink(
       user.stripe_account_id,
       buildServerUrl(req, '/refresh'),
       buildServerUrl(req, '/return')
     );
-
     res.json({ url: accountLink.url });
   } catch (error) {
     console.error('[STRIPE] Onboarding refresh error:', error);
@@ -207,25 +388,31 @@ router.get('/account-requirements', async (req: Request, res: Response): Promise
 
     const requirements = await getAccountRequirements(user.stripe_account_id);
 
-    // If there are outstanding requirements, include a remediation link
+    // Standard accounts: the merchant owns their stripe.com dashboard, which
+    // is where they resolve requirements. Account-link based remediation is
+    // an Express-specific concept and would 400 against a Standard account.
+    // Express accounts: keep the historical account_update / account_onboarding
+    // remediation link generation.
     let remediationUrl: string | null = null;
     if (requirements.has_requirements) {
-      try {
-        // Try account_update first (for accounts that finished initial onboarding)
-        const link = await createRemediationLink(
-          user.stripe_account_id,
-          buildServerUrl(req, '/refresh'),
-          buildServerUrl(req, '/return')
-        );
-        remediationUrl = link.url;
-      } catch {
-        // Fall back to account_onboarding (for accounts still in initial setup)
-        const link = await createAccountLink(
-          user.stripe_account_id,
-          buildServerUrl(req, '/refresh'),
-          buildServerUrl(req, '/return')
-        );
-        remediationUrl = link.url;
+      if (config.connect.mode === 'standard') {
+        remediationUrl = 'https://dashboard.stripe.com/';
+      } else {
+        try {
+          const link = await createRemediationLink(
+            user.stripe_account_id,
+            buildServerUrl(req, '/refresh'),
+            buildServerUrl(req, '/return')
+          );
+          remediationUrl = link.url;
+        } catch {
+          const link = await createAccountLink(
+            user.stripe_account_id,
+            buildServerUrl(req, '/refresh'),
+            buildServerUrl(req, '/return')
+          );
+          remediationUrl = link.url;
+        }
       }
     }
 

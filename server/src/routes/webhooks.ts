@@ -6,7 +6,7 @@ import {
   updateDisputeStatus,
   getDisputeByStripeId,
 } from '../db/queries/disputes';
-import { findUserByStripeAccount } from '../db/queries/users';
+import { findUserByStripeAccount, clearUserStripeAccount } from '../db/queries/users';
 import { sendPushNotification } from '../services/notifications';
 
 const router = Router();
@@ -96,6 +96,24 @@ router.post('/stripe', async (req: Request, res: Response): Promise<void> => {
         const dispute = event.data.object as Stripe.Dispute;
         console.log(`[WEBHOOK] Dispute closed: ${dispute.id}, status: ${dispute.status}`);
         await updateDisputeStatus(dispute.id, dispute.status);
+        break;
+      }
+
+      case 'account.application.deauthorized': {
+        // Fires when a Standard merchant disconnects OSPOS from their Stripe
+        // dashboard (revoking our OAuth grant). Null out the local pointer
+        // so the next /onboarding call re-enters the OAuth flow rather than
+        // calling the platform API against an unauthorized connected account.
+        const connectedAccountId = (event as Stripe.Event & { account?: string }).account;
+        if (connectedAccountId) {
+          const user = await findUserByStripeAccount(connectedAccountId);
+          if (user) {
+            await clearUserStripeAccount(user.id);
+            console.log(`[WEBHOOK] Deauthorized: cleared stripe_account_id for user ${user.id}`);
+          } else {
+            console.log(`[WEBHOOK] Deauthorized for unknown account ${connectedAccountId}; ignored`);
+          }
+        }
         break;
       }
 

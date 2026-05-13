@@ -29,7 +29,7 @@ import { strings } from './src/constants/strings';
 
 import { OnboardingProvider } from './src/state/OnboardingContext';
 import OnboardingNavigator from './src/navigation/OnboardingNavigator';
-import { setSetting } from './src/db/queries';
+import { setSetting, getAllSettings } from './src/db/queries';
 import MenuBuilderScreen from './src/screens/MenuBuilderScreen';
 import OrderScreen from './src/screens/OrderScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
@@ -390,7 +390,18 @@ function AppContent() {
       <OnboardingProvider onComplete={async (options) => {
         await reloadSettings();
         setInitialTab(options?.initialTab);
-        setShowTTPOiAwareness(true);
+        // Only paid-tier merchants need the TTPOi awareness modal — cash-only
+        // merchants never use Tap to Pay and shouldn't see Apple's reader
+        // discovery sheet. Read tier directly from DB since settings state
+        // hasn't propagated through the reducer yet.
+        try {
+          const dbSettings = await getAllSettings();
+          const tier = dbSettings['tier'] === 'paid' ? 'paid' : 'free';
+          const ttpOiDone = dbSettings['ttpoi_setup_complete'] === 'true';
+          if (tier === 'paid' && !ttpOiDone) {
+            setShowTTPOiAwareness(true);
+          }
+        } catch {}
         setOnboardingComplete(true);
       }}>
         <NavigationContainer>

@@ -13,6 +13,7 @@ import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
+import { strings } from '../constants/strings';
 import { startOnboarding, getAccountStatus, getAccountDetails } from '../services/api';
 import { useOnboarding } from '../state/OnboardingContext';
 import { lookupTaxRateByState } from '../utils/taxLookup';
@@ -42,15 +43,25 @@ export default function StripeOnboardingScreen() {
     setError(null);
     try {
       const result = await startOnboarding();
-      if (mountedRef.current) {
-        dispatch({ type: 'SET_STRIPE_ACCOUNT_ID', payload: result.stripeAccountId });
-        setOnboardingUrl(result.url);
+      if (!mountedRef.current) return;
+
+      // Standard mode short-circuit: the merchant returned with an existing
+      // connection. Skip the WebView and go straight to post-Stripe prefill.
+      if (result.alreadyConnected) {
+        await prefillAndNavigate();
+        return;
       }
+
+      if (result.stripeAccountId) {
+        dispatch({ type: 'SET_STRIPE_ACCOUNT_ID', payload: result.stripeAccountId });
+      }
+      setOnboardingUrl(result.url);
     } catch (err) {
       if (mountedRef.current) setError(err instanceof Error ? err.message : 'Failed to start onboarding');
     } finally {
       if (mountedRef.current) setLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
 
   // Listen for deep links from system browser (Safari)
@@ -59,15 +70,17 @@ export default function StripeOnboardingScreen() {
   // prevents the handler from firing on lookalikes (ospos://stripe/returnXYZ,
   // ospos://stripe/return.evil, etc.).
   type DeepLinkAction = 'return' | 'refresh' | null;
-  const parseDeepLink = (url: string): DeepLinkAction => {
+  type ParsedDeepLink = { action: DeepLinkAction; errorCode: string | null };
+  const parseDeepLink = (url: string): ParsedDeepLink => {
     try {
       const u = new URL(url);
-      if (u.protocol !== 'ospos:' || u.host !== 'stripe') return null;
-      if (u.pathname === '/return') return 'return';
-      if (u.pathname === '/refresh') return 'refresh';
-      return null;
+      if (u.protocol !== 'ospos:' || u.host !== 'stripe') return { action: null, errorCode: null };
+      const errorCode = u.searchParams.get('error');
+      if (u.pathname === '/return') return { action: 'return', errorCode };
+      if (u.pathname === '/refresh') return { action: 'refresh', errorCode };
+      return { action: null, errorCode: null };
     } catch {
-      return null;
+      return { action: null, errorCode: null };
     }
   };
 
@@ -75,8 +88,8 @@ export default function StripeOnboardingScreen() {
   // which redirects to ospos://stripe/return, which opens the app.
   useEffect(() => {
     const sub = Linking.addEventListener('url', ({ url }) => {
-      const action = parseDeepLink(url);
-      if (action) handleDeepLink(action);
+      const parsed = parseDeepLink(url);
+      if (parsed.action) handleDeepLink(parsed.action, parsed.errorCode);
     });
     return () => sub.remove();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -103,8 +116,28 @@ export default function StripeOnboardingScreen() {
     navigation.navigate('BusinessName');
   };
 
-  const handleDeepLink = async (action: DeepLinkAction) => {
+  const handleDeepLink = async (action: DeepLinkAction, errorCode?: string | null) => {
     if (action === 'return') {
+      // OAuth errors arrive on the return path with ?error=... — handle
+      // them before falling through to the success-path account-status check.
+      if (errorCode) {
+        const { stripeOnboarding } = strings;
+        if (errorCode === 'access_denied' || errorCode === 'oauth_denied') {
+          Alert.alert(stripeOnboarding.cancelledTitle, stripeOnboarding.cancelledBody, [
+            { text: 'OK', onPress: () => navigation.goBack() },
+          ]);
+        } else if (errorCode === 'oauth_state_invalid' || errorCode === 'oauth_state_missing') {
+          Alert.alert(stripeOnboarding.expiredTitle, stripeOnboarding.expiredBody, [
+            { text: 'Try again', onPress: () => { setStarted(false); setOnboardingUrl(null); } },
+          ]);
+        } else {
+          Alert.alert(stripeOnboarding.failedTitle, stripeOnboarding.failedBody, [
+            { text: 'Try again', onPress: () => { setStarted(false); setOnboardingUrl(null); } },
+          ]);
+        }
+        return;
+      }
+
       try {
         const status = await getAccountStatus();
         if (status.charges_enabled) {
@@ -135,14 +168,21 @@ export default function StripeOnboardingScreen() {
 
   // Intercept navigation BEFORE the WebView tries to load custom schemes
   const handleShouldStartLoad = (event: { url: string }): boolean => {
-    const action = parseDeepLink(event.url);
-    if (action) {
-      handleDeepLink(action);
+    const parsed = parseDeepLink(event.url);
+    if (parsed.action) {
+      handleDeepLink(parsed.action, parsed.errorCode);
       return false;
     }
-    // Catch the server redirect URLs too
+    // Catch the server redirect URLs too — the OAuth callback HTML bridges
+    // to ospos://stripe/return?error=... so its query string must come
+    // through for error propagation.
     if (event.url.includes('/stripe/return')) {
-      handleDeepLink('return');
+      try {
+        const u = new URL(event.url);
+        handleDeepLink('return', u.searchParams.get('error'));
+      } catch {
+        handleDeepLink('return');
+      }
       return false;
     }
     if (event.url.includes('/stripe/refresh')) {
@@ -219,15 +259,25 @@ export default function StripeOnboardingScreen() {
       <WebView
         source={{ uri: onboardingUrl }}
         // Tightened from `https://*` to Stripe-controlled domains. The
-        // initial URL is server-issued by /stripe/onboarding (always Stripe);
-        // these patterns cover the redirect chain Stripe walks through during
-        // KYC + identity verification (connect, hooks, js, verify, files).
+        // initial URL is server-issued by /stripe/onboarding (Stripe-hosted
+        // Express form OR connect.stripe.com OAuth screen depending on the
+        // server's STRIPE_CONNECT_MODE). These patterns cover the redirect
+        // chain Stripe walks through for KYC + identity verification.
+        // `connect.stripe.com` is listed explicitly because some webview
+        // versions don't expand `*.stripe.com` to multi-level subdomains.
         originWhitelist={[
           'https://*.stripe.com',
           'https://stripe.com',
+          'https://connect.stripe.com',
           'https://*.stripe.network',
           'ospos://*',
         ]}
+        // Stripe's OAuth page is JS-rendered and requires cookies + storage.
+        // Explicit flags here defeat any platform-version default drift.
+        javaScriptEnabled
+        domStorageEnabled
+        sharedCookiesEnabled
+        thirdPartyCookiesEnabled
         onShouldStartLoadWithRequest={handleShouldStartLoad}
         onMessage={(event) => {
           const msg = event.nativeEvent.data;

@@ -19,7 +19,7 @@ import Button from './Button';
 import Sticker from './Sticker';
 import { STICKERS_BY_CATEGORY } from '../assets/stickers';
 import { lightTap } from '../utils/haptics';
-import { validatePrice, MAX_ITEM_NAME_LENGTH, MAX_CATEGORY_LENGTH } from '../utils/validation';
+import { MAX_ITEM_NAME_LENGTH, MAX_CATEGORY_LENGTH } from '../utils/validation';
 import type { Item } from '../db/queries';
 
 interface AddItemModalProps {
@@ -38,28 +38,45 @@ export default function AddItemModal({
   editItem,
 }: AddItemModalProps) {
   const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
+  // Calculator-style entry: store cents directly, render formatted. Each digit
+  // typed shifts the buffer left (00 → 01 → 15 → 1.50). 8-digit cap = $999,999.99.
+  const [cents, setCents] = useState(0);
   const [category, setCategory] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [stickerId, setStickerId] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ name?: string; price?: string }>({});
 
+  const priceDisplay = (cents / 100).toFixed(2);
+
   useEffect(() => {
     if (editItem) {
       setName(editItem.name);
-      setPrice((editItem.price / 100).toFixed(2));
+      setCents(editItem.price);
       setCategory(editItem.category ?? '');
       setImageUri(editItem.image_uri);
       setStickerId(editItem.sticker_id);
     } else {
       setName('');
-      setPrice('');
+      setCents(0);
       setCategory('');
       setImageUri(null);
       setStickerId(null);
     }
     setErrors({});
   }, [editItem, visible]);
+
+  const handlePriceChange = (text: string) => {
+    if (errors.price) setErrors((prev) => ({ ...prev, price: undefined }));
+    if (text.length > priceDisplay.length) {
+      const last = text[text.length - 1];
+      if (/\d/.test(last)) {
+        const next = cents * 10 + parseInt(last, 10);
+        if (next <= 99999999) setCents(next);
+      }
+    } else if (text.length < priceDisplay.length) {
+      setCents(Math.floor(cents / 10));
+    }
+  };
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -87,9 +104,8 @@ export default function AddItemModal({
       newErrors.name = strings.menuBuilder.nameRequired;
     }
 
-    const priceResult = validatePrice(price);
-    if (!priceResult.valid) {
-      newErrors.price = priceResult.error ?? strings.menuBuilder.invalidPrice;
+    if (cents <= 0) {
+      newErrors.price = strings.menuBuilder.invalidPrice;
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -100,7 +116,7 @@ export default function AddItemModal({
     await lightTap();
     onSave({
       name: name.trim(),
-      price: priceResult.parsed,
+      price: cents,
       category: category.trim() || undefined,
       imageUri: imageUri ?? undefined,
       stickerId: stickerId ?? undefined,
@@ -144,14 +160,12 @@ export default function AddItemModal({
               <TextInput
                 testID="input-item-price"
                 style={[styles.input, errors.price ? styles.inputError : null]}
-                value={price}
-                onChangeText={(text) => {
-                  setPrice(text);
-                  if (errors.price) setErrors((prev) => ({ ...prev, price: undefined }));
-                }}
+                value={priceDisplay}
+                onChangeText={handlePriceChange}
                 placeholder="0.00"
                 placeholderTextColor={colors.textMuted}
-                keyboardType="decimal-pad"
+                keyboardType="number-pad"
+                selection={{ start: priceDisplay.length, end: priceDisplay.length }}
               />
               {errors.price ? (
                 <Text style={styles.errorText}>{errors.price}</Text>
