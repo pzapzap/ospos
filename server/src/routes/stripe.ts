@@ -340,6 +340,11 @@ router.post('/onboarding/refresh', async (req: Request, res: Response): Promise<
 });
 
 // GET /stripe/account-status
+// Also returns terminal_location_id so the app can keep its SecureStore cache
+// in sync with the server-of-record. Callers (StripeOnboardingScreen post-OAuth
+// return) treat this as cache invalidation: a stale local value from a prior
+// install — e.g., from the Express era — gets overwritten with the current
+// connected-account's location.
 router.get('/account-status', async (req: Request, res: Response): Promise<void> => {
   try {
     const user = await findUserById(req.user!.userId);
@@ -348,12 +353,13 @@ router.get('/account-status', async (req: Request, res: Response): Promise<void>
         charges_enabled: false,
         details_submitted: false,
         payouts_enabled: false,
+        terminal_location_id: null,
       });
       return;
     }
 
     const status = await getAccountStatus(user.stripe_account_id);
-    res.json(status);
+    res.json({ ...status, terminal_location_id: user.terminal_location_id });
   } catch (error) {
     console.error('[STRIPE] Account status error:', error);
     res.status(500).json({ error: 'Failed to get account status' });

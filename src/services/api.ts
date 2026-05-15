@@ -271,11 +271,26 @@ export async function getAccountStatus(): Promise<{
   charges_enabled: boolean;
   details_submitted: boolean;
   payouts_enabled: boolean;
+  terminal_location_id?: string | null;
 }> {
-  return request({
+  const result = await request<{
+    charges_enabled: boolean;
+    details_submitted: boolean;
+    payouts_enabled: boolean;
+    terminal_location_id?: string | null;
+  }>({
     method: 'GET',
     path: '/stripe/account-status',
   });
+  // Cache invalidation: the server is the source of truth for the location.
+  // A stale SecureStore value (e.g., a tml_xxx from a prior Express install
+  // that's since been wiped) gets overwritten here so TTPOi setup and reader
+  // discovery use the right ID. Null is also synced — a deauthorized account
+  // should clear the local pointer.
+  if (result.terminal_location_id !== undefined) {
+    await setTerminalLocationId(result.terminal_location_id);
+  }
+  return result;
 }
 
 export interface AccountDetails {
