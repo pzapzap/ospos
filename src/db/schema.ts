@@ -121,6 +121,100 @@ export const MIGRATION_V7 = `
 ALTER TABLE items ADD COLUMN sticker_id TEXT;
 `;
 
+// Migration v8: Add modifiers table for item customization (v1.1 — QSR unlock).
+// Each modifier attaches to one item, has a name + optional price delta in cents
+// (positive=extra, 0=free swap, negative=discount), an optional group name for
+// "Extras"/"Swaps"/"Size" labeling, and a sticker for the photo grid UI.
+// Soft-deleted via deleted_at so old order_items can still resolve names.
+export const MIGRATION_V8 = `
+CREATE TABLE IF NOT EXISTS modifiers (
+  id TEXT PRIMARY KEY,
+  item_id TEXT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  price_cents INTEGER NOT NULL DEFAULT 0,
+  group_name TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  sticker_id TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  deleted_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_modifiers_item ON modifiers(item_id, deleted_at, sort_order);
+`;
+
+// Migration v9: Add modifiers_json to order_items for denormalized snapshot
+// of selected modifiers at sale time. JSON shape:
+//   [{"name":"Avocado","price_cents":200},{"name":"No Onions","price_cents":0}]
+// Null/empty when no modifiers selected (the common case for non-customized items).
+export const MIGRATION_V9 = `
+ALTER TABLE order_items ADD COLUMN modifiers_json TEXT;
+`;
+
+// Migration v10: Promote modifier groups from free-text label to a real table
+// with selection rules. Unlocks coffee-shop / QSR customize flows where a
+// merchant needs "Size — required, pick 1" or "Extras — optional, pick up to 3".
+//
+// Schema:
+//   modifier_groups: select_type ('single'|'multi'), is_required, max_select
+//   modifiers gains: group_id (FK), is_default (boolean; auto-selects in
+//     customize sheet)
+//
+// Backfill (runs in afterUp) converts every distinct (item_id, group_name) into
+// a multi-select non-required group, attaches existing modifiers to it, and
+// buckets null-group modifiers into an auto-created "Options" group per item.
+// modifiers.group_name stays as a one-release safety net; remove in v11.
+// Migration v11: Per-item is_taxable flag. Merchants selling both prepared
+// goods (taxable) and packaged retail (often non-taxable in their jurisdiction)
+// need to mark individual items. Default 1 (taxable) preserves prior behavior
+// — every existing item was taxed under the global tax rate. The order_items
+// table isn't touched: tax_amount is already snapshotted on the order row, so
+// historical receipts stay correct even if the merchant later toggles a flag.
+export const MIGRATION_V11 = `
+ALTER TABLE items ADD COLUMN is_taxable INTEGER NOT NULL DEFAULT 1;
+`;
+
+// Migration v12: Per-item is_available flag (a.k.a. "86'd" in restaurant
+// vernacular). Lets the merchant hide an item from the order grid mid-shift
+// without deleting it. Default 1 (available); flip to 0 = sold out today.
+// Item stays in the editor so toggling back is one tap. Doesn't affect any
+// existing orders — pure runtime filter.
+export const MIGRATION_V12 = `
+ALTER TABLE items ADD COLUMN is_available INTEGER NOT NULL DEFAULT 1;
+`;
+
+// Migration v13: Order-level discount snapshot. Stored on the orders row so
+// historical receipts always show what was actually applied at sale time.
+//   discount_type    'percent' | 'amount' | null
+//   discount_value   raw input (10 for 10%; 150 for $1.50). null when no discount.
+//   discount_amount  computed cents the customer was actually discounted
+//   discount_reason  optional free text (e.g. "happy hour", "manager comp")
+// All nullable / default 0 so historical orders are untouched.
+export const MIGRATION_V13 = `
+ALTER TABLE orders ADD COLUMN discount_type TEXT;
+ALTER TABLE orders ADD COLUMN discount_value INTEGER;
+ALTER TABLE orders ADD COLUMN discount_amount INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE orders ADD COLUMN discount_reason TEXT;
+`;
+
+export const MIGRATION_V10_SCHEMA = `
+CREATE TABLE IF NOT EXISTS modifier_groups (
+  id TEXT PRIMARY KEY,
+  item_id TEXT NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  select_type TEXT NOT NULL DEFAULT 'multi' CHECK(select_type IN ('single', 'multi')),
+  is_required INTEGER NOT NULL DEFAULT 0,
+  max_select INTEGER,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  deleted_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_modifier_groups_item ON modifier_groups(item_id, deleted_at, sort_order);
+
+ALTER TABLE modifiers ADD COLUMN group_id TEXT REFERENCES modifier_groups(id) ON DELETE CASCADE;
+ALTER TABLE modifiers ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0;
+`;
+
 // Default settings inserted on first launch
 export const DEFAULT_SETTINGS = [
   { key: 'tax_rate', value: '0' },

@@ -1,6 +1,24 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
-import { MIGRATION_V1, MIGRATION_V2, MIGRATION_V3, MIGRATION_V4, MIGRATION_V5, MIGRATION_V6, MIGRATION_V7, DEFAULT_SETTINGS } from './schema';
+import { MIGRATION_V1, MIGRATION_V2, MIGRATION_V3, MIGRATION_V4, MIGRATION_V5, MIGRATION_V6, MIGRATION_V7, MIGRATION_V8, MIGRATION_V9, MIGRATION_V10_SCHEMA, MIGRATION_V11, MIGRATION_V12, MIGRATION_V13, DEFAULT_SETTINGS } from './schema';
+
+// Local UUID generator — same algorithm as queries.ts. Inlined here to avoid
+// a migration→queries import cycle.
+function migUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < 16; i++) bytes[i] = (Math.random() * 256) | 0;
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 interface Migration {
   version: number;
@@ -45,7 +63,68 @@ const migrations: Migration[] = [
     version: 7,
     up: MIGRATION_V7,
   },
+  {
+    version: 8,
+    up: MIGRATION_V8,
+  },
+  {
+    version: 9,
+    up: MIGRATION_V9,
+  },
+  {
+    version: 10,
+    up: MIGRATION_V10_SCHEMA,
+    afterUp: backfillModifierGroups,
+  },
+  {
+    version: 11,
+    up: MIGRATION_V11,
+  },
+  {
+    version: 12,
+    up: MIGRATION_V12,
+  },
+  {
+    version: 13,
+    up: MIGRATION_V13,
+  },
 ];
+
+// v10 backfill: turn every distinct (item_id, group_name) pair on existing
+// modifiers into a real modifier_groups row, then attach the modifiers.
+// Null group_names get bucketed into a single "Options" group per item.
+// Resulting groups default to multi-select / not required — merchant can
+// promote them to required/single in the editor.
+async function backfillModifierGroups(db: SQLiteDatabase): Promise<void> {
+  const rows = await db.getAllAsync<{ item_id: string; group_name: string | null }>(
+    `SELECT DISTINCT item_id, group_name
+     FROM modifiers
+     WHERE deleted_at IS NULL AND group_id IS NULL`
+  );
+  if (rows.length === 0) return;
+
+  const now = new Date().toISOString();
+  for (const { item_id, group_name } of rows) {
+    const groupId = migUUID();
+    const displayName = group_name && group_name.trim() ? group_name.trim() : 'Options';
+    await db.runAsync(
+      `INSERT INTO modifier_groups (id, item_id, name, select_type, is_required, max_select, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, 'multi', 0, NULL, 0, ?, ?)`,
+      [groupId, item_id, displayName, now, now]
+    );
+    if (group_name === null) {
+      await db.runAsync(
+        `UPDATE modifiers SET group_id = ? WHERE item_id = ? AND group_name IS NULL AND group_id IS NULL`,
+        [groupId, item_id]
+      );
+    } else {
+      await db.runAsync(
+        `UPDATE modifiers SET group_id = ? WHERE item_id = ? AND group_name = ? AND group_id IS NULL`,
+        [groupId, item_id, group_name]
+      );
+    }
+  }
+}
 
 const DB_NAME = 'ospos.db';
 

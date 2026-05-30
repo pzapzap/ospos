@@ -52,6 +52,7 @@ interface AppContextValue {
     taxAmount: number;
     tipAmount: number;
     cashTendered?: number;
+    discount?: { type: 'percent' | 'amount'; value: number; amount: number; reason?: string };
   } | null;
   setLastOrder: (order: AppContextValue['lastOrder']) => void;
 
@@ -152,6 +153,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             userEmail: dbSettings['user_email'] ?? '',
             stripeVerified: dbSettings['stripe_verified'] ?? 'true',
             ttpOiSetupComplete: dbSettings['ttpoi_setup_complete'] ?? 'false',
+            qsrMode: dbSettings['qsr_mode'] ?? 'off',
           },
         });
 
@@ -224,6 +226,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         userEmail: dbSettings['user_email'] ?? '',
         stripeVerified: dbSettings['stripe_verified'] ?? 'true',
         ttpOiSetupComplete: dbSettings['ttpoi_setup_complete'] ?? 'false',
+        qsrMode: dbSettings['qsr_mode'] ?? 'off',
       },
     });
     const rate = parseFloat(dbSettings['tax_rate'] ?? '0');
@@ -244,6 +247,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       userEmail: 'user_email',
       stripeVerified: 'stripe_verified',
       ttpOiSetupComplete: 'ttpoi_setup_complete',
+      qsrMode: 'qsr_mode',
     };
 
     // Some keys are stored in AsyncStorage, not SQLite settings
