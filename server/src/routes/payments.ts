@@ -78,6 +78,18 @@ router.post('/create-intent', async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Demo account hardening: the appstore-review merchant is shared with
+    // Apple's review team and uses the founder's live Stripe Connect account.
+    // Cap charge amount at $1 so an accidental real-card tap during review
+    // (or a leaked credential) can't move meaningful money. Real merchants
+    // are unaffected — the cap is keyed off this one email.
+    if (user.email === 'appstore-review@tttships.co' && amount > 100) {
+      res.status(400).json({
+        error: 'This demo merchant is capped at $1.00 per transaction. Use a real merchant account for production charges.',
+      });
+      return;
+    }
+
     // Generate idempotency key server-side to prevent replay attacks
     const idempotencyKey = `pi_${req.user.userId}_${amount}_${Date.now()}`;
 

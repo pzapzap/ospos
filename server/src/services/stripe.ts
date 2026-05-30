@@ -145,22 +145,20 @@ export async function getAccountRequirements(accountId: string): Promise<{
 // the brackets — using URLSearchParams here would over-encode and Stripe's
 // parser would not unwrap the prefill. Build the URL manually.
 
-export function buildOAuthAuthorizeUrl(state: string, prefillEmail?: string): string {
+export function buildOAuthAuthorizeUrl(_state: string, _prefillEmail?: string): string {
+  // KEEP BRACKET PARAMS OUT. iOS Linking.openURL → NSURL re-encodes already-
+  // encoded %5B/%5D, which double-encodes the entire query string and breaks
+  // Stripe's redirect_uri exact-match check. The bracket-form fields
+  // (suggested_capabilities[], stripe_user[country], stripe_user[email]) are
+  // all optional hints — Stripe defaults card_payments + transfers for US
+  // Standard accounts, prompts for country, and collects email itself.
   const params = [
     'response_type=code',
     `client_id=${encodeURIComponent(config.connect.clientId)}`,
     'scope=read_write',
     `redirect_uri=${encodeURIComponent(config.connect.redirectUri)}`,
-    `state=${encodeURIComponent(state)}`,
-    'suggested_capabilities[]=card_payments',
-    'suggested_capabilities[]=transfers',
-    'stripe_user[country]=US',
+    `state=${encodeURIComponent(_state)}`,
   ];
-  // Private-relay addresses won't reach Stripe's verification — let Stripe
-  // collect a real email instead of pre-filling a useless forwarder.
-  if (prefillEmail && !prefillEmail.endsWith(APPLE_PRIVATE_RELAY_SUFFIX)) {
-    params.push(`stripe_user[email]=${encodeURIComponent(prefillEmail)}`);
-  }
   return `https://connect.stripe.com/oauth/authorize?${params.join('&')}`;
 }
 

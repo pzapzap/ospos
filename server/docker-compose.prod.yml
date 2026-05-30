@@ -31,6 +31,8 @@ services:
       - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER:-}
       - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
       - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-}
       - PORT=3000
       - NODE_ENV=production
     depends_on:
