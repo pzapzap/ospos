@@ -52,7 +52,15 @@ export default function CashPaymentModal({
   };
 
   const handleConfirm = () => {
-    if (!canConfirm || submitting) return;
+    if (submitting) return;
+    // If the user taps Confirm without typing anything, treat it as Exact Cash
+    // rather than silently doing nothing. Less footgun.
+    if (cashInput.length === 0) {
+      setSubmitting(true);
+      onConfirm(total);
+      return;
+    }
+    if (!canConfirm) return;
     setSubmitting(true);
     onConfirm(cashTendered);
   };
@@ -137,7 +145,7 @@ export default function CashPaymentModal({
                 variant="cash"
                 size="md"
                 onPress={handleConfirm}
-                disabled={(!canConfirm && cashInput.length > 0) || submitting}
+                disabled={(cashInput.length > 0 && !canConfirm) || submitting}
               />
             </View>
           </View>
@@ -169,12 +177,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   totalLabel: {
-    ...typography.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    ...typography.eyebrow,
+    fontSize: 11,
+    color: colors.textMuted,
   },
   totalAmount: {
-    ...typography.total,
+    ...typography.displayMedium,
+    marginTop: spacing.xs,
   },
   exactCashRow: {
     marginBottom: spacing.lg,
@@ -213,9 +222,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   changeAmount: {
-    ...typography.statNumber,
+    ...typography.displayMedium,
     fontSize: 28,
-    color: colors.primary,
+    color: colors.green,
   },
   actions: {
     flexDirection: 'row',

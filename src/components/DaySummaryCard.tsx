@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '../constants/theme';
+import { colors, typography, spacing, borderRadius, fonts } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { formatCurrency } from '../utils/currency';
 
@@ -21,77 +21,88 @@ export default function DaySummaryCard({
   averageValue,
   currency,
 }: DaySummaryCardProps) {
+  // Cash/card split as a single stat — denser than two separate dollar
+  // totals and reads as a story ("70/30"), not a financial breakdown.
+  const split = totalSales > 0
+    ? `${Math.round((cashTotal / totalSales) * 100)}% / ${Math.round((cardTotal / totalSales) * 100)}%`
+    : '—';
+
   return (
-    <View style={styles.card} accessibilityRole="summary">
-      <View style={styles.mainStat} accessibilityLabel={`${strings.summary.totalSales}: ${formatCurrency(totalSales, currency)}`}>
-        <Text style={styles.mainLabel}>{strings.summary.totalSales}</Text>
-        <Text style={styles.mainValue}>
+    <View>
+      {/* Hero — single big serif number, no chrome around it */}
+      <View style={styles.heroCard} accessibilityRole="summary">
+        <Text style={styles.heroLabel}>{strings.summary.totalSales}</Text>
+        <Text
+          style={styles.heroValue}
+          accessibilityLabel={`${strings.summary.totalSales}: ${formatCurrency(totalSales, currency)}`}
+        >
           {formatCurrency(totalSales, currency)}
         </Text>
       </View>
 
-      <View style={styles.statsGrid}>
-        <View style={styles.stat} accessibilityLabel={`${strings.summary.transactions}: ${transactionCount}`}>
-          <Text style={styles.statValue}>{transactionCount}</Text>
-          <Text style={styles.statLabel}>{strings.summary.transactions}</Text>
-        </View>
-        <View style={styles.stat} accessibilityLabel={`${strings.summary.cashTotal}: ${formatCurrency(cashTotal, currency)}`}>
-          <Text style={styles.statValue}>
-            {formatCurrency(cashTotal, currency)}
-          </Text>
-          <Text style={styles.statLabel}>{strings.summary.cashTotal}</Text>
-        </View>
-        <View style={styles.stat} accessibilityLabel={`${strings.summary.cardTotal}: ${formatCurrency(cardTotal, currency)}`}>
-          <Text style={styles.statValue}>
-            {formatCurrency(cardTotal, currency)}
-          </Text>
-          <Text style={styles.statLabel}>{strings.summary.cardTotal}</Text>
-        </View>
-        <View style={styles.stat} accessibilityLabel={`${strings.summary.average}: ${formatCurrency(averageValue, currency)}`}>
-          <Text style={styles.statValue}>
-            {formatCurrency(averageValue, currency)}
-          </Text>
-          <Text style={styles.statLabel}>{strings.summary.average}</Text>
-        </View>
+      {/* Three secondary stats in a row — quiet supporting cast */}
+      <View style={styles.statsRow}>
+        <Stat label={strings.summary.transactions} value={String(transactionCount)} />
+        <Stat label={strings.summary.average} value={formatCurrency(averageValue, currency)} />
+        <Stat label="Cash / Card" value={split} />
       </View>
     </View>
   );
 }
 
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.stat} accessibilityLabel={`${label}: ${value}`}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  card: {
+  heroCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.xl,
+    padding: spacing.xxl,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  heroLabel: {
+    ...typography.eyebrow,
+    fontSize: 11,
+    color: colors.textMuted,
+  },
+  heroValue: {
+    ...typography.displayLarge,
+    marginTop: spacing.sm,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
     marginBottom: spacing.lg,
   },
-  mainStat: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  mainLabel: {
-    ...typography.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  mainValue: {
-    ...typography.total,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
   stat: {
-    width: '50%',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  statValue: {
-    ...typography.statNumber,
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   statLabel: {
-    ...typography.caption,
-    marginTop: 2,
+    fontSize: 10.5,
+    fontFamily: fonts.body,
+    color: colors.textMuted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  statValue: {
+    fontSize: 15,
+    fontFamily: fonts.numSemiBold,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+    marginTop: spacing.xs,
   },
 });
