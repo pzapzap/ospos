@@ -1,116 +1,204 @@
 # Contributing to OSPOS
 
-Thanks for your interest in contributing to OSPOS. This document covers how to set up your development environment, the code style we follow, and the PR process.
+Thanks for your interest in contributing. Bug reports, feature requests, docs improvements, and pull requests are all welcome.
 
-## Development Environment
+## Quick links
+
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+- [Security policy](./SECURITY.md) (don't open public issues for vulnerabilities)
+- [Architecture overview](./ARCHITECTURE.md)
+- [License](./LICENSE) — AGPL-3.0
+
+## Reporting bugs and requesting features
+
+Use the GitHub issue templates:
+
+- **Bug Report** — for things that are broken
+- **Feature Request** — for new ideas
+
+If you're not sure whether something is a bug, open an issue anyway — we'd rather close as "working as intended" than miss a real problem.
+
+## Development environment
 
 ### Prerequisites
 
 - Node.js 20+
-- npm or yarn
-- Expo CLI: `npm install -g expo-cli`
-- For iOS: macOS with Xcode and iOS Simulator
-- For Android: Android Studio with an emulator
-- For backend: Docker and Docker Compose
+- macOS with Xcode 15+ and iOS Simulator (for app development)
+- Docker + Docker Compose (for the server)
 
-### Setup
+OSPOS v1 is **iPhone-only** (XS or newer, iOS 16.4+). Android support is on the v1.1+ roadmap; there's no Android branch to develop against today.
 
-1. Fork and clone the repository
-2. Install app dependencies:
-   ```bash
-   cd ospos
-   npm install
-   ```
-3. Start the mock backend:
-   ```bash
-   cd mock-backend
-   npm install
-   npm start
-   ```
-4. Start the app:
-   ```bash
-   npx expo start
-   ```
+### App setup
 
-### Environment Variables
+```bash
+git clone https://github.com/pzapzap/ospos.git
+cd ospos
+npm install
+```
 
-The app uses `EXPO_PUBLIC_` prefixed environment variables:
+You'll need an Expo **development build** of OSPOS installed on your phone or simulator. The plain Expo Go app won't work because OSPOS uses native modules (Stripe Terminal SDK, our custom TTPOi module).
+
+To make a dev build:
+
+```bash
+npx eas-cli build --platform ios --profile development
+```
+
+(Requires an Expo account. Free tier is enough for occasional dev builds.)
+
+Then start Metro:
+
+```bash
+npx expo start --dev-client
+```
+
+### Mock backend (no Stripe needed)
+
+The fastest way to work on UI without setting up Stripe:
+
+```bash
+cd mock-backend
+npm install
+npm start
+```
+
+In another terminal, start the app pointing at the mock:
+
+```bash
+EXPO_PUBLIC_API_MODE=mock npx expo start --dev-client
+```
+
+The mock backend stubs every API call. Cash transactions work, card transactions return fake successes, sync queues complete instantly.
+
+### Production backend
+
+If you need to test actual Stripe flow, you'll need a Stripe Connect platform account and a backend. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full setup.
+
+```bash
+cd server
+cp .env.example .env
+# Fill in env vars (see .env.example for the list)
+docker compose up -d
+npm install
+npm run migrate
+npm run dev
+```
+
+Then point the app at it:
+
+```bash
+EXPO_PUBLIC_API_URL=http://localhost:3000 npx expo start --dev-client
+```
+
+### Environment variables
+
+App:
 
 - `EXPO_PUBLIC_API_MODE` — `mock` (default in dev) or `production`
 - `EXPO_PUBLIC_MOCK_API_URL` — mock backend URL (default: `http://localhost:3000`)
 - `EXPO_PUBLIC_API_URL` — production API URL (default: `https://api.ospos.app`)
 
-## Code Style
+Server: see `server/.env.example` for the full list.
+
+## Code style
 
 ### TypeScript
 
-- Strict mode enabled — no `any` types unless required by external libraries
-- All files use `.ts` or `.tsx` extensions
-- Interfaces over types where possible
+- Strict mode enabled — no `any` unless an external library forces it
+- All files use `.ts` or `.tsx`
 - Explicit return types on exported functions
+- Interfaces over types where possible
 
-### React
+### React (Native)
 
-- Functional components only (no class components)
+- Functional components only — no class components (except `ErrorBoundary`)
 - Hooks for state and side effects
-- React Context + useReducer for global state (no Redux, no Zustand)
+- **React Context + useReducer** for global state — no Redux, no Zustand, no MobX
 - Props interfaces defined adjacent to the component
 
 ### Naming
 
-- Files: PascalCase for components/screens (`OrderScreen.tsx`), camelCase for utilities (`currency.ts`)
+- Files: PascalCase for components and screens (`OrderScreen.tsx`), camelCase for utilities (`currency.ts`)
 - Components: PascalCase (`ChargeButton`)
 - Functions: camelCase (`formatCurrency`)
-- Constants: UPPER_SNAKE_CASE for true constants (`TIER_KEY`), camelCase for config objects (`colors`)
+- Constants: `UPPER_SNAKE_CASE` for true constants (`TIER_KEY`), camelCase for config objects (`colors`)
 
 ### Database
 
 - All SQL queries use parameterized statements (never string interpolation)
-- Migrations are sequential and versioned
+- Migrations are sequential and versioned (`001_initial.sql`, `002_...`)
 - Soft deletes for menu items (`deleted_at` column)
-- order_items stores denormalized name/price at time of sale
+- Order items denormalize name + price at sale time so historical orders stay readable
 
-### Text
+### Money
+
+- **All money is integer cents.** No floats anywhere in the money path — database, API, internal logic. Convert to display only via `formatCurrency()` at render time.
+
+### Strings
 
 - All user-facing text lives in `src/constants/strings.ts`
-- No hardcoded strings in components
-- This enables future i18n without code changes
+- No hardcoded strings in components — enables future i18n
 
-## Pull Request Process
+### Design system
 
-1. Create a feature branch from `main`
-2. Make your changes
-3. Run TypeScript check: `npx tsc --noEmit`
-4. Test on both iOS and Android if possible
-5. Open a PR with:
-   - Clear title describing the change
-   - Description of what and why
-   - Screenshots for UI changes
-6. Wait for review
+- Inter for UI text, body, labels, buttons
+- DM Serif Display for display moments (page titles, hero numbers, payment totals)
+- Bitter Italic for menu monogram letters
+- JetBrains Mono for eyebrows / technical metadata
+- Cyan (`colors.primary`) reserved for the single primary action on screen — don't use it as decoration
+- Dark theme only (intentional, not a bug)
 
-### What Makes a Good PR
+See `src/constants/theme.ts` for tokens.
+
+## Pull request process
+
+1. Fork the repo
+2. Create a feature branch from `master`
+3. Make your changes
+4. Run TypeScript check: `npx tsc --noEmit` (must pass)
+5. Test on the iOS simulator
+6. Open a PR using the template
+
+### What makes a good PR
 
 - Small and focused — one feature or fix per PR
-- Follows existing patterns in the codebase
+- Follows existing patterns
+- Strings externalized
 - Includes TypeScript types
-- Doesn't introduce new dependencies without discussion
-- Strings are externalized
+- Doesn't add new dependencies without discussion
 - UI matches the dark theme
+- Money is integer cents
 
-### What We Won't Merge
+### What we won't merge
 
 - Changes that break offline functionality
-- New external state management libraries
+- New state management libraries
 - Decorative animations (only state-communicating animations)
-- White/light theme changes (the dark theme is intentional)
-- ORM additions to the backend (we use raw SQL)
+- Light/white theme changes
+- ORM additions to the backend
+- Hardcoded user-facing strings
+- Floating-point money math
 
-## Reporting Issues
+### CLA / sign-off
 
-Use the GitHub issue templates:
-- **Bug Report** — for things that are broken
-- **Feature Request** — for new ideas
+OSPOS is licensed under AGPL-3.0. By contributing, you agree your contributions are licensed under the same AGPL-3.0 terms.
 
-## Questions?
+We don't require a formal Contributor License Agreement, but we do encourage signing commits (`git commit -s`) — it's a Developer Certificate of Origin attestation that you have the right to submit the work.
 
-Open a GitHub Discussion or reach out at hello@ospos.app.
+## Reviewing
+
+Maintainers triage new issues and PRs within 48 hours (best effort — we're a small team).
+
+Reviews focus on:
+
+- Does it match existing patterns?
+- Does it preserve offline functionality?
+- Money handling correctness
+- Security implications (especially anything touching auth, Stripe, or PII)
+- Visual consistency with the design system
+
+## Questions
+
+- General questions: [GitHub Discussions](https://github.com/pzapzap/ospos/discussions)
+- Anything sensitive: phil@tttships.co
+- Security: see [SECURITY.md](./SECURITY.md)

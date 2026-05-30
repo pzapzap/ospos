@@ -24,20 +24,20 @@ OSPOS turns any smartphone into a cash register. Add your menu items, tap to bui
 - Weekly automatic backups
 - Works completely offline
 
-**Card payments (1% per transaction):**
+**Card payments (1% per transaction on top of standard Stripe processing fees):**
 - Accept card payments via Tap to Pay on iPhone or Bluetooth reader
 - Stripe Connect for secure payment processing
 - Test mode to practice before going live
 - Cloud backup of all transactions
 - Refund management
 - Dispute handling with evidence upload
-- SMS and email receipts
+- Email receipts
 
 **Built for speed:**
 Every tap gives haptic feedback. The charge button has a 5-state indicator. The order screen is designed to be used while serving customers in a line. Function over form.
 
 **Open source:**
-OSPOS is MIT licensed. View the code, report issues, or contribute at github.com/ospos/ospos.
+OSPOS is AGPL-3.0 licensed. View the code, report issues, or contribute at github.com/ospos/ospos.
 
 ## Keywords (iOS)
 pos, point of sale, cash register, payments, stripe, card reader, small business, free pos, open source

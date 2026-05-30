@@ -126,11 +126,16 @@ npx tsc --noEmit
 
 App uses `EXPO_PUBLIC_API_MODE=mock` in dev (points to mock-backend on localhost:3000).
 
-## Current State (as of March 2026)
+## Current State (as of 2026-05-26)
 
 **Code complete. TypeScript compiles clean. Server deployed.**
 
-### Done
+### v1.0 — APPROVED by Apple (build 30, 2026-05-29)
+Cleared App Review. Ready to release (Phil chooses manual / automatic /
+scheduled release in App Store Connect). Feature scope frozen — any
+post-release fix would be a new build under the v1.0 version string;
+new features go into v1.1.
+
 - All app features: menu, orders, cash/card payments, receipts, sales summary, refunds, CSV export
 - Tap to Pay on iPhone (5-phase compliance, Apple-approved copy, legal disclaimers)
 - Sign in with Apple + email/password auth + account deletion
@@ -140,20 +145,36 @@ App uses `EXPO_PUBLIC_API_MODE=mock` in dev (points to mock-backend on localhost
 - All 3 PostgreSQL migrations applied
 - Website pages (terms, privacy, help) uploaded
 - Integer cents end-to-end (no float money anywhere)
+- US-only, iPhone-only (TARGETED_DEVICE_FAMILY="1" — iPad disabled)
+- App Store Connect metadata uploaded (screenshots, description, keywords, privacy questionnaire, App Review notes)
+
+### v1.1 — in active development (local + TestFlight)
+Coffee shop / QSR unlock. Already shipped beyond v1.0:
+
+- **Modifier groups + customize sheet** — required/optional, single/multi-select, max_select, defaults
+- **Edit-from-cart** — tap a cart line's Customize button → reopen sheet pre-filled → UPDATE_LINE
+- **Quantity stepper** in customize sheet footer
+- **Per-item taxable flag** (v11 migration) — mixed prepared/retail merchants
+- **86'd / Sold-out toggle** (v12 migration) — hide items from order grid without delete
+- **Order-level discounts/comps** (v13 migration) — % off + $ off + optional reason, proportional taxable-base reduction
+- **Adaptive cart grow** — panel flex 4 → 7 as items rung in; menu shrinks but always shows top row
+- **Single-select default radio swap** — marking new default auto-clears siblings
+- **Phase 1 polish** — Cancel/Back cleanup, empty-group warning, suggestion chips on group name, fee disclosure copy
+- **Receipt formatting** — modifier lines indented + correct line price (modifier deltas included), discount line above tax
+
+### v1.1 — still pending
+- Sticker library expansion (blocked on Claude Design brief)
+- Phase 3 polish from audit (required-as-headline, 4-pattern rule sentence, default preview)
+- Dogfood pass on real iPhone (the build is at-that-point)
 
 ### Waiting on external
 - Twilio A2P registration if SMS receipts wanted at launch (optional —
   SendGrid replaced by Resend for email; SMS still stubbed)
 
-### Done since last note
+### Infrastructure done
 - `ospos.app`, `www.ospos.app`, `api.ospos.app` all resolve to 157.180.82.227
 - Resend live for email receipts (3K/mo free tier, ospos.app DNS verified)
 - TTPOi Publishing Entitlement granted by Apple (Case-ID 18719391)
-- TestFlight builds live with chunky v1.1 design + ProximityReaderDiscovery
-
-### Not yet started
-- App Store Connect metadata (screenshots, description, keywords,
-  privacy questionnaire, App Review notes)
 
 ## Navigation Structure
 

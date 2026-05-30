@@ -44,3 +44,4 @@ server/.env.local
 /ios
 /android
 
+.planning/
