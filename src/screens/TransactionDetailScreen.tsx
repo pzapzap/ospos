@@ -98,11 +98,29 @@ export default function TransactionDetailScreen({
         total: order.total,
         paymentMethod: order.payment_method,
         createdAt: order.created_at,
-        items: order.items.map(item => ({
-          name: item.item_name,
-          price: item.item_price,
-          quantity: item.quantity,
-        })),
+        items: order.items.map(item => {
+          const modAdjustment = item.modifiers.reduce((s, m) => s + m.price_cents, 0);
+          return {
+            name: item.item_name,
+            price: item.item_price + modAdjustment,
+            quantity: item.quantity,
+            modifiers: item.modifiers.length > 0
+              ? item.modifiers.map((m) => ({
+                  name: m.name,
+                  priceCents: m.price_cents,
+                  groupName: m.group_name ?? undefined,
+                }))
+              : undefined,
+          };
+        }),
+        discount: (order.discount_amount ?? 0) > 0 && order.discount_type
+          ? {
+              type: order.discount_type,
+              value: order.discount_value ?? 0,
+              amount: order.discount_amount,
+              reason: order.discount_reason ?? undefined,
+            }
+          : undefined,
       };
       const result = await sendReceipt(order.id, 'email', emailAddress.trim(), settings.businessName || undefined, orderData);
       if (result.success) {
@@ -255,6 +273,20 @@ export default function TransactionDetailScreen({
               {formatCurrency(order.subtotal, settings.currency)}
             </Text>
           </View>
+          {(order.discount_amount ?? 0) > 0 ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel} numberOfLines={1}>
+                Discount
+                {order.discount_type === 'percent' && order.discount_value != null
+                  ? ` · ${order.discount_value}% off`
+                  : null}
+                {order.discount_reason ? ` · ${order.discount_reason}` : null}
+              </Text>
+              <Text style={styles.infoValue}>
+                −{formatCurrency(order.discount_amount, settings.currency)}
+              </Text>
+            </View>
+          ) : null}
           {order.tax_amount > 0 ? (
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Tax</Text>
@@ -279,16 +311,28 @@ export default function TransactionDetailScreen({
             data={order.items}
             keyExtractor={(item) => item.id}
             scrollEnabled={false}
-            renderItem={({ item }) => (
-              <View style={styles.lineItem}>
-                <Text style={styles.lineItemName}>
-                  {item.quantity}x {item.item_name}
-                </Text>
-                <Text style={styles.lineItemPrice}>
-                  {formatCurrency(item.item_price * item.quantity, settings.currency)}
-                </Text>
-              </View>
-            )}
+            renderItem={({ item }) => {
+              // Match the reducer's math — line total includes modifier deltas.
+              const modAdjustment = item.modifiers.reduce((s, m) => s + m.price_cents, 0);
+              const lineTotal = (item.item_price + modAdjustment) * item.quantity;
+              return (
+                <View style={styles.lineItem}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.lineItemName}>
+                      {item.quantity}x {item.item_name}
+                    </Text>
+                    {item.modifiers.length > 0 ? (
+                      <Text style={styles.lineItemModifiers} numberOfLines={3}>
+                        {item.modifiers.map((m) => m.name).join(' · ')}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.lineItemPrice}>
+                    {formatCurrency(lineTotal, settings.currency)}
+                  </Text>
+                </View>
+              );
+            }}
           />
         </View>
 
@@ -464,8 +508,14 @@ const styles = StyleSheet.create({
     ...typography.body,
     flex: 1,
   },
+  lineItemModifiers: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   lineItemPrice: {
     ...typography.priceMuted,
+    marginLeft: spacing.md,
   },
   emailButton: {
     flexDirection: 'row',

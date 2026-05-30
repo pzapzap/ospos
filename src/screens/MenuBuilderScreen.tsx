@@ -7,6 +7,7 @@ import {
   FlatList,
   SafeAreaView,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -14,6 +15,7 @@ import { colors, fonts, typography, spacing, borderRadius, touchTargets } from '
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
 import Button from '../components/Button';
+import Sticker from '../components/Sticker';
 import { formatCurrency } from '../utils/currency';
 import { lightTap } from '../utils/haptics';
 import {
@@ -64,6 +66,8 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
     category?: string;
     imageUri?: string;
     stickerId?: string;
+    isTaxable: boolean;
+    isAvailable: boolean;
   }) => {
     try {
       if (editingItem) {
@@ -73,9 +77,11 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
           category: data.category ?? null,
           image_uri: data.imageUri ?? null,
           sticker_id: data.stickerId ?? null,
+          is_taxable: data.isTaxable,
+          is_available: data.isAvailable,
         });
       } else {
-        await createItem(data.name, data.price, data.category, data.imageUri, data.stickerId);
+        await createItem(data.name, data.price, data.category, data.imageUri, data.stickerId, data.isTaxable, data.isAvailable);
       }
       setModalVisible(false);
       await loadItems();
@@ -142,22 +148,51 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
     </TouchableOpacity>
   );
 
-  const renderItem = ({ item }: { item: Item }) => (
-    <Swipeable renderRightActions={() => renderRightActions(item.id, item.name)}>
-      <TouchableOpacity
-        style={styles.itemRow}
-        onPress={() => handleEditItem(item)}
-        activeOpacity={0.7}
-        accessibilityLabel={`${item.name}, ${formatCurrency(item.price, settings.currency)}. Tap to edit, swipe left to delete`}
-        accessibilityRole="button"
-      >
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemPrice}>
-          {formatCurrency(item.price, settings.currency)}
-        </Text>
-      </TouchableOpacity>
-    </Swipeable>
-  );
+  const renderItem = ({ item }: { item: Item }) => {
+    const isSoldOut = item.is_available === 0;
+    // Three-layer visual: photo → sticker → monogram glyph fallback.
+    // Same resolution order as ItemButton on the order grid.
+    const hasPhoto = !!item.image_uri;
+    const hasSticker = !!item.sticker_id && item.sticker_id !== 'custom';
+    return (
+      <Swipeable renderRightActions={() => renderRightActions(item.id, item.name)}>
+        <TouchableOpacity
+          style={[styles.itemRow, isSoldOut && styles.itemRowSoldOut]}
+          onPress={() => handleEditItem(item)}
+          activeOpacity={0.7}
+          accessibilityLabel={`${item.name}, ${formatCurrency(item.price, settings.currency)}${isSoldOut ? ', sold out today' : ''}. Tap to edit, swipe left to delete`}
+          accessibilityRole="button"
+        >
+          {/* Thumb with chunky-card depth — same grammar as ItemButton on
+              the order grid. A 2pt shadow strip peeks below the card,
+              giving the tile visible weight against the row surface. */}
+          <View style={[styles.itemThumbWrapper, isSoldOut && styles.itemThumbSoldOut]}>
+            <View style={styles.itemThumbShadow} />
+            <View style={styles.itemThumb}>
+              {hasPhoto ? (
+                <Image source={{ uri: item.image_uri! }} style={styles.itemThumbPhoto} resizeMode="cover" />
+              ) : hasSticker ? (
+                <Sticker id={item.sticker_id!} size={32} />
+              ) : (
+                <Text style={styles.itemThumbGlyph}>
+                  {(item.name?.[0] ?? '·').toUpperCase()}
+                </Text>
+              )}
+            </View>
+          </View>
+          <View style={styles.itemTextColumn}>
+            <Text style={[styles.itemName, isSoldOut && styles.itemNameSoldOut]}>{item.name}</Text>
+            {isSoldOut ? (
+              <Text style={styles.soldOutBadge}>SOLD OUT TODAY</Text>
+            ) : null}
+          </View>
+          <Text style={[styles.itemPrice, isSoldOut && styles.itemPriceSoldOut]}>
+            {formatCurrency(item.price, settings.currency)}
+          </Text>
+        </TouchableOpacity>
+      </Swipeable>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -234,19 +269,94 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
+    paddingLeft: spacing.md,         // tighter left so thumb sits comfortably
+    paddingRight: spacing.xl,
+    paddingVertical: spacing.md,
     marginBottom: spacing.sm,
     borderRadius: borderRadius.md,
     minHeight: touchTargets.minimum,
+    gap: spacing.md,
+  },
+  itemRowSoldOut: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.warning,
+  },
+  // 44pt thumb with chunky-card depth. Wrapper matches card height so the
+  // row's alignItems:'center' aligns the CARD's visual center (not the
+  // wrapper's geometric center) with sibling text. Shadow strip peeks
+  // visually 2pt below the wrapper — that overflow is intentional and
+  // doesn't break layout because the row doesn't clip children.
+  itemThumbWrapper: {
+    width: 44,
+    height: 44,
+  },
+  itemThumbShadow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 2,
+    height: 44,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.border,
+  },
+  itemThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  itemThumbSoldOut: {
+    opacity: 0.4,
+  },
+  itemThumbPhoto: {
+    width: '100%',
+    height: '100%',
+  },
+  itemThumbGlyph: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 28,
+    color: colors.primary,
+    lineHeight: 32,
+  },
+  // Match thumb height so the text container shares the thumb's vertical
+  // span exactly. justifyContent centers the text inside; lineHeight tight to
+  // fontSize means the glyph's visible center equals the container's center.
+  itemTextColumn: {
+    flex: 1,
+    height: 44,
+    justifyContent: 'center',
   },
   itemName: {
     ...typography.body,
-    flex: 1,
+    lineHeight: 17,
   },
+  itemNameSoldOut: {
+    color: colors.textMuted,
+  },
+  soldOutBadge: {
+    ...typography.caption,
+    color: colors.warning,
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  // Price matches the name's 17pt so the two baselines line up visually;
+  // emphasis comes from cyan + SemiBold weight, not size. Previously was
+  // typography.price (20pt) which made the row look uneven.
   itemPrice: {
-    ...typography.price,
+    fontSize: 17,
+    fontFamily: fonts.numSemiBold,
+    color: colors.primary,
+    fontVariant: ['tabular-nums'],
     marginLeft: spacing.md,
+  },
+  itemPriceSoldOut: {
+    color: colors.textMuted,
   },
   swipeDelete: {
     backgroundColor: colors.danger,

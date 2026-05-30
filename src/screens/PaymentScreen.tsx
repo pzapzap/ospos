@@ -64,6 +64,7 @@ interface CardButtonProps {
     taxAmount: number;
     tipAmount: number;
     cashTendered?: number;
+    discount?: { type: 'percent' | 'amount'; value: number; amount: number; reason?: string };
   } | null) => void;
   onPaymentComplete: () => void;
 }
@@ -311,11 +312,20 @@ function CardButton({
         stripePaymentId: paymentIntentId,
         cardLast4,
         cardBrand,
+        discount: order.discount
+          ? {
+              type: order.discount.type,
+              value: order.discount.value,
+              amountCents: order.discount.amount,
+              reason: order.discount.reason,
+            }
+          : undefined,
         items: order.items.map((item) => ({
           itemId: item.itemId,
           itemName: item.itemName,
           itemPrice: item.itemPrice,
           quantity: item.quantity,
+          modifiers: item.modifiers,  // persist selected modifiers per line
         })),
       });
 
@@ -332,6 +342,7 @@ function CardButton({
         subtotal: order.subtotal,
         taxAmount: order.taxAmount,
         tipAmount: order.tipAmount,
+        discount: order.discount ?? undefined,
       });
 
       orderDispatch({ type: 'CLEAR_ORDER' });
@@ -513,11 +524,20 @@ export default function PaymentScreen({ onPaymentComplete, onBack, onTTPOiSetup,
         tipAmount: order.tipAmount,
         total: order.total,
         paymentMethod: 'cash',
+        discount: order.discount
+          ? {
+              type: order.discount.type,
+              value: order.discount.value,
+              amountCents: order.discount.amount,
+              reason: order.discount.reason,
+            }
+          : undefined,
         items: order.items.map((item) => ({
           itemId: item.itemId,
           itemName: item.itemName,
           itemPrice: item.itemPrice,
           quantity: item.quantity,
+          modifiers: item.modifiers,  // persist selected modifiers per line
         })),
       });
 
@@ -533,6 +553,7 @@ export default function PaymentScreen({ onPaymentComplete, onBack, onTTPOiSetup,
         taxAmount: order.taxAmount,
         tipAmount: order.tipAmount,
         cashTendered,
+        discount: order.discount ?? undefined,
       });
 
       if (!mountedRef.current) return;
@@ -553,9 +574,12 @@ export default function PaymentScreen({ onPaymentComplete, onBack, onTTPOiSetup,
         </TouchableOpacity>
 
         <View style={styles.totalSection}>
-          <Text style={styles.totalLabel}>{strings.order.total}</Text>
+          <Text style={styles.totalLabel}>AMOUNT DUE</Text>
           <Text style={styles.totalAmount}>
             {formatCurrency(order.total, settings.currency)}
+          </Text>
+          <Text style={styles.totalItemsHint}>
+            {order.items.reduce((n, i) => n + i.quantity, 0)} {order.items.reduce((n, i) => n + i.quantity, 0) === 1 ? 'item' : 'items'}
           </Text>
           {isTestMode ? (
             <Text style={styles.testModeLabel}>TEST TRANSACTION — NO CHARGE</Text>
@@ -679,14 +703,19 @@ const styles = StyleSheet.create({
     marginVertical: spacing.xxxl,
   },
   totalLabel: {
-    ...typography.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
+    ...typography.eyebrow,
+    fontSize: 11,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
   },
   totalAmount: {
-    ...typography.total,
-    fontSize: 48,
+    ...typography.displayHero,
+    lineHeight: 60,
+  },
+  totalItemsHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.md,
   },
   testModeLabel: {
     ...typography.bodyBold,

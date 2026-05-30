@@ -16,8 +16,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
-import { Bitter_400Regular, Bitter_500Medium, Bitter_500Medium_Italic, Bitter_600SemiBold, Bitter_700Bold } from '@expo-google-fonts/bitter';
-import { Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold, Archivo_700Bold } from '@expo-google-fonts/archivo';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
+import { Bitter_500Medium_Italic } from '@expo-google-fonts/bitter';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { Ionicons } from '@expo/vector-icons';
 import { AppProvider, useApp } from './src/state/AppContext';
@@ -218,7 +219,7 @@ function SettingsStackNavigator({ onAccountDeleted }: { onAccountDeleted?: () =>
             onUpgrade={() => {
               Alert.alert(
                 'Upgrade to Card Payments',
-                'This will begin the account setup process to accept card payments with a 1% per-transaction fee.',
+                'This will begin the account setup process to accept card payments. OSPOS charges 1% per transaction on top of standard Stripe processing fees.',
                 [
                   { text: 'Cancel', style: 'cancel' },
                   {
@@ -467,15 +468,12 @@ function AppContent() {
 
 function App() {
   const [fontsLoaded, fontError] = useFonts({
-    Bitter_400Regular,
-    Bitter_500Medium,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    DMSerifDisplay_400Regular,
     Bitter_500Medium_Italic,
-    Bitter_600SemiBold,
-    Bitter_700Bold,
-    Archivo_400Regular,
-    Archivo_500Medium,
-    Archivo_600SemiBold,
-    Archivo_700Bold,
     JetBrainsMono_500Medium,
   });
 

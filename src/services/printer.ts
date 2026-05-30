@@ -192,10 +192,13 @@ function textToBytes(text: string): number[] {
 
 export interface ReceiptData {
   businessName: string;
+  // price = unit price INCLUDING modifier deltas. modifiers carries the
+  // selection list for printing under each item.
   items: Array<{
     name: string;
     quantity: number;
     price: number;
+    modifiers?: Array<{ name: string; priceCents: number }>;
   }>;
   subtotal: number;
   taxAmount: number;
@@ -205,6 +208,7 @@ export interface ReceiptData {
   timestamp: string;
   footerText?: string;
   currencySymbol?: string;
+  discount?: { type: 'percent' | 'amount'; value: number; amount: number; reason?: string };
 }
 
 export async function printReceipt(receipt: ReceiptData): Promise<void> {

@@ -54,6 +54,9 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
   const [sent, setSent] = useState(false);
   const sentScale = useRef(new Animated.Value(0)).current;
   const [printing, setPrinting] = useState(false);
+  // Auto-advance to a new order so the cashier doesn't have to tap on a busy
+  // morning. Pauses when the user is mid-flow (entering an email, just sent).
+  const [countdown, setCountdown] = useState<number>(8);
   const isPaidTier = settings.tier === 'paid';
   const printerAvailable = isPrinterConnected();
 
@@ -74,6 +77,18 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
       }),
     ]).start();
   }, [checkmarkScale, contentOpacity]);
+
+  // Auto-advance countdown. Paused while the merchant is sending a receipt
+  // (mid-input) or just sent one (so they have time to see the confirmation).
+  useEffect(() => {
+    if (receiptMode !== 'none' || sent) return;
+    if (countdown <= 0) {
+      onNewOrder();
+      return;
+    }
+    const id = setTimeout(() => setCountdown((n) => n - 1), 1000);
+    return () => clearTimeout(id);
+  }, [countdown, receiptMode, sent, onNewOrder]);
 
   const handleSendReceipt = async () => {
     if (!lastOrder || !recipient.trim()) return;
@@ -97,11 +112,23 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
         paymentMethod: lastOrder.paymentMethod,
         createdAt: lastOrder.createdAt,
         cashTendered: lastOrder.cashTendered,
-        items: lastOrder.items.map(item => ({
-          name: item.itemName,
-          price: item.itemPrice,
-          quantity: item.quantity,
-        })),
+        items: lastOrder.items.map(item => {
+          const modAdjustment = item.modifiers.reduce((s, m) => s + m.price_cents, 0);
+          return {
+            name: item.itemName,
+            // Include modifier deltas so server-side renders the correct line price.
+            price: item.itemPrice + modAdjustment,
+            quantity: item.quantity,
+            modifiers: item.modifiers.length > 0
+              ? item.modifiers.map((m) => ({
+                  name: m.name,
+                  priceCents: m.price_cents,
+                  groupName: m.group_name ?? undefined,
+                }))
+              : undefined,
+          };
+        }),
+        discount: lastOrder.discount,
       };
       const formattedRecipient = receiptMode === 'sms' ? formatPhoneE164(recipient) : recipient.trim();
       const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', formattedRecipient, settings.businessName || undefined, orderData);
@@ -156,66 +183,46 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Checkmark Animation */}
-          <Animated.View
-            style={[styles.checkmark, { transform: [{ scale: checkmarkScale }] }]}
-          >
-            <Ionicons name="checkmark" size={40} color={colors.primary} />
-          </Animated.View>
-
-          <Eyebrow style={{ marginBottom: 4 }}>
-            {lastOrder.paymentMethod === 'cash'
-              ? 'CASH · APPROVED'
-              : lastOrder.cardLast4
-                ? `${(lastOrder.cardBrand ?? 'CARD').toUpperCase()} ••••${lastOrder.cardLast4} · APPROVED`
-                : 'CARD · APPROVED'}
-          </Eyebrow>
-          <Text style={styles.title}>{strings.receipt.title}</Text>
+          {/* Hero — checkmark + headline + amount + metadata, one unified block */}
+          <View style={styles.hero}>
+            <Animated.View
+              style={[styles.checkmark, { transform: [{ scale: checkmarkScale }] }]}
+            >
+              <Ionicons name="checkmark" size={32} color={colors.green} />
+            </Animated.View>
+            <Text style={styles.heroTitle}>Payment received</Text>
+            <Text style={styles.heroAmount}>
+              {formatCurrency(lastOrder.total, settings.currency)}
+            </Text>
+            <Text style={styles.heroMeta}>
+              {lastOrder.paymentMethod === 'cash'
+                ? 'Paid in cash'
+                : lastOrder.cardLast4
+                  ? `${lastOrder.cardBrand ?? 'Card'} ••••${lastOrder.cardLast4}`
+                  : 'Paid by card'}
+              {settings.businessName ? ` · ${settings.businessName}` : ''}
+              {` · ${new Date(lastOrder.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
+            </Text>
+          </View>
 
           <Animated.View style={[styles.details, { opacity: contentOpacity }]}>
-            {/* Business Name */}
-            {settings.businessName ? (
-              <Text style={styles.businessName}>{settings.businessName}</Text>
-            ) : null}
-
-            {/* Total */}
-            <View style={styles.totalSection}>
-              <Text style={styles.totalAmount}>
-                {formatCurrency(lastOrder.total, settings.currency)}
-              </Text>
-            </View>
-
-            {/* Info rows */}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>{strings.receipt.method}</Text>
-              <Text style={styles.infoValue}>
-                {lastOrder.paymentMethod === 'cash'
-                  ? 'Cash'
-                  : lastOrder.cardLast4
-                    ? `${lastOrder.cardBrand ?? 'Card'} ••••${lastOrder.cardLast4}`
-                    : 'Card'}
-              </Text>
-            </View>
+            {/* Cash-payment specifics — only when there's change due */}
             {lastOrder.paymentMethod === 'cash' && lastOrder.cashTendered && lastOrder.cashTendered > lastOrder.total ? (
-              <>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Cash Tendered</Text>
-                  <Text style={styles.infoValue}>
+              <View style={styles.changeStrip}>
+                <View style={styles.changeRow}>
+                  <Text style={styles.changeLabel}>Cash tendered</Text>
+                  <Text style={styles.changeValue}>
                     {formatCurrency(lastOrder.cashTendered, settings.currency)}
                   </Text>
                 </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Change</Text>
-                  <Text style={[styles.infoValue, { color: colors.primary }]}>
+                <View style={styles.changeRow}>
+                  <Text style={styles.changeLabel}>Change due</Text>
+                  <Text style={[styles.changeValue, { color: colors.green }]}>
                     {formatCurrency(lastOrder.cashTendered - lastOrder.total, settings.currency)}
                   </Text>
                 </View>
-              </>
+              </View>
             ) : null}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>{strings.receipt.time}</Text>
-              <Text style={styles.infoValue}>{formattedDate}</Text>
-            </View>
 
             {/* Itemized list */}
             <View style={styles.itemsSection}>
@@ -224,19 +231,32 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                 keyExtractor={(item) => item.itemId}
                 scrollEnabled={lastOrder.items.length > 10}
                 style={lastOrder.items.length > 10 ? { maxHeight: 200 } : undefined}
-                renderItem={({ item }) => (
-                  <View style={styles.lineItem}>
-                    <Text style={styles.lineItemName}>
-                      {item.quantity}x {item.itemName}
-                    </Text>
-                    <Text style={styles.lineItemPrice}>
-                      {formatCurrency(item.itemPrice * item.quantity, settings.currency)}
-                    </Text>
-                  </View>
-                )}
+                renderItem={({ item }) => {
+                  // Line price must include modifier deltas — base price × qty
+                  // alone is wrong any time the cashier customized an item.
+                  const modAdjustment = item.modifiers.reduce((s, m) => s + m.price_cents, 0);
+                  const lineTotal = (item.itemPrice + modAdjustment) * item.quantity;
+                  return (
+                    <View style={styles.lineItem}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.lineItemName}>
+                          {item.itemName} <Text style={styles.lineItemQty}>× {item.quantity}</Text>
+                        </Text>
+                        {item.modifiers.length > 0 ? (
+                          <Text style={styles.lineItemModifiers} numberOfLines={3}>
+                            {item.modifiers.map((m) => m.name).join(' · ')}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Text style={styles.lineItemPrice}>
+                        {formatCurrency(lineTotal, settings.currency)}
+                      </Text>
+                    </View>
+                  );
+                }}
               />
 
-              {/* Subtotal / Tax / Tip breakdown */}
+              {/* Subtotal / Discount / Tax / Tip breakdown */}
               <View style={styles.breakdownSection}>
                 <View style={styles.lineItem}>
                   <Text style={styles.breakdownLabel}>{strings.receipt.subtotal}</Text>
@@ -244,6 +264,18 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                     {formatCurrency(lastOrder.subtotal ?? lastOrder.total, settings.currency)}
                   </Text>
                 </View>
+                {lastOrder.discount && lastOrder.discount.amount > 0 ? (
+                  <View style={styles.lineItem}>
+                    <Text style={styles.breakdownLabel} numberOfLines={1}>
+                      Discount
+                      {lastOrder.discount.type === 'percent' ? ` · ${lastOrder.discount.value}% off` : null}
+                      {lastOrder.discount.reason ? ` · ${lastOrder.discount.reason}` : null}
+                    </Text>
+                    <Text style={styles.breakdownValue}>
+                      −{formatCurrency(lastOrder.discount.amount, settings.currency)}
+                    </Text>
+                  </View>
+                ) : null}
                 {(lastOrder.taxAmount ?? 0) > 0 ? (
                   <View style={styles.lineItem}>
                     <Text style={styles.breakdownLabel}>{strings.receipt.tax}</Text>
@@ -285,11 +317,17 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                 try {
                   await printReceipt({
                     businessName: settings.businessName || 'OSPOS',
-                    items: lastOrder.items.map((i) => ({
-                      name: i.itemName,
-                      quantity: i.quantity,
-                      price: i.itemPrice,
-                    })),
+                    items: lastOrder.items.map((i) => {
+                      const modAdjustment = i.modifiers.reduce((s, m) => s + m.price_cents, 0);
+                      return {
+                        name: i.itemName,
+                        quantity: i.quantity,
+                        price: i.itemPrice + modAdjustment,
+                        modifiers: i.modifiers.length > 0
+                          ? i.modifiers.map((m) => ({ name: m.name, priceCents: m.price_cents }))
+                          : undefined,
+                      };
+                    }),
                     subtotal: lastOrder.subtotal ?? lastOrder.total,
                     taxAmount: lastOrder.taxAmount ?? 0,
                     tipAmount: lastOrder.tipAmount ?? 0,
@@ -297,6 +335,7 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
                     paymentMethod: lastOrder.paymentMethod,
                     timestamp: new Date(lastOrder.createdAt).toLocaleString(),
                     footerText: settings.receiptFooter || undefined,
+                    discount: lastOrder.discount,
                   });
                   Alert.alert('Printed', 'Receipt sent to printer');
                 } catch {
@@ -321,10 +360,10 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
               <Button
                 label="Email Receipt"
                 variant="ghost"
-                size="md"
+                size="lg"
                 onPress={() => setReceiptMode('email')}
                 accessibilityLabel="Send receipt via email"
-                leftIcon={<Ionicons name="mail-outline" size={18} color={colors.primary} />}
+                leftIcon={<Ionicons name="mail-outline" size={20} color={colors.primary} />}
               />
             ) : (
               <View style={styles.recipientSection}>
@@ -380,6 +419,11 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
           <View style={{ marginTop: spacing.md }}>
             <Button label={strings.receipt.newOrder} variant="primary" size="lg" onPress={onNewOrder} />
           </View>
+          {receiptMode === 'none' && !sent ? (
+            <Text style={styles.autoStartHint}>
+              Auto-starting new order in {countdown}s
+            </Text>
+          ) : null}
         </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -408,57 +452,69 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxxl,
     paddingBottom: spacing.xxl,
   },
+  hero: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    gap: spacing.md,
+  },
   checkmark: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.successLight,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    // Green-tinted background with a subtle ring — confirmation as a moment,
+    // not a dim teal "maybe processed" feel.
+    backgroundColor: 'rgba(52,199,89,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(52,199,89,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: spacing.xl,
   },
-  title: {
-    ...typography.title1,
+  heroTitle: {
+    ...typography.displayMedium,
     textAlign: 'center',
-    marginBottom: spacing.xxxl,
+    marginTop: spacing.sm,
+  },
+  heroAmount: {
+    ...typography.displayLarge,
+    textAlign: 'center',
+  },
+  heroMeta: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
   details: {
     flex: 1,
   },
-  businessName: {
-    ...typography.bodyBold,
-    textAlign: 'center',
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
+  changeStrip: {
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
   },
-  totalSection: {
-    alignItems: 'center',
-    marginBottom: spacing.xxl,
-  },
-  totalAmount: {
-    ...typography.total,
-    fontSize: 40,
-  },
-  infoRow: {
+  changeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    alignItems: 'center',
   },
-  infoLabel: {
+  changeLabel: {
     ...typography.body,
     color: colors.textSecondary,
   },
-  infoValue: {
+  changeValue: {
     ...typography.bodyBold,
+    fontVariant: ['tabular-nums'],
   },
   itemsSection: {
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   lineItem: {
     flexDirection: 'row',
@@ -469,8 +525,17 @@ const styles = StyleSheet.create({
     ...typography.body,
     flex: 1,
   },
+  lineItemQty: {
+    color: colors.textMuted,
+  },
+  lineItemModifiers: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   lineItemPrice: {
     ...typography.priceMuted,
+    marginLeft: spacing.md,
   },
   breakdownSection: {
     borderTopWidth: 1,
@@ -495,6 +560,12 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: spacing.xxl,
     gap: spacing.md,
+  },
+  autoStartHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.md,
   },
   receiptButtonRow: {
     flexDirection: 'row',

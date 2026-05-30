@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
+import { colors, typography, spacing, borderRadius, touchTargets, fonts } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { formatCurrency, getCurrencySymbol } from '../utils/currency';
 import { useApp } from '../state/AppContext';
@@ -183,17 +183,23 @@ export default function SummaryScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>
           {settings.testMode === 'on'
-            ? 'Test Mode Total (not real revenue)'
-            : strings.summary.today}
+            ? 'Test mode (not real revenue)'
+            : 'Sales'}
         </Text>
-        <TouchableOpacity
-          onPress={isPaidTier ? () => setShowDatePicker(true) : undefined}
-          disabled={!isPaidTier}
-        >
-          <Text style={[styles.date, isPaidTier && styles.dateClickable]}>
-            {dateLabel}{isPaidTier ? ' ▼' : ''}
-          </Text>
-        </TouchableOpacity>
+        {isPaidTier ? (
+          // Paid tier: tappable pill with chevron — opens date range picker
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            style={styles.datePill}
+          >
+            <Text style={styles.datePillText}>{dateLabel}</Text>
+            <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+        ) : (
+          // Free tier: range is always Today — render as a quiet subtitle
+          // so it doesn't look like a stranded button.
+          <Text style={styles.dateCaption}>{dateLabel}</Text>
+        )}
       </View>
 
       <FlatList
@@ -227,12 +233,12 @@ export default function SummaryScreen() {
 
       <View style={styles.footer}>
         <View style={{ flex: 1 }}>
-          <Button label={strings.summary.share} variant="ghost" size="md" onPress={handleShare} />
+          <Button label={strings.summary.share} variant="primary" size="md" onPress={handleShare} />
         </View>
         <View style={{ flex: 1 }}>
           <Button
             label={exporting ? '…' : strings.summary.exportCsv}
-            variant="primary"
+            variant="ghost"
             size="md"
             onPress={handleExportCSV}
             disabled={exporting}
@@ -297,12 +303,28 @@ const styles = StyleSheet.create({
   title: {
     ...typography.title1,
   },
-  date: {
-    ...typography.caption,
-    marginTop: spacing.xs,
+  datePill: {
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  dateClickable: {
-    color: colors.primary,
+  datePillText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontFamily: fonts.body,
+  },
+  dateCaption: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   list: {
     paddingHorizontal: spacing.lg,
@@ -318,16 +340,19 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   orderTime: {
-    ...typography.eyebrow,
-    fontSize: 12,
+    fontSize: 13,
+    fontFamily: fonts.body,
+    color: colors.textSecondary,
   },
   orderTotal: {
     ...typography.priceMuted,
     marginRight: spacing.md,
+    color: colors.text,
   },
   orderMethod: {
-    ...typography.eyebrow,
-    fontSize: 11,
+    fontSize: 12,
+    fontFamily: fonts.bodyRegular,
+    color: colors.textMuted,
     width: 110,
     textAlign: 'right',
   },

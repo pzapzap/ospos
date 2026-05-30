@@ -6,18 +6,28 @@ import { TextStyle } from 'react-native';
 // ════════════════════════════════════════════════════════════
 
 export const fonts = {
-  // Bitter: slab serif — body, headers, buttons, labels
-  display: 'Bitter_700Bold',
-  displaySemiBold: 'Bitter_600SemiBold',
-  body: 'Bitter_500Medium',
-  bodyRegular: 'Bitter_400Regular',
+  // Inter: sans-serif — body, headers, buttons, labels, numbers.
+  // One UI font for the whole app.
+  display: 'Inter_700Bold',
+  displaySemiBold: 'Inter_600SemiBold',
+  body: 'Inter_500Medium',
+  bodyRegular: 'Inter_400Regular',
+  // Bitter italic stays for menu-tile monogram letters — slab serif italic
+  // is OSPOS's signature visual for empty/single-letter glyphs and Inter
+  // doesn't ship italic in our default load.
   bodyItalic: 'Bitter_500Medium_Italic',
 
-  // Archivo: grotesque sans — ALL prices, totals, dollar amounts
-  num: 'Archivo_700Bold',
-  numSemiBold: 'Archivo_600SemiBold',
-  numMedium: 'Archivo_500Medium',
-  numRegular: 'Archivo_400Regular',
+  // DM Serif Display: reserved for display moments only — hero totals,
+  // page titles like "Sales" and "Settings", "Payment received". Never
+  // used in lists, buttons, body text, or anything dense.
+  displaySerif: 'DMSerifDisplay_400Regular',
+
+  // Numbers map to Inter at appropriate weights. Tabular-nums applied
+  // per-usage via fontVariant: ['tabular-nums'] for alignment in grids.
+  num: 'Inter_700Bold',
+  numSemiBold: 'Inter_600SemiBold',
+  numMedium: 'Inter_500Medium',
+  numRegular: 'Inter_400Regular',
 
   // JetBrains Mono: eyebrows, IDs, timestamps, technical metadata
   mono: 'JetBrainsMono_500Medium',
@@ -73,10 +83,15 @@ export const colors = {
 } as const;
 
 export const typography: Record<string, TextStyle> = {
-  largeTitle: { fontSize: 34, fontFamily: fonts.display, color: colors.text },
-  title1: { fontSize: 28, fontFamily: fonts.display, color: colors.text },
+  // PAGE TITLES — DM Serif Display, reserved for display moments
+  largeTitle: { fontSize: 34, fontFamily: fonts.displaySerif, color: colors.text, letterSpacing: -0.5 },
+  title1: { fontSize: 28, fontFamily: fonts.displaySerif, color: colors.text, letterSpacing: -0.4 },
+
+  // SECONDARY HEADINGS — Inter SemiBold (functional, not display)
   title2: { fontSize: 22, fontFamily: fonts.displaySemiBold, color: colors.text },
   title3: { fontSize: 20, fontFamily: fonts.displaySemiBold, color: colors.text },
+
+  // BODY — Inter
   body: { fontSize: 17, fontFamily: fonts.body, color: colors.text },
   bodyBold: { fontSize: 17, fontFamily: fonts.displaySemiBold, color: colors.text },
   caption: { fontSize: 13, fontFamily: fonts.bodyRegular, color: colors.textSecondary },
@@ -90,12 +105,19 @@ export const typography: Record<string, TextStyle> = {
     color: colors.textSecondary,
   },
 
-  // NUMBER STYLES — Archivo
-  price: { fontSize: 20, fontFamily: fonts.num, color: colors.primary },
-  total: { fontSize: 32, fontFamily: fonts.num, color: colors.text },
-  priceSmall: { fontSize: 15, fontFamily: fonts.numSemiBold, color: colors.primary },
-  priceMuted: { fontSize: 15, fontFamily: fonts.numMedium, color: colors.textSecondary },
-  statNumber: { fontSize: 22, fontFamily: fonts.num, color: colors.primary },
+  // HERO DISPLAY NUMBERS — DM Serif Display, the "display moments":
+  // PaymentScreen total, ReceiptScreen amount, SummaryScreen total sales.
+  displayHero: { fontSize: 56, fontFamily: fonts.displaySerif, color: colors.text, letterSpacing: -1, fontVariant: ['tabular-nums'] },
+  displayLarge: { fontSize: 44, fontFamily: fonts.displaySerif, color: colors.text, letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
+  displayMedium: { fontSize: 30, fontFamily: fonts.displaySerif, color: colors.text, letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
+
+  // FUNCTIONAL NUMBERS — Inter with tabular-nums. Used in lists, totals,
+  // anywhere a number sits next to a label (not the hero of the screen).
+  price: { fontSize: 20, fontFamily: fonts.num, color: colors.primary, fontVariant: ['tabular-nums'] },
+  total: { fontSize: 32, fontFamily: fonts.num, color: colors.text, fontVariant: ['tabular-nums'] },
+  priceSmall: { fontSize: 15, fontFamily: fonts.numSemiBold, color: colors.primary, fontVariant: ['tabular-nums'] },
+  priceMuted: { fontSize: 15, fontFamily: fonts.numMedium, color: colors.textSecondary, fontVariant: ['tabular-nums'] },
+  statNumber: { fontSize: 22, fontFamily: fonts.num, color: colors.primary, fontVariant: ['tabular-nums'] },
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32 } as const;

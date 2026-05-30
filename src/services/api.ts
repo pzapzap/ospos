@@ -438,7 +438,16 @@ export interface ReceiptOrderData {
   paymentMethod: string;
   createdAt: string;
   cashTendered?: number;
-  items: Array<{ name: string; price: number; quantity: number }>;
+  // price = unit price INCLUDING modifier deltas (so price × quantity is the
+  // correct line total). modifiers carries the selection list for the receipt
+  // template to render under each item line.
+  items: Array<{
+    name: string;
+    price: number;
+    quantity: number;
+    modifiers?: Array<{ name: string; priceCents: number; groupName?: string }>;
+  }>;
+  discount?: { type: 'percent' | 'amount'; value: number; amount: number; reason?: string };
 }
 
 export async function sendReceipt(

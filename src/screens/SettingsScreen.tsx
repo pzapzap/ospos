@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
 import { stepUpAuth } from '../utils/stepUpAuth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -190,70 +191,84 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           </TouchableOpacity>
         ) : null}
 
-        {/* Business Name */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{strings.settings.businessName}</Text>
-          <TextInput
-            style={styles.input}
-            value={localBusinessName}
-            onChangeText={setLocalBusinessName}
-            onBlur={() => {
-              if (localBusinessName !== settings.businessName) {
-                updateSetting('businessName', localBusinessName);
-              }
-            }}
-            placeholder={strings.settings.businessNamePlaceholder}
-            placeholderTextColor={colors.textMuted}
-            maxLength={MAX_BUSINESS_NAME_LENGTH}
-            autoCapitalize="words"
-            accessibilityLabel="Business name"
-          />
-        </View>
-
-        {/* Tax Rate */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{strings.settings.taxRate}</Text>
+        <Text style={styles.sectionLabel}>Business</Text>
+        <View style={styles.card}>
+          {/* Name — inline edit, right-aligned in row */}
+          <View style={styles.cardRow}>
+            <Text style={styles.cardRowLabel}>Name</Text>
+            <TextInput
+              style={styles.cardRowInput}
+              value={localBusinessName}
+              onChangeText={setLocalBusinessName}
+              onBlur={() => {
+                if (localBusinessName !== settings.businessName) {
+                  updateSetting('businessName', localBusinessName);
+                }
+              }}
+              placeholder={strings.settings.businessNamePlaceholder}
+              placeholderTextColor={colors.textMuted}
+              maxLength={MAX_BUSINESS_NAME_LENGTH}
+              autoCapitalize="words"
+              accessibilityLabel="Business name"
+            />
+          </View>
+          <View style={styles.cardDivider} />
+          {/* Tax rate — tap to open picker */}
           <TouchableOpacity
-            style={styles.pickerButton}
+            style={styles.cardRow}
             onPress={() => setShowTaxRateModal(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Tax rate, currently ${taxDisplay}`}
           >
-            <Text style={styles.pickerText}>{taxDisplay}</Text>
+            <Text style={styles.cardRowLabel}>Tax rate</Text>
+            <View style={styles.cardRowValueGroup}>
+              <Text style={styles.cardRowValue}>{taxDisplay}</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+            </View>
           </TouchableOpacity>
-          <Text style={styles.hint}>{strings.settings.taxNote}</Text>
-        </View>
-
-        {/* Currency */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{strings.settings.currency}</Text>
+          <View style={styles.cardDivider} />
+          {/* Currency — tap to open picker */}
           <TouchableOpacity
-            style={styles.pickerButton}
+            style={styles.cardRow}
             onPress={() => setShowCurrencyPicker(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Currency"
           >
-            <Text style={styles.pickerText}>
-              {selectedCurrency
-                ? `${selectedCurrency.symbol} ${selectedCurrency.code} — ${selectedCurrency.name}`
-                : settings.currency}
-            </Text>
+            <Text style={styles.cardRowLabel}>Currency</Text>
+            <View style={styles.cardRowValueGroup}>
+              <Text style={styles.cardRowValue}>
+                {selectedCurrency
+                  ? `${selectedCurrency.symbol} ${selectedCurrency.code}`
+                  : settings.currency}
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+            </View>
           </TouchableOpacity>
         </View>
+        <View style={styles.savedRow}>
+          <Ionicons name="checkmark-circle" size={14} color={colors.green} />
+          <Text style={styles.savedText}>Saved automatically</Text>
+        </View>
 
-        {/* Receipt Footer */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{strings.settings.receiptFooter}</Text>
-          <TextInput
-            style={styles.input}
-            value={localReceiptFooter}
-            onChangeText={setLocalReceiptFooter}
-            onBlur={() => {
-              if (localReceiptFooter !== settings.receiptFooter) {
-                updateSetting('receiptFooter', localReceiptFooter);
-              }
-            }}
-            placeholder={strings.settings.receiptFooterPlaceholder}
-            placeholderTextColor={colors.textMuted}
-            maxLength={MAX_RECEIPT_FOOTER_LENGTH}
-            accessibilityLabel="Receipt footer text"
-          />
+        <Text style={styles.sectionLabel}>Receipt</Text>
+        <View style={styles.card}>
+          <View style={styles.cardRow}>
+            <Text style={styles.cardRowLabel}>Footer message</Text>
+            <TextInput
+              style={styles.cardRowInput}
+              value={localReceiptFooter}
+              onChangeText={setLocalReceiptFooter}
+              onBlur={() => {
+                if (localReceiptFooter !== settings.receiptFooter) {
+                  updateSetting('receiptFooter', localReceiptFooter);
+                }
+              }}
+              placeholder={strings.settings.receiptFooterPlaceholder}
+              placeholderTextColor={colors.textMuted}
+              maxLength={MAX_RECEIPT_FOOTER_LENGTH}
+              accessibilityLabel="Receipt footer text"
+            />
+          </View>
         </View>
 
         {/* Upgrade to paid tier (free tier only) */}
@@ -303,10 +318,45 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           </TouchableOpacity>
         )}
 
-        {/* Test Mode */}
-        <View style={styles.section}>
-          <View style={styles.switchRow}>
-            <Text style={styles.label}>Test Mode</Text>
+        <Text style={styles.sectionLabel}>Order screen</Text>
+        <View style={styles.card}>
+          {/* QSR mode — shows the CategoryStrip + filter above the order grid.
+              Default off; coffee shops with a single un-categorized menu
+              shouldn't see category UI they don't need. Merchant opts in
+              when their menu spans multiple categories. */}
+          <View style={styles.cardRow}>
+            <View style={styles.cardRowTextGroup}>
+              <Text style={styles.cardRowLabel}>{strings.settings.qsrModeLabel}</Text>
+              <Text style={styles.cardRowSub}>
+                {settings.qsrMode === 'on'
+                  ? 'Categories show above the order grid'
+                  : strings.settings.qsrModeHint}
+              </Text>
+            </View>
+            <Switch
+              value={settings.qsrMode === 'on'}
+              onValueChange={(val) =>
+                updateSetting('qsrMode', val ? 'on' : 'off')
+              }
+              trackColor={{ false: colors.disabled, true: colors.primaryDark }}
+              thumbColor={colors.white}
+              accessibilityLabel="QSR mode"
+            />
+          </View>
+        </View>
+
+        <Text style={styles.sectionLabel}>Advanced</Text>
+        <View style={styles.card}>
+          {/* Test Mode toggle with descriptive sub */}
+          <View style={styles.cardRow}>
+            <View style={styles.cardRowTextGroup}>
+              <Text style={styles.cardRowLabel}>Test mode</Text>
+              <Text style={styles.cardRowSub}>
+                {isTestMode
+                  ? 'Active — no real charges will be processed'
+                  : 'Use sample data, don’t record sales'}
+              </Text>
+            </View>
             <Switch
               value={isTestMode}
               onValueChange={handleTestModeToggle}
@@ -314,11 +364,35 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
               thumbColor={colors.white}
             />
           </View>
-          {isTestMode ? (
-            <Text style={styles.testModeWarning}>
-              Test mode active — no real charges will be processed
-            </Text>
-          ) : null}
+          <View style={styles.cardDivider} />
+          {/* Weekly auto-backup toggle with descriptive sub */}
+          <View style={styles.cardRow}>
+            <View style={styles.cardRowTextGroup}>
+              <Text style={styles.cardRowLabel}>Weekly auto-backup</Text>
+              <Text style={styles.cardRowSub}>
+                {settings.autoBackup === 'on'
+                  ? 'Local backup every 7 days'
+                  : 'Off — manual backups only'}
+              </Text>
+            </View>
+            <Switch
+              value={settings.autoBackup === 'on'}
+              onValueChange={(val) =>
+                updateSetting('autoBackup', val ? 'on' : 'off')
+              }
+              trackColor={{ false: colors.disabled, true: colors.primaryDark }}
+              thumbColor={colors.white}
+            />
+          </View>
+        </View>
+        {/* Back up now — kept as the explicit big button per merchant ask */}
+        <View style={{ marginBottom: spacing.xxl }}>
+          <Button
+            label={strings.settings.backupNow}
+            variant="ghost"
+            size="md"
+            onPress={handleBackupNow}
+          />
         </View>
 
         {/* Tap to Pay on iPhone (paid tier only) */}
@@ -519,27 +593,6 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
         </View>
         */}
 
-        {/* Auto-Backup */}
-        <View style={styles.section}>
-          <View style={styles.switchRow}>
-            <Text style={styles.label}>{strings.settings.autoBackup}</Text>
-            <Switch
-              value={settings.autoBackup === 'on'}
-              onValueChange={(val) =>
-                updateSetting('autoBackup', val ? 'on' : 'off')
-              }
-              trackColor={{ false: colors.disabled, true: colors.primaryDark }}
-              thumbColor={colors.white}
-            />
-          </View>
-          <Button
-            label={strings.settings.backupNow}
-            variant="ghost"
-            size="md"
-            onPress={handleBackupNow}
-          />
-        </View>
-
         {/* Help & Support */}
         <TouchableOpacity
           style={styles.linkRow}
@@ -547,31 +600,6 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
         >
           <Text style={styles.linkText}>{strings.settings.helpSupport}</Text>
         </TouchableOpacity>
-
-        {/* DEBUG: Reset TTPOi flags — remove before production */}
-        {__DEV__ ? (
-          <TouchableOpacity
-            style={[styles.linkRow, { borderColor: colors.warning }]}
-            onPress={async () => {
-              await SecureStore.deleteItemAsync('ttpoi_awareness_shown');
-              await SecureStore.deleteItemAsync('ttpoi_setup_complete');
-              const { setSetting } = require('../db/queries');
-              await setSetting('ttpoi_setup_complete', 'false');
-              Alert.alert('Reset', 'TTPOi flags cleared. Hard close and reopen the app.');
-            }}
-          >
-            <Text style={[styles.linkText, { color: colors.warning }]}>DEV: Reset TTPOi Flags</Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {__DEV__ ? (
-          <TouchableOpacity
-            style={[styles.linkRow, { borderColor: colors.warning }]}
-            onPress={onButtonShowcase}
-          >
-            <Text style={[styles.linkText, { color: colors.warning }]}>DEV: Button Showcase</Text>
-          </TouchableOpacity>
-        ) : null}
 
         {/* Legal */}
         <View style={styles.legalRow}>
@@ -676,6 +704,82 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.xxl, paddingTop: spacing.xl, paddingBottom: spacing.xxxl },
   title: { ...typography.title1, marginBottom: spacing.xxl },
   section: { marginBottom: spacing.xxl },
+  // Section label — small-caps Inter, quiet. Replaces the older all-caps
+  // slab serif "BUSINESS NAME" treatment that competed with field values.
+  sectionLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter_500Medium',
+    color: colors.textMuted,
+    letterSpacing: 0.6,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+    paddingLeft: spacing.md,
+  },
+  // Card — iOS Settings pattern. Groups related fields with hairline dividers.
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    minHeight: 44,
+  },
+  cardRowLabel: {
+    ...typography.body,
+    color: colors.text,
+    flex: 1,
+  },
+  cardRowSub: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  cardRowTextGroup: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  cardRowValue: {
+    ...typography.body,
+    color: colors.textSecondary,
+    fontFamily: 'Inter_500Medium',
+  },
+  cardRowValueGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  cardRowInput: {
+    ...typography.body,
+    color: colors.text,
+    fontFamily: 'Inter_500Medium',
+    flex: 1,
+    textAlign: 'right',
+    padding: 0,
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: spacing.lg,
+  },
+  savedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+    paddingLeft: spacing.md,
+  },
+  savedText: {
+    fontSize: 11,
+    color: colors.green,
+    fontFamily: 'Inter_500Medium',
+  },
   label: { ...typography.caption, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.sm },
   input: { backgroundColor: colors.surface, borderRadius: borderRadius.md, padding: spacing.lg, ...typography.body, color: colors.text, borderWidth: 1, borderColor: colors.border },
   hint: { ...typography.caption, color: colors.textMuted, marginTop: spacing.sm, lineHeight: 18 },
@@ -696,7 +800,7 @@ const styles = StyleSheet.create({
   legalRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, paddingVertical: spacing.md, gap: spacing.sm },
   legalLink: { ...typography.caption, color: colors.textMuted },
   legalDot: { ...typography.caption, color: colors.textMuted },
-  upgradeButton: { backgroundColor: colors.primary, borderRadius: borderRadius.lg, paddingVertical: spacing.lg, paddingHorizontal: spacing.xl, alignItems: 'center', marginBottom: spacing.xxl, borderWidth: 2, borderColor: colors.primaryDark, borderBottomWidth: 4 },
+  upgradeButton: { backgroundColor: colors.primary, borderRadius: borderRadius.lg, paddingVertical: spacing.lg, paddingHorizontal: spacing.xl, alignItems: 'center', marginTop: spacing.xxl, marginBottom: spacing.xxl, borderWidth: 2, borderColor: colors.primaryDark, borderBottomWidth: 4 },
   upgradeButtonText: { ...typography.bodyBold, color: colors.black, fontSize: 16 },
   upgradeHint: { ...typography.caption, color: colors.black, opacity: 0.8, marginTop: spacing.xs },
   aboutSection: { paddingTop: spacing.lg, gap: spacing.xs },

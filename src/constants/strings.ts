@@ -86,6 +86,16 @@ export const strings = {
     success: 'Payment successful',
     editMenu: 'Edit Menu',
   },
+  // QSR mode — CategoryStrip on the order grid. Strings used as small-caps
+  // eyebrow labels (lowercase here; CategoryStrip applies textTransform).
+  categories: {
+    allItems: 'All items',
+    showingPrefix: 'Showing',
+    uncategorized: 'Uncategorized',
+    emptyFilterTitle: (category: string) => `Nothing in ${category} right now`,
+    emptyFilterHint: 'Items sold out today are hidden. Toggle them back in Menu.',
+    clearFilter: 'Show all items',
+  },
   payment: {
     title: 'Payment',
     cash: 'Cash',
@@ -148,6 +158,8 @@ export const strings = {
   },
   settings: {
     title: 'Settings',
+    qsrModeLabel: 'QSR mode',
+    qsrModeHint: 'Show categories above the order grid so cashiers can filter items by type. Useful for menus with 20+ items across multiple categories.',
     businessName: 'Business Name',
     businessNamePlaceholder: 'Your Business',
     taxRate: 'Tax Rate (%)',

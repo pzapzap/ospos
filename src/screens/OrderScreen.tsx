@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,17 +8,21 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
+  LayoutAnimation,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
-import { getActiveItems, type Item } from '../db/queries';
+import { getOrderableItems, getModifiersForItem, type Item, type ModifierSnapshot } from '../db/queries';
 import ItemButton from '../components/ItemButton';
 import Button from '../components/Button';
 import OrderPanel from '../components/OrderPanel';
 import ChargeButton, { type ChargeButtonState } from '../components/ChargeButton';
+import CustomizeItemModal from '../components/CustomizeItemModal';
+import DiscountModal from '../components/DiscountModal';
+import CategoryStrip, { UNCATEGORIZED } from '../components/CategoryStrip';
 
 interface OrderScreenProps {
   onCharge: () => void;
@@ -29,6 +33,34 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
   const { order, orderDispatch, settings } = useApp();
   const [menuItems, setMenuItems] = useState<Item[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
+  // Track which items have at least one modifier so we know whether tap should
+  // route to CustomizeItemModal (immediate) or add-to-cart directly.
+  const [itemsWithModifiers, setItemsWithModifiers] = useState<Set<string>>(new Set());
+  const [customizingItem, setCustomizingItem] = useState<Item | null>(null);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  // QSR mode category filter. null = ALL ITEMS; UNCATEGORIZED for null-category items.
+  // Only rendered when settings.qsrMode === 'on'.
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Cart panel grows as items are rung in. Empty cart keeps the menu front
+  // and center (6:4 grid:panel — original layout); each item shifts the split
+  // toward the panel. Capped at 3:7 so 3 rows of menu tiles stay visible
+  // during a packed cart.
+  const panelFlex = Math.min(7, 4 + order.items.length * 0.5);
+  const gridFlex = 10 - panelFlex;
+
+  // Animate the flex transition so the panel doesn't snap when an item is
+  // added or removed. iOS Simulator + device both honor this without setup.
+  useEffect(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  }, [order.items.length]);
+  // Edit-from-cart context. When set, the customize sheet opens in edit mode
+  // pre-filled with the line's current modifiers + quantity.
+  const [editingLine, setEditingLine] = useState<{
+    lineIndex: number;
+    modifiers: ModifierSnapshot[];
+    quantity: number;
+  } | null>(null);
   const navigatingRef = React.useRef(false);
 
   // Derive charge state — no need for separate state + effect
@@ -36,8 +68,17 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
 
   const loadItems = useCallback(async () => {
     try {
-      const items = await getActiveItems();
+      const items = await getOrderableItems();
       setMenuItems(items);
+      // Parallel-fetch modifier counts so tap routing is instant. Items with
+      // 1+ active modifiers go in the set; others fall through to direct add.
+      const counts = await Promise.all(
+        items.map(async (it) => {
+          const mods = await getModifiersForItem(it.id);
+          return [it.id, mods.length > 0] as const;
+        })
+      );
+      setItemsWithModifiers(new Set(counts.filter(([, has]) => has).map(([id]) => id)));
     } catch (e) {
       if (__DEV__) console.warn('[OrderScreen] Failed to load items:', e);
     } finally {
@@ -51,16 +92,111 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
     }, [loadItems])
   );
 
+  // QSR mode is opt-in via Settings. When it's flipped off, drop any active
+  // filter so the merchant doesn't carry a stale selection back into a
+  // non-categorized flow next time they flip it on.
+  const qsrEnabled = settings.qsrMode === 'on';
+  useEffect(() => {
+    if (!qsrEnabled && selectedCategory !== null) {
+      setSelectedCategory(null);
+    }
+  }, [qsrEnabled, selectedCategory]);
+
+  // Derive the category list from loaded items every time menuItems changes.
+  // Free-form text → Set → sorted array. hasUncategorized flags whether any
+  // item lacks a category (drives whether to render the trailing pill).
+  const { categories, hasUncategorized } = useMemo(() => {
+    const set = new Set<string>();
+    let hasNull = false;
+    for (const it of menuItems) {
+      const c = it.category?.trim();
+      if (c) set.add(c);
+      else hasNull = true;
+    }
+    return { categories: Array.from(set).sort(), hasUncategorized: hasNull };
+  }, [menuItems]);
+
+  // Stale-selection guard: if the merchant renames or deletes the selected
+  // category in Edit Menu, the previous string no longer exists in the
+  // derived list. Drop to null silently.
+  useEffect(() => {
+    if (!selectedCategory || selectedCategory === UNCATEGORIZED) return;
+    if (!categories.includes(selectedCategory)) {
+      setSelectedCategory(null);
+    }
+  }, [categories, selectedCategory]);
+
+  // Filtered grid data. When QSR mode is off, never filter — always show all.
+  const filteredItems = useMemo(() => {
+    if (!qsrEnabled || !selectedCategory) return menuItems;
+    if (selectedCategory === UNCATEGORIZED) {
+      return menuItems.filter((i) => !i.category?.trim());
+    }
+    return menuItems.filter((i) => i.category?.trim() === selectedCategory);
+  }, [menuItems, selectedCategory, qsrEnabled]);
+
   const handleItemPress = useCallback((item: Item) => {
+    // Items with modifiers route to the customize sheet first; everything
+    // else adds straight to the cart for fast tapping.
+    if (itemsWithModifiers.has(item.id)) {
+      setCustomizingItem(item);
+      return;
+    }
     orderDispatch({
       type: 'ADD_ITEM',
       payload: {
         itemId: item.id,
         itemName: item.name,
         itemPrice: item.price,
+        isTaxable: item.is_taxable === 1,
       },
     });
+  }, [orderDispatch, itemsWithModifiers]);
+
+  const handleCustomizeAdd = useCallback((selectedModifiers: ModifierSnapshot[], quantity: number) => {
+    if (!customizingItem) return;
+    orderDispatch({
+      type: 'ADD_ITEM',
+      payload: {
+        itemId: customizingItem.id,
+        itemName: customizingItem.name,
+        itemPrice: customizingItem.price,
+        modifiers: selectedModifiers,
+        quantity,
+        isTaxable: customizingItem.is_taxable === 1,
+      },
+    });
+    setCustomizingItem(null);
+    setEditingLine(null);
+  }, [customizingItem, orderDispatch]);
+
+  const handleCustomizeUpdate = useCallback((lineIndex: number, modifiers: ModifierSnapshot[], quantity: number) => {
+    orderDispatch({ type: 'UPDATE_LINE', payload: { lineIndex, modifiers, quantity } });
+    setCustomizingItem(null);
+    setEditingLine(null);
   }, [orderDispatch]);
+
+  // Tap a cart line's "Customize" → reopen the sheet in edit mode pre-filled
+  // with the current line's modifiers + quantity.
+  const handleEditLine = useCallback((lineIndex: number) => {
+    const line = order.items[lineIndex];
+    if (!line) return;
+    const itemRow = menuItems.find((it) => it.id === line.itemId);
+    if (!itemRow) return;
+    setEditingLine({ lineIndex, modifiers: line.modifiers, quantity: line.quantity });
+    setCustomizingItem(itemRow);
+  }, [order.items, menuItems]);
+
+  // Cart-line indices whose underlying item still has at least one modifier
+  // group — the "Customize" button only shows on these. Recomputed every
+  // render but the set is tiny so this is cheap.
+  const customizableLineIndices = useMemo(() => {
+    const set = new Set<number>();
+    order.items.forEach((line, idx) => {
+      if (itemsWithModifiers.has(line.itemId)) set.add(idx);
+    });
+    return set;
+  }, [order.items, itemsWithModifiers]);
 
   const handleClear = useCallback(() => {
     Alert.alert(
@@ -94,24 +230,66 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top 60%: Item Grid */}
-      <View style={styles.gridSection}>
+      {/* Item grid — shrinks as the cart fills (see panelFlex calc above) */}
+      <View style={[styles.gridSection, { flex: gridFlex }]}>
         <View style={styles.gridHeader}>
           <Button label={strings.order.editMenu} variant="ghost" size="sm" onPress={onMenuEdit} accessibilityLabel="Go to menu editor" />
           {order.items.length > 0 ? (
             <Button label={strings.order.clear} variant="destructive" size="sm" onPress={handleClear} accessibilityLabel="Clear all items from order" />
           ) : null}
         </View>
+        {/* QSR-only: category strip + filter eyebrow. Only renders when the
+            merchant has opted into QSR mode AND has at least one item with
+            a category (so single-menu coffee shops who flip it on don't see
+            an empty strip). */}
+        {qsrEnabled && (categories.length > 0 || hasUncategorized) ? (
+          <CategoryStrip
+            categories={categories}
+            selected={selectedCategory}
+            hasUncategorized={hasUncategorized}
+            onSelect={setSelectedCategory}
+          />
+        ) : null}
         <FlatList
-          data={menuItems}
+          data={filteredItems}
+          extraData={selectedCategory}
           keyExtractor={(item) => item.id}
           renderItem={renderItemButton}
           numColumns={3}
-          contentContainerStyle={menuItems.length === 0 ? styles.gridEmpty : styles.grid}
+          contentContainerStyle={filteredItems.length === 0 ? styles.gridEmpty : styles.grid}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             menuLoading ? (
               <ActivityIndicator size="large" color={colors.primary} />
+            ) : qsrEnabled && selectedCategory && menuItems.length > 0 ? (
+              // Filtered-empty state: the merchant has a menu, but the
+              // selected category has zero visible items (likely all 86'd
+              // today). Use the first letter of the selected category as the
+              // hero monogram — the one place reusing Bitter italic is
+              // earned because it echoes the menu-tile fallback grammar.
+              <View style={styles.emptyGrid}>
+                <View style={styles.emptyHero}>
+                  <Text style={styles.emptyHeroGlyph}>
+                    {selectedCategory === UNCATEGORIZED
+                      ? '·'
+                      : (selectedCategory[0] ?? '·').toUpperCase()}
+                  </Text>
+                </View>
+                <Text style={styles.emptyGridTitle}>
+                  {strings.categories.emptyFilterTitle(
+                    selectedCategory === UNCATEGORIZED ? strings.categories.uncategorized : selectedCategory
+                  )}
+                </Text>
+                <Text style={styles.emptyGridText}>{strings.categories.emptyFilterHint}</Text>
+                <View style={{ marginTop: spacing.md, minWidth: 180 }}>
+                  <Button
+                    label={strings.categories.clearFilter}
+                    variant="ghost"
+                    size="md"
+                    onPress={() => setSelectedCategory(null)}
+                  />
+                </View>
+              </View>
             ) : (
               <View style={styles.emptyGrid}>
                 <View style={styles.emptyHero}>
@@ -128,23 +306,27 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
         />
       </View>
 
-      {/* Bottom 40%: Order Panel — ALWAYS VISIBLE */}
-      <View style={styles.panelSection}>
+      {/* Cart panel — grows as items are added */}
+      <View style={[styles.panelSection, { flex: panelFlex }]}>
         <OrderPanel
           items={order.items}
           subtotal={order.subtotal}
           taxAmount={order.taxAmount}
           total={order.total}
           currency={settings.currency}
-          onIncrement={(itemId) =>
-            orderDispatch({ type: 'INCREMENT_ITEM', payload: { itemId } })
+          onIncrement={(lineIndex) =>
+            orderDispatch({ type: 'INCREMENT_ITEM', payload: { lineIndex } })
           }
-          onDecrement={(itemId) =>
-            orderDispatch({ type: 'DECREMENT_ITEM', payload: { itemId } })
+          onDecrement={(lineIndex) =>
+            orderDispatch({ type: 'DECREMENT_ITEM', payload: { lineIndex } })
           }
-          onRemove={(itemId) =>
-            orderDispatch({ type: 'REMOVE_ITEM', payload: { itemId } })
+          onRemove={(lineIndex) =>
+            orderDispatch({ type: 'REMOVE_ITEM', payload: { lineIndex } })
           }
+          onCustomize={handleEditLine}
+          customizableLineIndices={customizableLineIndices}
+          discount={order.discount}
+          onDiscountTap={() => setShowDiscountModal(true)}
         />
         <View style={styles.chargeContainer}>
           <ChargeButton
@@ -155,6 +337,41 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
           />
         </View>
       </View>
+
+      {/* Order-level discount editor */}
+      <DiscountModal
+        visible={showDiscountModal}
+        currency={settings.currency}
+        subtotal={order.subtotal}
+        existing={order.discount}
+        onClose={() => setShowDiscountModal(false)}
+        onSave={(data) => {
+          orderDispatch({ type: 'SET_DISCOUNT', payload: data });
+          setShowDiscountModal(false);
+        }}
+        onRemove={() => {
+          orderDispatch({ type: 'CLEAR_DISCOUNT' });
+          setShowDiscountModal(false);
+        }}
+      />
+
+      {/* Customize sheet — opens for items with modifiers (add mode) and for
+          cart-line edits (edit mode, pre-filled). */}
+      <CustomizeItemModal
+        visible={customizingItem !== null}
+        item={customizingItem}
+        currency={settings.currency}
+        mode={editingLine ? 'edit' : 'add'}
+        initialLineIndex={editingLine?.lineIndex}
+        initialModifiers={editingLine?.modifiers}
+        initialQuantity={editingLine?.quantity}
+        onClose={() => {
+          setCustomizingItem(null);
+          setEditingLine(null);
+        }}
+        onAdd={handleCustomizeAdd}
+        onUpdate={handleCustomizeUpdate}
+      />
     </SafeAreaView>
   );
 }
@@ -165,7 +382,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   gridSection: {
-    flex: 6, // 60%
+    // flex value is set inline (varies with cart item count — see panelFlex /
+    // gridFlex in the component body)
   },
   gridHeader: {
     flexDirection: 'row',
@@ -235,7 +453,7 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   panelSection: {
-    flex: 4, // 40%
+    // flex value is set inline (varies with cart item count)
   },
   chargeContainer: {
     paddingHorizontal: spacing.lg,
