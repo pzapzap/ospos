@@ -2,6 +2,14 @@
   "name": "ospos-server",
   "version": "1.0.0",
   "description": "OSPOS backend API server",
+  "license": "AGPL-3.0-or-later",
+  "author": "TTTS Co. LLC <phil@tttships.co> (https://ospos.app)",
+  "homepage": "https://ospos.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pzapzap/ospos.git",
+    "directory": "server"
+  },
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

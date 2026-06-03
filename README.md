@@ -4,7 +4,7 @@ A free, open-source point-of-sale app for iPhone. Cash for nothing, cards at 1% 
 
 Built by [TTTS Co.](https://ospos.app) for small merchants who hate giving 3–4% of every sale to a payment processor.
 
-[App Store](https://apps.apple.com/app/ospos/idTBD) · [ospos.app](https://ospos.app) · [phil@tttships.co](mailto:phil@tttships.co)
+[App Store](https://apps.apple.com/us/app/ospos/id6766436501) · [ospos.app](https://ospos.app) · [phil@tttships.co](mailto:phil@tttships.co)
 
 ---
 

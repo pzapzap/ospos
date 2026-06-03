@@ -1,6 +1,14 @@
 {
   "name": "ospos",
   "version": "1.0.0",
+  "description": "Open-source point of sale for iPhone. Cash always free, cards at 1%.",
+  "license": "AGPL-3.0-or-later",
+  "author": "TTTS Co. LLC <phil@tttships.co> (https://ospos.app)",
+  "homepage": "https://ospos.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pzapzap/ospos.git"
+  },
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
