@@ -17,6 +17,7 @@ import { lightTap } from '../utils/haptics';
 import Sticker from './Sticker';
 import Button from './Button';
 import { STICKERS, STICKERS_BY_CATEGORY, type StickerCategory } from '../assets/stickers';
+import { STICKER_KEYWORDS } from '../assets/stickers/keywords';
 
 // Full-screen browse-and-pick sticker library. Replaces the long inline
 // "all categories stacked vertically" picker that used to live inside
@@ -70,11 +71,22 @@ export default function StickerPickerModal({
 
   // When search is empty, show the active category. When search has text,
   // hide the tab strip and show flat matching results across all categories.
+  //
+  // Matching: substring against the sticker's name (with underscores
+  // normalized to spaces so "ice cream" matches "ice_cream"), the id, and
+  // any hand-curated aliases in STICKER_KEYWORDS. Aliases cover common-
+  // language menu terms that aren't substrings of the technical Unicode
+  // name (e.g. "lettuce" → leafy_green, "pickle" → cucumber).
   const searchActive = searchQuery.trim().length > 0;
   const visibleStickers = useMemo(() => {
     if (searchActive) {
       const q = searchQuery.trim().toLowerCase();
-      return STICKERS.filter((s) => s.name.includes(q) || s.id.includes(q));
+      return STICKERS.filter((s) => {
+        const normalizedName = s.name.replace(/_/g, ' ');
+        if (normalizedName.includes(q) || s.name.includes(q) || s.id.includes(q)) return true;
+        const aliases = STICKER_KEYWORDS[s.id];
+        return aliases?.some((k) => k.toLowerCase().includes(q)) ?? false;
+      });
     }
     return STICKERS_BY_CATEGORY[activeCategory];
   }, [searchActive, searchQuery, activeCategory]);

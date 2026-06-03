@@ -38,8 +38,8 @@ interface PaymentScreenProps {
 const TIP_OPTIONS = [
   { label: strings.payment.noTip, value: 0, percent: null, isCustom: false },
   { label: '15%', value: 0, percent: 15, isCustom: false },
+  { label: '18%', value: 0, percent: 18, isCustom: false },
   { label: '20%', value: 0, percent: 20, isCustom: false },
-  { label: '25%', value: 0, percent: 25, isCustom: false },
   { label: strings.payment.customTip, value: 0, percent: null, isCustom: true },
 ];
 
