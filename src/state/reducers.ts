@@ -114,7 +114,12 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       // Items only merge if they have the SAME itemId AND the SAME set of
       // selected modifiers. Customized items always create a new line —
       // "2 plain burgers + 1 burger with avocado" is 2 lines, not 1.
-      const modKey = mods.length === 0 ? '' : JSON.stringify(mods.map((m) => m.name).sort());
+      //
+      // Both sides serialize the same way (JSON.stringify of sorted name
+      // array). The previous version short-circuited mods.length === 0 to
+      // '', which silently broke stacking for plain items because the
+      // findIndex comparison always produced '[]' for empty modifiers.
+      const modKey = JSON.stringify(mods.map((m) => m.name).sort());
       const existingIdx = state.items.findIndex(
         (i) => i.itemId === incoming.itemId &&
                JSON.stringify(i.modifiers.map((m) => m.name).sort()) === modKey

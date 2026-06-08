@@ -62,6 +62,12 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
     quantity: number;
   } | null>(null);
   const navigatingRef = React.useRef(false);
+  // Menu grid FlatList ref so we can scroll-to-keep-visible after an item is
+  // added. The cart panel grows on every add (panelFlex), which shrinks the
+  // grid — without an active scroll, the just-tapped item can disappear
+  // below the cart edge. scrollToIndex(viewPosition: 0.5) keeps it centered
+  // in the new visible area.
+  const menuListRef = React.useRef<FlatList<Item>>(null);
 
   // Derive charge state — no need for separate state + effect
   const chargeState: ChargeButtonState = order.total > 0 ? 'ready' : 'disabled';
@@ -135,6 +141,32 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
     return menuItems.filter((i) => i.category?.trim() === selectedCategory);
   }, [menuItems, selectedCategory, qsrEnabled]);
 
+  // itemId → index in filteredItems, so we can scroll the grid to a specific
+  // item after it's been added to the cart. Rebuilds when the filter changes.
+  const itemIdToIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredItems.forEach((it, idx) => map.set(it.id, idx));
+    return map;
+  }, [filteredItems]);
+
+  // Scroll the grid so the given item stays visible after the cart grows.
+  // Fired from handleItemPress (direct add) and handleCustomizeAdd (after a
+  // customize sheet). Wrapped in requestAnimationFrame so it runs after the
+  // LayoutAnimation begins; try/catch swallows scrollToIndex out-of-bounds
+  // during transitions.
+  const scrollToItem = useCallback((itemId: string) => {
+    const idx = itemIdToIndex.get(itemId);
+    if (idx == null) return;
+    requestAnimationFrame(() => {
+      try {
+        menuListRef.current?.scrollToIndex({ index: idx, viewPosition: 0.5, animated: true });
+      } catch {
+        // Index can fall out of range mid-transition (filter change race,
+        // list size change). Ignore — the next tap re-scrolls correctly.
+      }
+    });
+  }, [itemIdToIndex]);
+
   const handleItemPress = useCallback((item: Item) => {
     // Items with modifiers route to the customize sheet first; everything
     // else adds straight to the cart for fast tapping.
@@ -151,14 +183,16 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
         isTaxable: item.is_taxable === 1,
       },
     });
-  }, [orderDispatch, itemsWithModifiers]);
+    scrollToItem(item.id);
+  }, [orderDispatch, itemsWithModifiers, scrollToItem]);
 
   const handleCustomizeAdd = useCallback((selectedModifiers: ModifierSnapshot[], quantity: number) => {
     if (!customizingItem) return;
+    const addedItemId = customizingItem.id;
     orderDispatch({
       type: 'ADD_ITEM',
       payload: {
-        itemId: customizingItem.id,
+        itemId: addedItemId,
         itemName: customizingItem.name,
         itemPrice: customizingItem.price,
         modifiers: selectedModifiers,
@@ -168,7 +202,8 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
     });
     setCustomizingItem(null);
     setEditingLine(null);
-  }, [customizingItem, orderDispatch]);
+    scrollToItem(addedItemId);
+  }, [customizingItem, orderDispatch, scrollToItem]);
 
   const handleCustomizeUpdate = useCallback((lineIndex: number, modifiers: ModifierSnapshot[], quantity: number) => {
     orderDispatch({ type: 'UPDATE_LINE', payload: { lineIndex, modifiers, quantity } });
@@ -251,6 +286,7 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
           />
         ) : null}
         <FlatList
+          ref={menuListRef}
           data={filteredItems}
           extraData={selectedCategory}
           keyExtractor={(item) => item.id}

@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
-import { MIGRATION_V1, MIGRATION_V2, MIGRATION_V3, MIGRATION_V4, MIGRATION_V5, MIGRATION_V6, MIGRATION_V7, MIGRATION_V8, MIGRATION_V9, MIGRATION_V10_SCHEMA, MIGRATION_V11, MIGRATION_V12, MIGRATION_V13, DEFAULT_SETTINGS } from './schema';
+import { MIGRATION_V1, MIGRATION_V2, MIGRATION_V3, MIGRATION_V4, MIGRATION_V5, MIGRATION_V6, MIGRATION_V7, MIGRATION_V8, MIGRATION_V9, MIGRATION_V10_SCHEMA, MIGRATION_V11, MIGRATION_V12, MIGRATION_V13, MIGRATION_V14, DEFAULT_SETTINGS } from './schema';
 
 // Local UUID generator — same algorithm as queries.ts. Inlined here to avoid
 // a migration→queries import cycle.
@@ -87,6 +87,10 @@ const migrations: Migration[] = [
   {
     version: 13,
     up: MIGRATION_V13,
+  },
+  {
+    version: 14,
+    up: MIGRATION_V14,
   },
 ];
 

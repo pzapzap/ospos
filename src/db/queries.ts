@@ -81,6 +81,7 @@ export interface Modifier {
   price_cents: number;
   group_name: string | null;
   is_default: number;        // 0 | 1
+  is_available: number;      // 0 | 1 — added v14; 0 = sold out today
   sort_order: number;
   sticker_id: string | null;
   created_at: string;
@@ -135,6 +136,19 @@ export async function getOrderableItems(): Promise<Item[]> {
   return db.getAllAsync<Item>(
     'SELECT * FROM items WHERE deleted_at IS NULL AND is_available = 1 ORDER BY sort_order ASC, created_at ASC'
   );
+}
+
+// Distinct non-empty categories currently in use, alphabetical. Powers the
+// category autocomplete in AddItemModal so merchants don't end up with
+// "Drinks"/"drinks"/"DRINKS" as three separate categories.
+export async function getDistinctCategories(): Promise<string[]> {
+  const db = getDatabase();
+  const rows = await db.getAllAsync<{ category: string }>(
+    `SELECT DISTINCT category FROM items
+     WHERE deleted_at IS NULL AND category IS NOT NULL AND category != ''
+     ORDER BY category COLLATE NOCASE ASC`
+  );
+  return rows.map((r) => r.category);
 }
 
 export async function createItem(
@@ -686,14 +700,15 @@ export async function createModifier(input: {
   groupName?: string | null;  // legacy safety net — mirrored from group's name
   stickerId?: string | null;
   isDefault?: boolean;
+  isAvailable?: boolean;      // v14 — default true; pass false to create as sold-out
   sortOrder?: number;
 }): Promise<Modifier> {
   const db = getDatabase();
   const id = generateUUID();
   const now = new Date().toISOString();
   await db.runAsync(
-    `INSERT INTO modifiers (id, item_id, group_id, name, price_cents, group_name, is_default, sort_order, sticker_id, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO modifiers (id, item_id, group_id, name, price_cents, group_name, is_default, is_available, sort_order, sticker_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       input.itemId,
@@ -702,6 +717,7 @@ export async function createModifier(input: {
       Math.round(input.priceCents),
       input.groupName ?? null,
       input.isDefault ? 1 : 0,
+      input.isAvailable === false ? 0 : 1,
       input.sortOrder ?? 0,
       input.stickerId ?? null,
       now,
@@ -721,6 +737,7 @@ export async function updateModifier(
     groupName?: string | null;
     stickerId?: string | null;
     isDefault?: boolean;
+    isAvailable?: boolean;
     sortOrder?: number;
   }
 ): Promise<void> {
@@ -733,6 +750,7 @@ export async function updateModifier(
   if (updates.groupName !== undefined) { sets.push('group_name = ?'); args.push(updates.groupName); }
   if (updates.stickerId !== undefined) { sets.push('sticker_id = ?'); args.push(updates.stickerId); }
   if (updates.isDefault !== undefined) { sets.push('is_default = ?'); args.push(updates.isDefault ? 1 : 0); }
+  if (updates.isAvailable !== undefined) { sets.push('is_available = ?'); args.push(updates.isAvailable ? 1 : 0); }
   if (updates.sortOrder !== undefined) { sets.push('sort_order = ?'); args.push(updates.sortOrder); }
   if (sets.length === 0) return;
   sets.push('updated_at = ?');

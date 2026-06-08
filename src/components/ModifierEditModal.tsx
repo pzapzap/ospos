@@ -23,7 +23,7 @@ import type { Modifier } from '../db/queries';
 interface ModifierEditModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (data: { name: string; priceCents: number; stickerId?: string; isDefault: boolean }) => void;
+  onSave: (data: { name: string; priceCents: number; stickerId?: string; isDefault: boolean; isAvailable: boolean }) => void;
   onDelete?: () => void;
   editModifier?: Modifier | null;
   // Group context — modifiers always live inside a group post-v10. Parent
@@ -48,6 +48,11 @@ export default function ModifierEditModal({
   const [cents, setCents] = useState(0);
   const [stickerId, setStickerId] = useState<string | null>(null);
   const [isDefault, setIsDefault] = useState(false);
+  // 86'd flag for this individual modifier. Default available. When ON,
+  // the customer-facing CustomizeItemModal filters this modifier out of
+  // the choices; the merchant editor still shows it so the toggle remains
+  // reachable to flip back tomorrow.
+  const [isAvailable, setIsAvailable] = useState(true);
   const [errors, setErrors] = useState<{ name?: string }>({});
   const [showStickerPicker, setShowStickerPicker] = useState(false);
 
@@ -60,11 +65,13 @@ export default function ModifierEditModal({
       setCents(editModifier.price_cents);
       setStickerId(editModifier.sticker_id);
       setIsDefault(editModifier.is_default === 1);
+      setIsAvailable(editModifier.is_available !== 0);
     } else {
       setName('');
       setCents(0);
       setStickerId(null);
       setIsDefault(false);
+      setIsAvailable(true);
     }
     setErrors({});
   }, [editModifier, visible]);
@@ -92,6 +99,7 @@ export default function ModifierEditModal({
       priceCents: cents,
       stickerId: stickerId ?? undefined,
       isDefault,
+      isAvailable,
     });
   };
 
@@ -186,6 +194,26 @@ export default function ModifierEditModal({
                 onValueChange={setIsDefault}
                 trackColor={{ false: colors.border, true: colors.primary }}
                 thumbColor={colors.surface}
+              />
+            </View>
+
+            {/* Sold out today — hides this modifier from the customer-facing
+                customize sheet. Stays in the editor so toggling back is one
+                tap. Mid-shift use: "we just ran out of oat milk" without
+                deleting the option or hiding the whole item. */}
+            <View style={[styles.field, styles.row]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>Sold out today</Text>
+                <Text style={styles.hint}>
+                  Hides this option from the customize sheet until you toggle back. Doesn&rsquo;t affect past orders.
+                </Text>
+              </View>
+              <Switch
+                value={!isAvailable}
+                onValueChange={(soldOut) => setIsAvailable(!soldOut)}
+                trackColor={{ false: colors.border, true: colors.warning }}
+                thumbColor={colors.surface}
+                accessibilityLabel="Mark this modifier sold out today"
               />
             </View>
 

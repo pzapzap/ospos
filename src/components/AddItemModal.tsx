@@ -31,6 +31,7 @@ import {
   createGroup,
   updateGroup,
   softDeleteGroup,
+  getDistinctCategories,
 } from '../db/queries';
 import type { Item, Modifier, ModifierGroup } from '../db/queries';
 import ModifierEditModal from './ModifierEditModal';
@@ -66,6 +67,11 @@ export default function AddItemModal({
   // hides item from order grid but keeps it in the editor.
   const [isAvailable, setIsAvailable] = useState(true);
   const [errors, setErrors] = useState<{ name?: string; price?: string }>({});
+  // Existing categories pulled fresh each time the modal opens, so the
+  // suggestion strip stays in sync if the merchant added items in another
+  // session. The strip below the category input filters down to matches as
+  // the user types.
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
   // Modifiers — only loaded/shown for existing items. New items must save first
   // before adding modifiers (the modifier_groups + modifiers tables both need
   // an item_id FK that doesn't exist until the item is created).
@@ -102,6 +108,26 @@ export default function AddItemModal({
     }
     setErrors({});
   }, [editItem, visible]);
+
+  // Load existing categories each time the modal becomes visible so the
+  // suggestion strip stays current across sessions.
+  useEffect(() => {
+    if (!visible) return;
+    getDistinctCategories().then(setExistingCategories).catch(() => {
+      setExistingCategories([]);
+    });
+  }, [visible]);
+
+  // Filter to matches that contain the typed substring but aren't already an
+  // exact match (no point suggesting what the user already typed). Cap at 6
+  // to keep the strip from running off-screen with large category lists.
+  const categorySuggestions = (() => {
+    const q = category.trim().toLowerCase();
+    if (q.length === 0) return [];
+    return existingCategories
+      .filter((c) => c.toLowerCase().includes(q) && c.toLowerCase() !== q)
+      .slice(0, 6);
+  })();
 
   // Load groups + modifiers when editing an existing item. Re-fetch when any
   // child modal closes so the list reflects fresh adds/edits/deletes.
@@ -148,7 +174,7 @@ export default function AddItemModal({
     setEditingGroup(null);
   };
 
-  const handleSaveModifier = async (data: { name: string; priceCents: number; stickerId?: string; isDefault: boolean }) => {
+  const handleSaveModifier = async (data: { name: string; priceCents: number; stickerId?: string; isDefault: boolean; isAvailable: boolean }) => {
     if (!editItem || !activeGroup) return;
 
     // Single-select groups behave like radios — only one option can be the
@@ -174,6 +200,7 @@ export default function AddItemModal({
         groupName: activeGroup.name,
         stickerId: data.stickerId ?? null,
         isDefault: data.isDefault,
+        isAvailable: data.isAvailable,
       });
     } else {
       const sortOrder = modifiers.filter((m) => m.group_id === activeGroup.id).length;
@@ -185,6 +212,7 @@ export default function AddItemModal({
         groupName: activeGroup.name,
         stickerId: data.stickerId ?? null,
         isDefault: data.isDefault,
+        isAvailable: data.isAvailable,
         sortOrder,
       });
     }
@@ -262,7 +290,7 @@ export default function AddItemModal({
       newErrors.name = strings.menuBuilder.nameRequired;
     }
 
-    if (cents <= 0) {
+    if (cents < 0) {
       newErrors.price = strings.menuBuilder.invalidPrice;
     }
 
@@ -341,6 +369,7 @@ export default function AddItemModal({
                 placeholder={strings.menuBuilder.itemName}
                 placeholderTextColor={colors.textMuted}
                 autoFocus={!editItem}
+                autoCapitalize="words"
                 maxLength={MAX_ITEM_NAME_LENGTH}
               />
               {errors.name ? (
@@ -373,8 +402,29 @@ export default function AddItemModal({
                 onChangeText={setCategory}
                 placeholder={strings.menuBuilder.itemCategory}
                 placeholderTextColor={colors.textMuted}
+                autoCapitalize="words"
                 maxLength={MAX_CATEGORY_LENGTH}
               />
+              {categorySuggestions.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.suggestionStrip}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {categorySuggestions.map((c) => (
+                    <TouchableOpacity
+                      key={c}
+                      style={styles.suggestionChip}
+                      onPress={() => setCategory(c)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Use ${c} as category`}
+                    >
+                      <Text style={styles.suggestionChipText}>{c}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : null}
             </View>
 
             {/* Taxable — drives whether this item contributes to the tax base
@@ -694,6 +744,24 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.danger,
     marginTop: spacing.xs,
+  },
+  suggestionStrip: {
+    paddingTop: spacing.sm,
+    paddingBottom: 2,
+    gap: spacing.xs,
+  },
+  suggestionChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    marginRight: spacing.xs,
+  },
+  suggestionChipText: {
+    ...typography.caption,
+    color: colors.primary,
   },
   photoButton: {
     backgroundColor: colors.background,

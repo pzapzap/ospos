@@ -91,10 +91,13 @@ export default function CustomizeItemModal({
         // single-select group, but legacy data (from before the radio-swap
         // logic was added) may still contain duplicates. Defense in depth:
         // at runtime, keep only the first default per single-select group.
+        // Also skip defaults marked sold-out (is_available === 0, v14) so
+        // we don't auto-select an option the customer can't see.
         const defaultIds = new Set<string>();
         const claimedSingleGroups = new Set<string>();
         for (const m of ms) {
           if (m.is_default !== 1) continue;
+          if (m.is_available === 0) continue;
           const group = gs.find((g) => g.id === m.group_id);
           if (group?.select_type === 'single') {
             if (claimedSingleGroups.has(group.id)) continue;
@@ -113,11 +116,15 @@ export default function CustomizeItemModal({
     });
   }, [visible, item, mode, initialModifiers, initialQuantity]);
 
-  // Group → its modifiers (ordered). Memoized for the render loop.
+  // Group → its modifiers (ordered). Memoized for the render loop. Sold-out
+  // modifiers (is_available === 0, v14) are filtered out at the customer-
+  // facing customize sheet — they remain in the editor so the toggle is
+  // reachable, but the customer never sees them as a choice. A group that
+  // ends up with zero visible options collapses (the .filter at the end).
   const groupedMods = useMemo(() => {
     return groups.map((g) => ({
       group: g,
-      mods: modifiers.filter((m) => m.group_id === g.id),
+      mods: modifiers.filter((m) => m.group_id === g.id && m.is_available !== 0),
     })).filter((g) => g.mods.length > 0);  // hide empty groups in customer view
   }, [groups, modifiers]);
 

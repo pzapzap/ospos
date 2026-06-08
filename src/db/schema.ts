@@ -196,6 +196,17 @@ ALTER TABLE orders ADD COLUMN discount_amount INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE orders ADD COLUMN discount_reason TEXT;
 `;
 
+// Migration v14: Per-modifier is_available flag (the "86'd" toggle at the
+// modifier level — parallel to items.is_available from v12). Lets merchants
+// mark a specific modifier sold-out ("we're out of oat milk") without
+// deleting the modifier or hiding the whole item. Default 1 (available);
+// flip to 0 = sold out today. Filtered only in the customer-facing
+// CustomizeItemModal; the editor always shows all modifiers so the toggle
+// is reachable.
+export const MIGRATION_V14 = `
+ALTER TABLE modifiers ADD COLUMN is_available INTEGER NOT NULL DEFAULT 1;
+`;
+
 export const MIGRATION_V10_SCHEMA = `
 CREATE TABLE IF NOT EXISTS modifier_groups (
   id TEXT PRIMARY KEY,
