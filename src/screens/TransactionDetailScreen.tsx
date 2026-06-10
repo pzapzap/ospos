@@ -10,6 +10,9 @@ import {
   ActivityIndicator,
   FlatList,
   Animated,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
@@ -49,6 +52,20 @@ export default function TransactionDetailScreen({
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const sentScale = useRef(new Animated.Value(0)).current;
+  // Scroll the content to the email row when the merchant opens it. Without
+  // this, the keyboard pops up and covers the input field (the screen has
+  // no native scroll-on-focus because the email row sits below the items
+  // FlatList in the same vertical stack).
+  const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (showEmail) {
+      // Defer one frame so layout finishes before the scroll fires.
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      });
+    }
+  }, [showEmail]);
 
   useEffect(() => {
     (async () => {
@@ -229,7 +246,16 @@ export default function TransactionDetailScreen({
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
@@ -382,6 +408,11 @@ export default function TransactionDetailScreen({
           />
         )}
 
+        {/* Spacer at the bottom so the last action button isn't flush
+            against the scroll edge and so scrollToEnd has room to reveal
+            the keyboard-pushed email input. */}
+        {null}
+
         {/* Refund button — card transactions only */}
         {isCard && order.refund_status !== 'full' ? (
           <View style={styles.refundSection}>
@@ -430,7 +461,8 @@ export default function TransactionDetailScreen({
             )}
           </View>
         ) : null}
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -440,9 +472,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  flex: { flex: 1 },
   content: {
     flex: 1,
     paddingHorizontal: spacing.xxl,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.xxl,
+    paddingBottom: spacing.xxxl,
   },
   backButton: {
     paddingVertical: spacing.lg,

@@ -27,6 +27,7 @@ import { useApp } from '../state/AppContext';
 import { SUPPORTED_CURRENCIES } from '../utils/currency';
 import { MAX_BUSINESS_NAME_LENGTH, MAX_RECEIPT_FOOTER_LENGTH } from '../utils/validation';
 import { performBackup, recordBackupTime } from '../utils/backup';
+import { shareMenuJson } from '../utils/menuExport';
 import { getSyncHealth, forceRetryFailed } from '../services/sync';
 import {
   scanForPrinters,
@@ -94,6 +95,25 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
         Alert.alert(strings.settings.backupSuccess);
       } else {
         Alert.alert(strings.summary.noTransactions);
+      }
+    } catch {
+      Alert.alert(strings.errors.generic);
+    }
+  };
+
+  // Hidden in plain sight for v1.1 — no marketing copy, no onboarding pointer.
+  // Becomes a featured surface in v1.2 when menu templates ship and merchants
+  // need an obvious way to export/import. For now, merchants who scroll to
+  // the bottom of Advanced and notice this can use it to back up their menu.
+  const handleExportMenu = async () => {
+    try {
+      const { shared, itemCount } = await shareMenuJson('1.1.0');
+      if (itemCount === 0) {
+        Alert.alert('No items', 'Add some menu items first.');
+        return;
+      }
+      if (!shared) {
+        Alert.alert('Sharing not available', 'The iOS share sheet could not open. Try again in a moment.');
       }
     } catch {
       Alert.alert(strings.errors.generic);
@@ -386,12 +406,23 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           </View>
         </View>
         {/* Back up now — kept as the explicit big button per merchant ask */}
-        <View style={{ marginBottom: spacing.xxl }}>
+        <View style={{ marginBottom: spacing.sm }}>
           <Button
             label={strings.settings.backupNow}
             variant="ghost"
             size="md"
             onPress={handleBackupNow}
+          />
+        </View>
+
+        {/* Menu export — discoverable but not promoted in v1.1. Becomes a
+            featured surface in v1.2 when menu templates ship. */}
+        <View style={{ marginBottom: spacing.xxl }}>
+          <Button
+            label="Export menu as JSON"
+            variant="ghost"
+            size="sm"
+            onPress={handleExportMenu}
           />
         </View>
 

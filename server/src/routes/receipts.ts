@@ -17,12 +17,27 @@ interface OrderRow {
   total: number;
   payment_method: string;
   created_at: string;
+  // v1.1: optional discount snapshot. When discount_amount > 0 the template
+  // renders a line above tax showing the type/value/reason.
+  discount_type?: 'percent' | 'amount' | null;
+  discount_value?: number | null;
+  discount_amount?: number;
+  discount_reason?: string | null;
+}
+
+interface ClientModifier {
+  name: string;
+  priceCents: number;
+  groupName?: string;
 }
 
 interface OrderItemRow {
   item_name: string;
   item_price: number;
   quantity: number;
+  // v1.1: optional modifier list. When non-empty the template renders an
+  // indented sub-line under the item (e.g. "oat milk · no foam · +$0.75").
+  modifiers?: ClientModifier[];
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,10 +74,24 @@ function formatReceiptText(
   for (const item of items) {
     const lineTotal = formatMoney(item.item_price * item.quantity);
     lines.push(`${item.quantity}x ${item.item_name}  $${lineTotal}`);
+    // v1.1: indented modifier sub-line. Renders something like
+    //   - oat milk · no foam · extra shot
+    if (item.modifiers && item.modifiers.length > 0) {
+      const modText = item.modifiers.map((m) => m.name).join(' · ');
+      lines.push(`  - ${modText}`);
+    }
   }
 
   lines.push('');
   lines.push(`Subtotal: $${formatMoney(order.subtotal)}`);
+  // v1.1: discount line above tax (matches the in-app receipt rendering).
+  if (order.discount_amount && order.discount_amount > 0) {
+    const label = order.discount_type === 'percent' && order.discount_value != null
+      ? `Discount (${order.discount_value}% off)`
+      : 'Discount';
+    const suffix = order.discount_reason ? ` · ${order.discount_reason}` : '';
+    lines.push(`${label}${suffix}: -$${formatMoney(order.discount_amount)}`);
+  }
   if (order.tax_amount > 0) {
     lines.push(`Tax: $${formatMoney(order.tax_amount)}`);
   }
@@ -98,19 +127,46 @@ function formatReceiptHtml(
     "'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace";
 
   const itemRows = items
-    .map(
-      (item) => `
+    .map((item) => {
+      // v1.1: indented modifier sub-line under the item name when present.
+      // Joined with thin-space dot separators to match the in-app receipt.
+      const modText = item.modifiers && item.modifiers.length > 0
+        ? escapeHtml(item.modifiers.map((m) => m.name).join(' · '))
+        : '';
+      const nameBlock = modText
+        ? `<div style="font-family:${SERIF};font-size:15px;color:#fafafa">
+             <span style="color:#a1a1aa;font-family:${NUM};font-weight:600;font-size:13px">${item.quantity}×</span>
+             &nbsp;${escapeHtml(item.item_name)}
+           </div>
+           <div style="font-family:${SERIF};font-size:12px;color:#a1a1aa;margin-top:3px;padding-left:24px;line-height:1.4">${modText}</div>`
+        : `<span style="color:#a1a1aa;font-family:${NUM};font-weight:600;font-size:13px">${item.quantity}×</span>
+           &nbsp;${escapeHtml(item.item_name)}`;
+      return `
         <tr>
           <td style="padding:14px 0;border-bottom:2px solid #27272a;color:#fafafa;font-family:${SERIF};font-size:15px">
-            <span style="color:#a1a1aa;font-family:${NUM};font-weight:600;font-size:13px">${item.quantity}×</span>
-            &nbsp;${escapeHtml(item.item_name)}
+            ${nameBlock}
           </td>
-          <td style="padding:14px 0;text-align:right;border-bottom:2px solid #27272a;color:#fafafa;font-family:${NUM};font-weight:600;font-size:15px;white-space:nowrap">
+          <td style="padding:14px 0;text-align:right;border-bottom:2px solid #27272a;color:#fafafa;font-family:${NUM};font-weight:600;font-size:15px;white-space:nowrap;vertical-align:top">
             $${formatMoney(item.item_price * item.quantity)}
           </td>
-        </tr>`
-    )
+        </tr>`;
+    })
     .join('');
+
+  // v1.1: discount row between subtotal and tax. Renders nothing when zero.
+  // Matches in-app receipt formatting (label may include the % and reason).
+  const discountRow = order.discount_amount && order.discount_amount > 0
+    ? (() => {
+        const pctSuffix = order.discount_type === 'percent' && order.discount_value != null
+          ? ` · ${order.discount_value}% off`
+          : '';
+        const reasonSuffix = order.discount_reason ? ` · ${escapeHtml(order.discount_reason)}` : '';
+        return `<tr>
+          <td style="padding:6px 0;font-family:${SERIF};font-size:14px;color:#a1a1aa">Discount${pctSuffix}${reasonSuffix}</td>
+          <td style="padding:6px 0;text-align:right;font-family:${NUM};font-weight:500;font-size:14px;color:#fafafa;white-space:nowrap">−$${formatMoney(order.discount_amount)}</td>
+        </tr>`;
+      })()
+    : '';
 
   const safeName = businessName ? escapeHtml(businessName) : 'OSPOS';
   const orderId = escapeHtml(order.id.substring(0, 8).toUpperCase());
@@ -160,12 +216,13 @@ function formatReceiptHtml(
           </td></tr>
         </table>
 
-        <!-- Subtotal / Tax / Tip -->
+        <!-- Subtotal / Discount / Tax / Tip -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px">
           <tr>
             <td style="padding:6px 0;font-family:${SERIF};font-size:14px;color:#a1a1aa">Subtotal</td>
             <td style="padding:6px 0;text-align:right;font-family:${NUM};font-weight:500;font-size:14px;color:#fafafa;white-space:nowrap">$${formatMoney(order.subtotal)}</td>
           </tr>
+          ${discountRow}
           ${order.tax_amount > 0 ? `<tr>
             <td style="padding:6px 0;font-family:${SERIF};font-size:14px;color:#a1a1aa">Tax</td>
             <td style="padding:6px 0;text-align:right;font-family:${NUM};font-weight:500;font-size:14px;color:#fafafa;white-space:nowrap">$${formatMoney(order.tax_amount)}</td>
@@ -227,7 +284,20 @@ interface ClientOrderData {
   paymentMethod: string;
   createdAt: string;
   cashTendered?: number;
-  items: Array<{ name: string; price: number; quantity: number }>;
+  items: Array<{
+    name: string;
+    price: number;
+    quantity: number;
+    // v1.1: modifiers selected at sale time, denormalized snapshot.
+    modifiers?: ClientModifier[];
+  }>;
+  // v1.1: order-level discount applied at sale time.
+  discount?: {
+    type: 'percent' | 'amount';
+    value: number;
+    amount: number;
+    reason?: string;
+  };
 }
 
 // POST /receipts/send
@@ -323,11 +393,18 @@ router.post('/send', async (req: Request, res: Response): Promise<void> => {
         total: orderData.total,
         payment_method: orderData.paymentMethod,
         created_at: orderData.createdAt,
+        // v1.1: discount snapshot. Only renders a line when amount > 0.
+        discount_type: orderData.discount?.type ?? null,
+        discount_value: orderData.discount?.value ?? null,
+        discount_amount: orderData.discount?.amount ?? 0,
+        discount_reason: orderData.discount?.reason ?? null,
       };
       items = orderData.items.map(item => ({
         item_name: item.name,
         item_price: item.price,
         quantity: item.quantity,
+        // v1.1: pass modifiers through to the renderer for the sub-line.
+        modifiers: item.modifiers,
       }));
     } else {
       // Neither DB row nor client data — nothing to send.
