@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "exported_at": "2026-06-10T00:00:00.000Z",
+  "source": "ospos",
+  "app_version": "1.1.0",
+  "items": [
+    {
+      "name": "Funnel Cake",
+      "price": 700,
+      "category": "Sweets",
+      "sticker_id": "food/pancakes",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 0,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Cotton Candy",
+      "price": 500,
+      "category": "Sweets",
+      "sticker_id": "food/candy",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 1,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Snow Cone",
+      "price": 400,
+      "category": "Sweets",
+      "sticker_id": "food/shaved_ice",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 2,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Popcorn",
+      "price": 500,
+      "category": "Snacks",
+      "sticker_id": "food/popcorn",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 3,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Pretzel",
+      "price": 500,
+      "category": "Snacks",
+      "sticker_id": "food/pretzel",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 4,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Corn Dog",
+      "price": 600,
+      "category": "Hot Food",
+      "sticker_id": "food/hot_dog",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 5,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Hot Dog",
+      "price": 600,
+      "category": "Hot Food",
+      "sticker_id": "food/hot_dog",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 6,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Fries",
+      "price": 500,
+      "category": "Hot Food",
+      "sticker_id": "food/fries",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 7,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Lemonade",
+      "price": 500,
+      "category": "Drinks",
+      "sticker_id": "drinks/cup_with_straw",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 8,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Bottled Water",
+      "price": 300,
+      "category": "Drinks",
+      "sticker_id": "drinks/bottle",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 9,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Soda",
+      "price": 400,
+      "category": "Drinks",
+      "sticker_id": "drinks/cup_with_straw",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 10,
+      "groups": [],
+      "ungrouped_modifiers": []
+    }
+  ]
+}

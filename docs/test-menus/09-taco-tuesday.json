@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "exported_at": "2026-06-10T00:00:00.000Z",
+  "source": "ospos",
+  "app_version": "1.1.0",
+  "items": [
+    {
+      "name": "Carnitas Taco",
+      "price": 450,
+      "category": "Tacos",
+      "sticker_id": "food/taco",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 0,
+      "groups": [
+        {
+          "name": "Tortilla",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Corn", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/corn", "sort_order": 0 },
+            { "name": "Flour", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/stuffed_flatbread", "sort_order": 1 }
+          ]
+        },
+        {
+          "name": "Toppings",
+          "select_type": "multi",
+          "is_required": 0,
+          "max_select": null,
+          "sort_order": 1,
+          "modifiers": [
+            { "name": "Onion", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/onion", "sort_order": 0 },
+            { "name": "Cilantro", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/leafy_green", "sort_order": 1 },
+            { "name": "Salsa Verde", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": null, "sort_order": 2 },
+            { "name": "Salsa Roja", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 3 },
+            { "name": "Extra Crema", "price_cents": 50, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 4 },
+            { "name": "Cheese", "price_cents": 50, "is_default": 0, "is_available": 1, "sticker_id": "food/cheese", "sort_order": 5 },
+            { "name": "No Onion", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 6 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Al Pastor Taco",
+      "price": 450,
+      "category": "Tacos",
+      "sticker_id": "food/taco",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 1,
+      "groups": [
+        {
+          "name": "Tortilla",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Corn", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/corn", "sort_order": 0 },
+            { "name": "Flour", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/stuffed_flatbread", "sort_order": 1 }
+          ]
+        },
+        {
+          "name": "Toppings",
+          "select_type": "multi",
+          "is_required": 0,
+          "max_select": null,
+          "sort_order": 1,
+          "modifiers": [
+            { "name": "Pineapple", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/pineapple", "sort_order": 0 },
+            { "name": "Onion", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/onion", "sort_order": 1 },
+            { "name": "Cilantro", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/leafy_green", "sort_order": 2 },
+            { "name": "Salsa Verde", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": null, "sort_order": 3 },
+            { "name": "Salsa Roja", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 4 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Fish Taco",
+      "price": 550,
+      "category": "Tacos",
+      "sticker_id": "food/fried_shrimp",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 2,
+      "groups": [
+        {
+          "name": "Tortilla",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Corn", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/corn", "sort_order": 0 },
+            { "name": "Flour", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/stuffed_flatbread", "sort_order": 1 }
+          ]
+        },
+        {
+          "name": "Toppings",
+          "select_type": "multi",
+          "is_required": 0,
+          "max_select": null,
+          "sort_order": 1,
+          "modifiers": [
+            { "name": "Cabbage Slaw", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/leafy_green", "sort_order": 0 },
+            { "name": "Pico", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/tomato", "sort_order": 1 },
+            { "name": "Crema", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": null, "sort_order": 2 },
+            { "name": "Hot Sauce", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/hot_pepper", "sort_order": 3 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Veggie Taco",
+      "price": 400,
+      "category": "Tacos",
+      "sticker_id": "food/taco",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 3,
+      "groups": [
+        {
+          "name": "Tortilla",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Corn", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/corn", "sort_order": 0 },
+            { "name": "Flour", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/stuffed_flatbread", "sort_order": 1 }
+          ]
+        },
+        {
+          "name": "Filling",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 1,
+          "modifiers": [
+            { "name": "Roasted Veggies", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/eggplant", "sort_order": 0 },
+            { "name": "Mushroom", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/mushroom", "sort_order": 1 },
+            { "name": "Beans & Rice", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/cooked_rice", "sort_order": 2 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Lengua Taco",
+      "price": 450,
+      "category": "Tacos",
+      "sticker_id": "food/taco",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 4,
+      "groups": [
+        {
+          "name": "Tortilla",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Corn", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/corn", "sort_order": 0 },
+            { "name": "Flour", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/stuffed_flatbread", "sort_order": 1 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Rice",
+      "price": 300,
+      "category": "Sides",
+      "sticker_id": "food/cooked_rice",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 5,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Black Beans",
+      "price": 300,
+      "category": "Sides",
+      "sticker_id": "food/pot_of_food",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 6,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Chips & Salsa",
+      "price": 400,
+      "category": "Sides",
+      "sticker_id": "food/popcorn",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 7,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Horchata",
+      "price": 400,
+      "category": "Drinks",
+      "sticker_id": "drinks/cup_with_straw",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 8,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Jarritos",
+      "price": 350,
+      "category": "Drinks",
+      "sticker_id": "drinks/bottle",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 9,
+      "groups": [],
+      "ungrouped_modifiers": []
+    }
+  ]
+}

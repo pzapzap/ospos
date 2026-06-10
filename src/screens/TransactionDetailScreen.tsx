@@ -249,6 +249,7 @@ export default function TransactionDetailScreen({
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 32 : 0}
       >
         <ScrollView
           ref={scrollRef}
@@ -479,7 +480,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: spacing.xxl,
-    paddingBottom: spacing.xxxl,
+    // Generous bottom padding so when the email input is scrolled into
+    // view, it lands with breathing room above the keyboard instead of
+    // flush against it. The KeyboardAvoidingView vertical offset above
+    // adds another 32pt on top of this.
+    paddingBottom: spacing.xxxl * 2,
   },
   backButton: {
     paddingVertical: spacing.lg,

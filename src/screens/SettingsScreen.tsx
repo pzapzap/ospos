@@ -28,6 +28,7 @@ import { SUPPORTED_CURRENCIES } from '../utils/currency';
 import { MAX_BUSINESS_NAME_LENGTH, MAX_RECEIPT_FOOTER_LENGTH } from '../utils/validation';
 import { performBackup, recordBackupTime } from '../utils/backup';
 import { shareMenuJson } from '../utils/menuExport';
+import { pickAndPreviewMenu, applyMenuImport } from '../utils/menuImport';
 import { getSyncHealth, forceRetryFailed } from '../services/sync';
 import {
   scanForPrinters,
@@ -117,6 +118,44 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
       }
     } catch {
       Alert.alert(strings.errors.generic);
+    }
+  };
+
+  // Symmetric counterpart to Export. Reads a JSON file from the iOS file
+  // picker, shows a confirmation summary, and adds rows to the existing
+  // menu (additive — does NOT wipe). New UUIDs are generated for every
+  // row so re-importing the same file produces duplicates not collisions.
+  const handleImportMenu = async () => {
+    try {
+      const preview = await pickAndPreviewMenu();
+      if (!preview) return; // user cancelled
+      if (preview.itemCount === 0) {
+        Alert.alert('Nothing to import', 'That file didn\'t contain any items.');
+        return;
+      }
+      Alert.alert(
+        'Add to menu?',
+        `${preview.itemCount} item${preview.itemCount === 1 ? '' : 's'}, ${preview.groupCount} modifier group${preview.groupCount === 1 ? '' : 's'}, ${preview.modifierCount} option${preview.modifierCount === 1 ? '' : 's'}.\n\nThis adds to your existing menu — nothing is removed.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Add',
+            onPress: async () => {
+              try {
+                const result = await applyMenuImport(preview.parsed);
+                Alert.alert(
+                  'Menu imported',
+                  `Added ${result.items} item${result.items === 1 ? '' : 's'}, ${result.groups} group${result.groups === 1 ? '' : 's'}, ${result.modifiers} option${result.modifiers === 1 ? '' : 's'}.`,
+                );
+              } catch (err) {
+                Alert.alert('Import failed', err instanceof Error ? err.message : 'Could not import the menu.');
+              }
+            },
+          },
+        ]
+      );
+    } catch (err) {
+      Alert.alert('Import failed', err instanceof Error ? err.message : 'Could not read that file.');
     }
   };
 
@@ -405,24 +444,35 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
             />
           </View>
         </View>
-        {/* Back up now — kept as the explicit big button per merchant ask */}
-        <View style={{ marginBottom: spacing.sm }}>
-          <Button
-            label={strings.settings.backupNow}
-            variant="ghost"
-            size="md"
-            onPress={handleBackupNow}
-          />
+        {/* Data actions — Back up now is the original explicit action;
+            Export/Import are its symmetric counterparts (discoverable but
+            not promoted in v1.1, become featured surfaces in v1.2 with menu
+            templates). Two-row layout with equal-weight ghost buttons keeps
+            the section ending clean. */}
+        <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm }}>
+          <View style={{ flex: 1 }}>
+            <Button
+              label={strings.settings.backupNow}
+              variant="ghost"
+              size="md"
+              onPress={handleBackupNow}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              label="Export menu"
+              variant="ghost"
+              size="md"
+              onPress={handleExportMenu}
+            />
+          </View>
         </View>
-
-        {/* Menu export — discoverable but not promoted in v1.1. Becomes a
-            featured surface in v1.2 when menu templates ship. */}
         <View style={{ marginBottom: spacing.xxl }}>
           <Button
-            label="Export menu as JSON"
+            label="Import menu from file"
             variant="ghost"
-            size="sm"
-            onPress={handleExportMenu}
+            size="md"
+            onPress={handleImportMenu}
           />
         </View>
 

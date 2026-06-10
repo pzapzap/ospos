@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "exported_at": "2026-06-10T00:00:00.000Z",
+  "source": "ospos",
+  "app_version": "1.1.0",
+  "items": [
+    {
+      "name": "Turkey Club",
+      "price": 1150,
+      "category": "Sandwiches",
+      "sticker_id": "food/sandwich",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 0,
+      "groups": [
+        {
+          "name": "Bread",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Sourdough", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/bread", "sort_order": 0 },
+            { "name": "Wheat", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/bread", "sort_order": 1 },
+            { "name": "Wrap", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/stuffed_flatbread", "sort_order": 2 }
+          ]
+        },
+        {
+          "name": "Toppings",
+          "select_type": "multi",
+          "is_required": 0,
+          "max_select": null,
+          "sort_order": 1,
+          "modifiers": [
+            { "name": "Avocado", "price_cents": 200, "is_default": 0, "is_available": 1, "sticker_id": "food/avocado", "sort_order": 0 },
+            { "name": "Bacon", "price_cents": 200, "is_default": 0, "is_available": 1, "sticker_id": "food/bacon", "sort_order": 1 },
+            { "name": "Extra Cheese", "price_cents": 100, "is_default": 0, "is_available": 1, "sticker_id": "food/cheese", "sort_order": 2 },
+            { "name": "No Mayo", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 3 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Italian Sub",
+      "price": 1200,
+      "category": "Sandwiches",
+      "sticker_id": "food/sandwich",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 1,
+      "groups": [
+        {
+          "name": "Bread",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Sourdough", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/bread", "sort_order": 0 },
+            { "name": "Wheat", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/bread", "sort_order": 1 },
+            { "name": "Wrap", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/stuffed_flatbread", "sort_order": 2 }
+          ]
+        },
+        {
+          "name": "Toppings",
+          "select_type": "multi",
+          "is_required": 0,
+          "max_select": null,
+          "sort_order": 1,
+          "modifiers": [
+            { "name": "Hot Peppers", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/hot_pepper", "sort_order": 0 },
+            { "name": "Olives", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/olive", "sort_order": 1 },
+            { "name": "Onions", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/onion", "sort_order": 2 },
+            { "name": "Extra Meat", "price_cents": 300, "is_default": 0, "is_available": 1, "sticker_id": "food/bacon", "sort_order": 3 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Caesar Wrap",
+      "price": 1000,
+      "category": "Sandwiches",
+      "sticker_id": "food/stuffed_flatbread",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 2,
+      "groups": [
+        {
+          "name": "Protein",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Grilled Chicken", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "food/poultry_leg", "sort_order": 0 },
+            { "name": "Crispy Chicken", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": "food/poultry_leg", "sort_order": 1 },
+            { "name": "No Protein", "price_cents": -150, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 2 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Garden Salad",
+      "price": 900,
+      "category": "Salads",
+      "sticker_id": "food/salad",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 3,
+      "groups": [
+        {
+          "name": "Dressing",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Ranch", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": null, "sort_order": 0 },
+            { "name": "Balsamic", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 1 },
+            { "name": "Italian", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 2 },
+            { "name": "On the Side", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 3 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Caesar Salad",
+      "price": 950,
+      "category": "Salads",
+      "sticker_id": "food/salad",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 4,
+      "groups": [
+        {
+          "name": "Add Protein",
+          "select_type": "single",
+          "is_required": 0,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Grilled Chicken", "price_cents": 300, "is_default": 0, "is_available": 1, "sticker_id": "food/poultry_leg", "sort_order": 0 },
+            { "name": "Salmon", "price_cents": 500, "is_default": 0, "is_available": 1, "sticker_id": "food/sushi", "sort_order": 1 },
+            { "name": "Shrimp", "price_cents": 400, "is_default": 0, "is_available": 1, "sticker_id": "food/fried_shrimp", "sort_order": 2 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Lemonade",
+      "price": 350,
+      "category": "Drinks",
+      "sticker_id": "drinks/cup_with_straw",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 5,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Iced Tea",
+      "price": 300,
+      "category": "Drinks",
+      "sticker_id": "drinks/cup_with_straw",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 6,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Sparkling Water",
+      "price": 300,
+      "category": "Drinks",
+      "sticker_id": "drinks/bottle",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 7,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Coke",
+      "price": 250,
+      "category": "Drinks",
+      "sticker_id": "drinks/cup_with_straw",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 8,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Chips",
+      "price": 150,
+      "category": "Sides",
+      "sticker_id": "food/popcorn",
+      "image_uri": null,
+      "is_taxable": 0,
+      "is_available": 1,
+      "sort_order": 9,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Chocolate Chip Cookie",
+      "price": 200,
+      "category": "Sweets",
+      "sticker_id": "food/cookie",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 10,
+      "groups": [],
+      "ungrouped_modifiers": []
+    }
+  ]
+}
