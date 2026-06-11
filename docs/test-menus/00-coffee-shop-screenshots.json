@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "exported_at": "2026-06-11T00:00:00.000Z",
+  "source": "ospos",
+  "app_version": "1.1.0",
+  "items": [
+    {
+      "name": "Drip Coffee",
+      "price": 350,
+      "category": "Espresso Bar",
+      "sticker_id": "drinks/coffee",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 0,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Cappuccino",
+      "price": 475,
+      "category": "Espresso Bar",
+      "sticker_id": "drinks/coffee",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 1,
+      "groups": [
+        {
+          "name": "Milk",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Whole", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "drinks/milk", "sort_order": 0 },
+            { "name": "Oat", "price_cents": 75, "is_default": 0, "is_available": 1, "sticker_id": "drinks/milk", "sort_order": 1 },
+            { "name": "Almond", "price_cents": 75, "is_default": 0, "is_available": 1, "sticker_id": "drinks/milk", "sort_order": 2 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Latte",
+      "price": 525,
+      "category": "Espresso Bar",
+      "sticker_id": "drinks/coffee",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 2,
+      "groups": [
+        {
+          "name": "Milk",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Whole", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "drinks/milk", "sort_order": 0 },
+            { "name": "Oat", "price_cents": 75, "is_default": 0, "is_available": 1, "sticker_id": "drinks/milk", "sort_order": 1 },
+            { "name": "Almond", "price_cents": 75, "is_default": 0, "is_available": 1, "sticker_id": "drinks/milk", "sort_order": 2 }
+          ]
+        },
+        {
+          "name": "Extras",
+          "select_type": "multi",
+          "is_required": 0,
+          "max_select": null,
+          "sort_order": 1,
+          "modifiers": [
+            { "name": "Extra shot", "price_cents": 100, "is_default": 0, "is_available": 1, "sticker_id": "drinks/coffee", "sort_order": 0 },
+            { "name": "Vanilla syrup", "price_cents": 50, "is_default": 0, "is_available": 1, "sticker_id": "food/honey_pot", "sort_order": 1 },
+            { "name": "Light foam", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 2 },
+            { "name": "Extra hot", "price_cents": 0, "is_default": 0, "is_available": 1, "sticker_id": null, "sort_order": 3 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Almond Croissant",
+      "price": 425,
+      "category": "Pastries",
+      "sticker_id": "food/croissant",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 3,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Bagel",
+      "price": 350,
+      "category": "Pastries",
+      "sticker_id": "food/bagel",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 4,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Cinnamon Roll",
+      "price": 475,
+      "category": "Pastries",
+      "sticker_id": "food/cookie",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 5,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Iced Latte",
+      "price": 550,
+      "category": "Cold Drinks",
+      "sticker_id": "drinks/cup_with_straw",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 6,
+      "groups": [
+        {
+          "name": "Milk",
+          "select_type": "single",
+          "is_required": 1,
+          "max_select": null,
+          "sort_order": 0,
+          "modifiers": [
+            { "name": "Whole", "price_cents": 0, "is_default": 1, "is_available": 1, "sticker_id": "drinks/milk", "sort_order": 0 },
+            { "name": "Oat", "price_cents": 75, "is_default": 0, "is_available": 1, "sticker_id": "drinks/milk", "sort_order": 1 },
+            { "name": "Almond", "price_cents": 75, "is_default": 0, "is_available": 1, "sticker_id": "drinks/milk", "sort_order": 2 }
+          ]
+        }
+      ],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Cold Brew",
+      "price": 450,
+      "category": "Cold Drinks",
+      "sticker_id": "drinks/cup_with_straw",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 7,
+      "groups": [],
+      "ungrouped_modifiers": []
+    },
+    {
+      "name": "Lemonade",
+      "price": 400,
+      "category": "Cold Drinks",
+      "sticker_id": "drinks/cup_with_straw",
+      "image_uri": null,
+      "is_taxable": 1,
+      "is_available": 1,
+      "sort_order": 8,
+      "groups": [],
+      "ungrouped_modifiers": []
+    }
+  ]
+}
