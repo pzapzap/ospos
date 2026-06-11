@@ -42,15 +42,18 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
   // Only rendered when settings.qsrMode === 'on'.
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Cart panel grows as items are rung in, but stops short of dominating
-  // the screen. Empty cart keeps the menu front and center (6:4
-  // grid:panel — original layout); each item shifts the split toward the
-  // panel slowly. Capped at 5:5 so the menu always retains AT LEAST 50%
-  // of the screen — enough for 2 rows of sticker tiles + the category
-  // strip + the grid header. Beyond the cap the cart scrolls internally.
-  // Previous cap was 7 / growth 0.5 — felt too aggressive in Phil's
-  // 2026-06-11 dogfood pass (1 row of tiles visible at 6+ items).
-  const panelFlex = Math.min(5, 4 + order.items.length * 0.25);
+  // Cart panel grows as items are rung in, but never dominates. Empty cart
+  // gives the menu 60% of the screen (the original 6:4 layout); each item
+  // shifts the split slowly toward the cart. Capped at 6:4 so the menu
+  // always retains AT LEAST 40% of the screen — enough for 2 rows of
+  // sticker tiles + the category strip + the grid header. Beyond the cap
+  // the cart scrolls internally.
+  //
+  // Tuning history:
+  //   Original:  max 7, growth 0.5 — too aggressive, menu collapsed to 1 row.
+  //   Attempt 1: max 5, growth 0.25 — over-corrected, cart starved at scale.
+  //   Current:   max 6, growth 0.4  — splits the difference; ~2 rows at cap.
+  const panelFlex = Math.min(6, 4 + order.items.length * 0.4);
   const gridFlex = 10 - panelFlex;
 
   // Animate the flex transition so the panel doesn't snap when an item is
@@ -66,12 +69,6 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
     quantity: number;
   } | null>(null);
   const navigatingRef = React.useRef(false);
-  // Menu grid FlatList ref so we can scroll-to-keep-visible after an item is
-  // added. The cart panel grows on every add (panelFlex), which shrinks the
-  // grid — without an active scroll, the just-tapped item can disappear
-  // below the cart edge. scrollToIndex(viewPosition: 0.5) keeps it centered
-  // in the new visible area.
-  const menuListRef = React.useRef<FlatList<Item>>(null);
 
   // Derive charge state — no need for separate state + effect
   const chargeState: ChargeButtonState = order.total > 0 ? 'ready' : 'disabled';
@@ -145,41 +142,19 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
     return menuItems.filter((i) => i.category?.trim() === selectedCategory);
   }, [menuItems, selectedCategory, qsrEnabled]);
 
-  // itemId → index in filteredItems, so we can scroll the grid to a specific
-  // item after it's been added to the cart. Rebuilds when the filter changes.
-  const itemIdToIndex = useMemo(() => {
-    const map = new Map<string, number>();
-    filteredItems.forEach((it, idx) => map.set(it.id, idx));
-    return map;
-  }, [filteredItems]);
-
-  // Scroll the grid so the given item stays visible after the cart grows.
-  // Fired from handleItemPress (direct add) and handleCustomizeAdd (after a
-  // customize sheet). Wrapped in requestAnimationFrame so it runs after the
-  // LayoutAnimation begins; try/catch swallows scrollToIndex out-of-bounds
-  // during transitions.
-  //
-  // viewPosition: 0.3 keeps the tapped tile in the upper third of the
-  // visible grid area instead of dead center. That leaves the row BELOW
-  // the tapped item visible too, so cashiers see what they just rang AND
-  // what they might tap next. Previous value 0.5 centered the tile,
-  // pushing the next-row context off the visible area.
-  const scrollToItem = useCallback((itemId: string) => {
-    const idx = itemIdToIndex.get(itemId);
-    if (idx == null) return;
-    requestAnimationFrame(() => {
-      try {
-        menuListRef.current?.scrollToIndex({ index: idx, viewPosition: 0.3, animated: true });
-      } catch {
-        // Index can fall out of range mid-transition (filter change race,
-        // list size change). Ignore — the next tap re-scrolls correctly.
-      }
-    });
-  }, [itemIdToIndex]);
-
   const handleItemPress = useCallback((item: Item) => {
     // Items with modifiers route to the customize sheet first; everything
     // else adds straight to the cart for fast tapping.
+    //
+    // No auto-scroll on add. Attempts to keep the tapped tile in view
+    // fought the user's spatial expectation: tapping a visible tile
+    // would silently reposition the grid (e.g. scroll the top item
+    // down to expose empty space above it). The panelFlex cap of 6:4
+    // already guarantees the menu retains 2 rows of tiles, so the
+    // tapped tile stays visible naturally. If a merchant has scrolled
+    // deep into a long menu and adds a tile near the bottom edge, they
+    // can scroll manually — that's the same interaction Square / Toast
+    // expose, and it doesn't fight the user.
     if (itemsWithModifiers.has(item.id)) {
       setCustomizingItem(item);
       return;
@@ -193,16 +168,14 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
         isTaxable: item.is_taxable === 1,
       },
     });
-    scrollToItem(item.id);
-  }, [orderDispatch, itemsWithModifiers, scrollToItem]);
+  }, [orderDispatch, itemsWithModifiers]);
 
   const handleCustomizeAdd = useCallback((selectedModifiers: ModifierSnapshot[], quantity: number) => {
     if (!customizingItem) return;
-    const addedItemId = customizingItem.id;
     orderDispatch({
       type: 'ADD_ITEM',
       payload: {
-        itemId: addedItemId,
+        itemId: customizingItem.id,
         itemName: customizingItem.name,
         itemPrice: customizingItem.price,
         modifiers: selectedModifiers,
@@ -212,8 +185,7 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
     });
     setCustomizingItem(null);
     setEditingLine(null);
-    scrollToItem(addedItemId);
-  }, [customizingItem, orderDispatch, scrollToItem]);
+  }, [customizingItem, orderDispatch]);
 
   const handleCustomizeUpdate = useCallback((lineIndex: number, modifiers: ModifierSnapshot[], quantity: number) => {
     orderDispatch({ type: 'UPDATE_LINE', payload: { lineIndex, modifiers, quantity } });
@@ -296,7 +268,6 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
           />
         ) : null}
         <FlatList
-          ref={menuListRef}
           data={filteredItems}
           extraData={selectedCategory}
           keyExtractor={(item) => item.id}
