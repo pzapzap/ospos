@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.ospos.app",
-      "buildNumber": "34",
+      "buildNumber": "35",
       "config": {
         "usesNonExemptEncryption": false
       },

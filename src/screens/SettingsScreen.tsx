@@ -133,9 +133,12 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
         Alert.alert('Nothing to import', 'That file didn\'t contain any items.');
         return;
       }
+      const rejectedNote = (preview.rejectedItems + preview.rejectedModifiers) > 0
+        ? `\n\n${preview.rejectedItems} item${preview.rejectedItems === 1 ? '' : 's'} and ${preview.rejectedModifiers} option${preview.rejectedModifiers === 1 ? '' : 's'} were skipped (missing names, invalid stickers, or over limit).`
+        : '';
       Alert.alert(
         'Add to menu?',
-        `${preview.itemCount} item${preview.itemCount === 1 ? '' : 's'}, ${preview.groupCount} modifier group${preview.groupCount === 1 ? '' : 's'}, ${preview.modifierCount} option${preview.modifierCount === 1 ? '' : 's'}.\n\nThis adds to your existing menu — nothing is removed.`,
+        `${preview.itemCount} item${preview.itemCount === 1 ? '' : 's'}, ${preview.groupCount} modifier group${preview.groupCount === 1 ? '' : 's'}, ${preview.modifierCount} option${preview.modifierCount === 1 ? '' : 's'}.\n\nThis adds to your existing menu — nothing is removed.${rejectedNote}`,
         [
           { text: 'Cancel', style: 'cancel' },
           {

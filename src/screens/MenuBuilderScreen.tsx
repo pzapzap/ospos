@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors, fonts, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
@@ -46,9 +47,16 @@ export default function MenuBuilderScreen({ onStartSelling }: MenuBuilderScreenP
     }
   }, []);
 
-  useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+  // Re-fetch whenever this screen comes into focus, not just on mount.
+  // Tabs in React Navigation stay mounted, so a one-shot useEffect would
+  // miss new items added via Settings → Import while the Menu tab was
+  // sitting in the background. useFocusEffect fires every focus, so
+  // popping back to Menu after an import shows fresh data.
+  useFocusEffect(
+    useCallback(() => {
+      loadItems();
+    }, [loadItems])
+  );
 
   const handleAddItem = () => {
     setEditingItem(null);
