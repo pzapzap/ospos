@@ -447,20 +447,21 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
             />
           </View>
         </View>
-        {/* Data actions — Back up now is the original explicit action;
-            Export/Import are its symmetric counterparts (discoverable but
-            not promoted in v1.1, become featured surfaces in v1.2 with menu
-            templates). Two-row layout with equal-weight ghost buttons keeps
-            the section ending clean. */}
-        <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm }}>
-          <View style={{ flex: 1 }}>
-            <Button
-              label={strings.settings.backupNow}
-              variant="ghost"
-              size="md"
-              onPress={handleBackupNow}
-            />
-          </View>
+        {/* Data actions — Back up now is the original explicit action,
+            kept as the prominent big button. Export/Import sit below as
+            a paired data-transfer row (discoverable but not promoted in
+            v1.1; become a featured surface in v1.2 with menu templates).
+            Generous vertical margins so the section reads as three
+            separate beats instead of a cramped stack. */}
+        <View style={{ marginTop: spacing.md, marginBottom: spacing.xl }}>
+          <Button
+            label={strings.settings.backupNow}
+            variant="ghost"
+            size="md"
+            onPress={handleBackupNow}
+          />
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.xxxl }}>
           <View style={{ flex: 1 }}>
             <Button
               label="Export menu"
@@ -469,14 +470,14 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
               onPress={handleExportMenu}
             />
           </View>
-        </View>
-        <View style={{ marginBottom: spacing.xxl }}>
-          <Button
-            label="Import menu from file"
-            variant="ghost"
-            size="md"
-            onPress={handleImportMenu}
-          />
+          <View style={{ flex: 1 }}>
+            <Button
+              label="Import menu"
+              variant="ghost"
+              size="md"
+              onPress={handleImportMenu}
+            />
+          </View>
         </View>
 
         {/* Tap to Pay on iPhone (paid tier only) */}
