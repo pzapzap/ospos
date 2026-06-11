@@ -42,11 +42,15 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
   // Only rendered when settings.qsrMode === 'on'.
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Cart panel grows as items are rung in. Empty cart keeps the menu front
-  // and center (6:4 grid:panel — original layout); each item shifts the split
-  // toward the panel. Capped at 3:7 so 3 rows of menu tiles stay visible
-  // during a packed cart.
-  const panelFlex = Math.min(7, 4 + order.items.length * 0.5);
+  // Cart panel grows as items are rung in, but stops short of dominating
+  // the screen. Empty cart keeps the menu front and center (6:4
+  // grid:panel — original layout); each item shifts the split toward the
+  // panel slowly. Capped at 5:5 so the menu always retains AT LEAST 50%
+  // of the screen — enough for 2 rows of sticker tiles + the category
+  // strip + the grid header. Beyond the cap the cart scrolls internally.
+  // Previous cap was 7 / growth 0.5 — felt too aggressive in Phil's
+  // 2026-06-11 dogfood pass (1 row of tiles visible at 6+ items).
+  const panelFlex = Math.min(5, 4 + order.items.length * 0.25);
   const gridFlex = 10 - panelFlex;
 
   // Animate the flex transition so the panel doesn't snap when an item is
@@ -154,12 +158,18 @@ export default function OrderScreen({ onCharge, onMenuEdit }: OrderScreenProps) 
   // customize sheet). Wrapped in requestAnimationFrame so it runs after the
   // LayoutAnimation begins; try/catch swallows scrollToIndex out-of-bounds
   // during transitions.
+  //
+  // viewPosition: 0.3 keeps the tapped tile in the upper third of the
+  // visible grid area instead of dead center. That leaves the row BELOW
+  // the tapped item visible too, so cashiers see what they just rang AND
+  // what they might tap next. Previous value 0.5 centered the tile,
+  // pushing the next-row context off the visible area.
   const scrollToItem = useCallback((itemId: string) => {
     const idx = itemIdToIndex.get(itemId);
     if (idx == null) return;
     requestAnimationFrame(() => {
       try {
-        menuListRef.current?.scrollToIndex({ index: idx, viewPosition: 0.5, animated: true });
+        menuListRef.current?.scrollToIndex({ index: idx, viewPosition: 0.3, animated: true });
       } catch {
         // Index can fall out of range mid-transition (filter change race,
         // list size change). Ignore — the next tap re-scrolls correctly.
