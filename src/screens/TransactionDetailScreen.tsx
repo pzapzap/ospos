@@ -158,8 +158,14 @@ export default function TransactionDetailScreen({
       } else {
         Alert.alert('Failed', 'Could not send receipt. Please try again.');
       }
-    } catch {
-      Alert.alert(strings.errors.generic);
+    } catch (err) {
+      // Stale JWT after an App Store update — see ReceiptScreen for the
+      // same pattern. Specific message tells the user to sign out + back in.
+      if (err instanceof Error && err.message === 'Authentication expired') {
+        Alert.alert(strings.errors.sessionExpiredTitle, strings.errors.sessionExpiredBody);
+      } else {
+        Alert.alert(strings.errors.generic);
+      }
     } finally {
       setSendingEmail(false);
     }

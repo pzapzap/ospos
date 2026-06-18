@@ -56,6 +56,11 @@ export const strings = {
     expiredBody: "Let's try that again.",
     failedTitle: 'Setup Error',
     failedBody: 'Something went wrong on Stripe’s side. Please try again.',
+    instagramHint: "Don't have a business website? Stripe accepts your Instagram, Facebook, Yelp, or any social profile URL.",
+    skipCashModeLabel: 'Skip for now — start with cash mode',
+    skipConfirmTitle: 'Skip Stripe setup?',
+    skipConfirmBody: "You'll be able to take cash payments right away. Connect Stripe later from Settings whenever you're ready.",
+    skipConfirmAction: 'Skip for now',
   },
   menuBuilder: {
     title: 'Your Menu',
@@ -291,5 +296,7 @@ export const strings = {
     dbReset: 'Reset Database',
     orderFailed: 'Failed to create order. Please try again.',
     generic: 'Something went wrong. Please try again.',
+    sessionExpiredTitle: 'Session expired',
+    sessionExpiredBody: 'Try signing out and back in from Settings to refresh your session, then try this again.',
   },
 } as const;

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { startOnboarding, getAccountStatus, getAccountDetails } from '../services/api';
@@ -29,7 +30,7 @@ type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'StripeOnboarding
 
 export default function StripeOnboardingScreen() {
   const navigation = useNavigation<Nav>();
-  const { dispatch } = useOnboarding();
+  const { dispatch, commitOnboarding } = useOnboarding();
   const mountedRef = useRef(true);
   // started=true once the user taps Continue and we hand off to Safari.
   // 'waiting' state shows while the user is in Stripe's browser tab.
@@ -95,6 +96,34 @@ export default function StripeOnboardingScreen() {
       if (mountedRef.current) setLoading(false);
     }
   }, [dispatch, prefillAndNavigate]);
+
+  // Drop the merchant straight into cash mode. commitOnboarding writes the
+  // settings table with tier='free' (overriding the 'paid' the merchant
+  // picked in ModeSelect) plus whatever defaults are in OnboardingContext
+  // state for businessName/currency/taxRate/receiptFooter. The
+  // onboardingComplete AsyncStorage flag flips inside commitOnboarding, so
+  // App.tsx's polling swap to MainTabs happens automatically — no explicit
+  // navigation needed. Merchant can connect Stripe later via the existing
+  // Settings upgrade path (App.tsx onUpgrade handler).
+  const handleSkipToCash = useCallback(() => {
+    Alert.alert(
+      strings.stripeOnboarding.skipConfirmTitle,
+      strings.stripeOnboarding.skipConfirmBody,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: strings.stripeOnboarding.skipConfirmAction,
+          onPress: async () => {
+            try {
+              await commitOnboarding({ tier: 'free' });
+            } catch (err) {
+              Alert.alert('Could not switch to cash mode', err instanceof Error ? err.message : 'Try again.');
+            }
+          },
+        },
+      ]
+    );
+  }, [commitOnboarding]);
 
   // Deep-link parser. Strict path matching (URL() not startsWith) blocks
   // lookalike paths like ospos://stripe/returnXYZ. Error codes ride on the
@@ -210,9 +239,31 @@ export default function StripeOnboardingScreen() {
             <Text style={styles.bullet}>•  Usually 1&ndash;3 minutes if you already have a Stripe account</Text>
           </View>
           <Text style={styles.headsUpNote}>Your information goes directly to Stripe. OSPOS never sees it.</Text>
+
+          {/* "No website?" hint — surfaces the Instagram-URL workaround at the
+              friction point. Merchants without a website (most food trucks,
+              market vendors, popups) were bailing here before this hint
+              landed because Stripe asks for a business website during the
+              Connect flow and they didn't realize a social URL works. */}
+          <View style={styles.hintCard}>
+            <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} style={styles.hintIcon} />
+            <Text style={styles.hintText}>{strings.stripeOnboarding.instagramHint}</Text>
+          </View>
         </View>
         <View style={styles.headsUpFooter}>
           <Button label="Continue to Stripe" variant="primary" size="lg" onPress={beginStripeFlow} />
+          {/* Skip-to-cash escape hatch. The previous funnel had merchants
+              bail the whole app when they got intimidated by Stripe Connect;
+              this lets them drop into cash mode immediately and connect
+              Stripe later from Settings whenever they're ready. */}
+          <View style={styles.skipRow}>
+            <Button
+              label={strings.stripeOnboarding.skipCashModeLabel}
+              variant="ghost"
+              size="md"
+              onPress={handleSkipToCash}
+            />
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -328,9 +379,33 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textMuted,
   },
+  hintCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginTop: spacing.xl,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  hintIcon: {
+    marginTop: 2,
+  },
+  hintText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    flex: 1,
+    lineHeight: 18,
+  },
   headsUpFooter: {
     paddingHorizontal: spacing.xxl,
     paddingBottom: spacing.xxl,
+  },
+  skipRow: {
+    marginTop: spacing.md,
+    alignItems: 'center',
   },
   loadingText: {
     ...typography.body,
