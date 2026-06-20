@@ -18,6 +18,7 @@
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_MODE": "production",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://48c1a2237c04eb9469987889813cb7db@o4510966624944128.ingest.us.sentry.io/4510966628745216",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }

@@ -27,7 +27,7 @@ Built by [TTTS Co.](https://ospos.app) for small merchants who hate giving 3–4
 
 ## Status
 
-OSPOS v1.0 ships **US-only, iPhone-only** (XS or newer, iOS 16.4+). Other countries and Android are on the v1.1+ roadmap.
+OSPOS v1.1 ships **US-only, iPhone-only** (XS or newer, iOS 16.4+). v1.1 adds modifier groups, QSR mode, expanded sticker library, order-level discounts, and a sold-out toggle for items and modifiers. Other countries and Android are on the roadmap.
 
 The hosted version at [ospos.app](https://ospos.app) is live. Self-hosting is fully supported — see [ARCHITECTURE.md](./ARCHITECTURE.md) for deployment.
 
