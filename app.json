@@ -2,7 +2,7 @@
   "expo": {
     "name": "OSPOS",
     "slug": "ospos",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/brand/icon-app.png",
     "userInterfaceStyle": "dark",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.ospos.app",
-      "buildNumber": "38",
+      "buildNumber": "39",
       "config": {
         "usesNonExemptEncryption": false
       },
