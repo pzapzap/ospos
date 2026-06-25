@@ -135,7 +135,7 @@ const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
 const noHeader = { headerShown: false, contentStyle: { backgroundColor: colors.background } };
 
-function OrderStackNavigator() {
+function OrderStackNavigator({ onUpgrade }: { onUpgrade: () => Promise<void> }) {
   const { isOnline, isTestMode, settings } = useApp();
   return (
     <SafeAreaViewCompat style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
@@ -156,11 +156,7 @@ function OrderStackNavigator() {
               onPaymentComplete={() => navigation.navigate('Receipt')}
               onBack={() => navigation.goBack()}
               onTTPOiSetup={() => navigation.navigate('TTPOiSetup')}
-              onUpgrade={async () => {
-                await AsyncStorage.removeItem('onboardingComplete');
-                await clearToken();
-                Alert.alert('Restart Required', 'Please restart the app to begin card payment setup.');
-              }}
+              onUpgrade={onUpgrade}
             />
           )}
         </OrderStack.Screen>
@@ -205,7 +201,7 @@ function SummaryStackNavigator() {
   );
 }
 
-function SettingsStackNavigator({ onAccountDeleted }: { onAccountDeleted?: () => void }) {
+function SettingsStackNavigator({ onAccountDeleted, onUpgrade }: { onAccountDeleted?: () => void; onUpgrade: () => Promise<void> }) {
   return (
     <SettingsStack.Navigator screenOptions={noHeader}>
       <SettingsStack.Screen name="SettingsMain">
@@ -224,11 +220,7 @@ function SettingsStackNavigator({ onAccountDeleted }: { onAccountDeleted?: () =>
                   { text: 'Cancel', style: 'cancel' },
                   {
                     text: 'Continue',
-                    onPress: async () => {
-                      await AsyncStorage.removeItem('onboardingComplete');
-                      await clearToken();
-                      Alert.alert('Restart Required', 'Please restart the app to begin card payment setup.');
-                    },
+                    onPress: () => { onUpgrade(); },
                   },
                 ]
               );
@@ -265,7 +257,7 @@ function SettingsStackNavigator({ onAccountDeleted }: { onAccountDeleted?: () =>
   );
 }
 
-function MainTabs({ initialTab, onAccountDeleted }: { initialTab?: string; onAccountDeleted?: () => void }) {
+function MainTabs({ initialTab, onAccountDeleted, onUpgrade }: { initialTab?: string; onAccountDeleted?: () => void; onUpgrade: () => Promise<void> }) {
   return (
     <Tab.Navigator
       initialRouteName={initialTab}
@@ -286,12 +278,13 @@ function MainTabs({ initialTab, onAccountDeleted }: { initialTab?: string; onAcc
     >
       <Tab.Screen
         name="Order"
-        component={OrderStackNavigator}
         options={{
           tabBarLabel: 'Order',
           tabBarIcon: ({ color }) => <Ionicons name="grid-outline" size={22} color={color} />,
         }}
-      />
+      >
+        {() => <OrderStackNavigator onUpgrade={onUpgrade} />}
+      </Tab.Screen>
       <Tab.Screen
         name="Menu"
         options={{
@@ -318,7 +311,7 @@ function MainTabs({ initialTab, onAccountDeleted }: { initialTab?: string; onAcc
           tabBarIcon: ({ color }) => <Ionicons name="settings-outline" size={22} color={color} />,
         }}
       >
-        {() => <SettingsStackNavigator onAccountDeleted={onAccountDeleted} />}
+        {() => <SettingsStackNavigator onAccountDeleted={onAccountDeleted} onUpgrade={onUpgrade} />}
       </Tab.Screen>
     </Tab.Navigator>
   );
@@ -429,6 +422,18 @@ function AppContent() {
     setOnboardingComplete(false);
   };
 
+  // Cash-tier merchant taps "Upgrade to Card Payments" (from Settings or
+  // PaymentScreen). The old flow required a manual restart of the app
+  // because AsyncStorage was being mutated without telling React about it.
+  // Now we clear the persisted flag AND the auth token in storage, then
+  // flip the local state so React re-evaluates and swaps in the
+  // OnboardingNavigator immediately. No restart, no jarring alert.
+  const handleUpgrade = async () => {
+    await AsyncStorage.removeItem('onboardingComplete');
+    await clearToken();
+    setOnboardingComplete(false);
+  };
+
   const content = launchTTPOiSetup ? (
     <NavigationContainer>
       <TTPOiSetupScreen
@@ -439,7 +444,7 @@ function AppContent() {
   ) : (
     <>
       <NavigationContainer>
-        <MainTabs initialTab={initialTab} onAccountDeleted={handleAccountDeleted} />
+        <MainTabs initialTab={initialTab} onAccountDeleted={handleAccountDeleted} onUpgrade={handleUpgrade} />
       </NavigationContainer>
       <TTPOiAwarenessModal
         visible={showTTPOiAwareness}
