@@ -701,73 +701,6 @@ h1 .accent {
   overflow: hidden;
 }
 
-/* Last card (Dispute Protection) is the 10th cell — the 3-col grid leaves
-   it alone on the 4th row. Span the full width and center its content so it
-   reads as intentional (a feature highlight) rather than orphaned. */
-.feature-cell-centered {
-  grid-column: 1 / -1;
-  text-align: center;
-}
-.feature-cell-centered .feature-icon {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Sticker library callout — small standalone box above the features grid.
-   Big numeral on the left (Archivo, cyan), short copy on the right.
-   Reads as one quick fact about the library rather than another card. */
-.features-callout {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  max-width: 540px;
-  margin: 0 auto 56px;
-  padding: 20px 28px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-.features-callout-num {
-  font-family: var(--font-num);
-  font-weight: 700;
-  font-size: 56px;
-  line-height: 1;
-  color: var(--cyan);
-  letter-spacing: -2px;
-  flex-shrink: 0;
-}
-.features-callout-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.features-callout-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 18px;
-  color: var(--text);
-  letter-spacing: -0.3px;
-}
-.features-callout-sub {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-}
-
-@media (max-width: 480px) {
-  .features-callout {
-    flex-direction: column;
-    text-align: center;
-    align-items: center;
-    gap: 12px;
-    padding: 24px 20px;
-  }
-  .features-callout-num {
-    font-size: 48px;
-  }
-}
 
 .feature-cell {
   padding: 40px 32px;
@@ -1476,17 +1409,6 @@ footer .container {
       <h2 class="section-title">Everything you need.<br>Nothing you don't.</h2>
     </div>
 
-    <!-- Sticker library callout — small standalone box, not a feature card.
-         Surfaces the 193-sticker count as its own beat between the header
-         and the grid. -->
-    <div class="features-callout reveal">
-      <div class="features-callout-num">193</div>
-      <div class="features-callout-body">
-        <div class="features-callout-title">hand-curated stickers</div>
-        <div class="features-callout-sub">Across Food, Drinks, Retail, and Service. Search &ldquo;lettuce,&rdquo; &ldquo;pickle,&rdquo; &ldquo;iced coffee&rdquo; — find the right visual instantly.</div>
-      </div>
-    </div>
-
     <div class="features-grid reveal-stagger">
       <div class="feature-cell reveal">
         <div class="feature-icon">
@@ -1525,6 +1447,13 @@ footer .container {
       </div>
       <div class="feature-cell reveal">
         <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3" fill="none" stroke="currentColor"/><rect x="13" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor"/><polygon points="6,14 9.5,20 2.5,20" fill="none" stroke="currentColor" stroke-linejoin="round"/><path d="M17 13.5l1.5 3 3.3.5-2.4 2.3.6 3.3-3-1.6-3 1.6.6-3.3-2.4-2.3 3.3-.5z" fill="none" stroke="currentColor" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>193 stickers</h3>
+        <p>Hand-curated icons across Food, Drinks, Retail, and Service. Search &ldquo;lettuce,&rdquo; &ldquo;pickle,&rdquo; &ldquo;iced coffee&rdquo; &mdash; find the right visual instantly.</p>
+      </div>
+      <div class="feature-cell reveal">
+        <div class="feature-icon">
           <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="currentColor" fill="none"/><path d="M8 12l3 3 5-5" fill="none"/></svg>
         </div>
         <h3>Tap to Pay</h3>
@@ -1551,7 +1480,7 @@ footer .container {
         <h3>Email Receipts</h3>
         <p>Email receipts to your customers. Clean, branded, professional.</p>
       </div>
-      <div class="feature-cell reveal feature-cell-centered">
+      <div class="feature-cell reveal">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" fill="none"/><path d="M9 12l2 2 4-4" fill="none"/></svg>
         </div>
