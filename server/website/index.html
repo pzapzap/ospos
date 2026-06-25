@@ -391,6 +391,59 @@ h1 .accent {
   animation: fadeUpScale 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
 }
 
+/* Hero carousel — 5 v1.1 screenshots cycling on a 30s loop.
+   Each image visible ~5s (3s fully-opaque hold + 1s fade in + 1s fade out).
+   Crossfade overlaps the fade-out of image N with the fade-in of N+1 so
+   there's never a dead frame.
+   Stack order: hero-v1.1 (menu) → pastries (QSR) → customize (modifiers) →
+   modifiers (cart sub-lines) → discount (full order with happy hour). */
+.hero-carousel {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 922 / 1884;
+  margin: 0 auto;
+  border-radius: 36px;
+  overflow: hidden;
+  box-shadow:
+    0 24px 72px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(255,255,255,0.06),
+    0 0 60px -10px var(--cyan-glow);
+}
+.hero-carousel-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  animation: heroCarousel 30s infinite;
+}
+.hero-carousel-img:nth-child(1) { animation-delay: 0s; }
+.hero-carousel-img:nth-child(2) { animation-delay: 6s; }
+.hero-carousel-img:nth-child(3) { animation-delay: 12s; }
+.hero-carousel-img:nth-child(4) { animation-delay: 18s; }
+.hero-carousel-img:nth-child(5) { animation-delay: 24s; }
+
+@keyframes heroCarousel {
+  0%      { opacity: 0; }
+  3.33%   { opacity: 1; }   /* fade in over 1s (3.33% of 30s) */
+  16.67%  { opacity: 1; }   /* hold for 4s */
+  20%     { opacity: 0; }   /* fade out over 1s */
+  100%    { opacity: 0; }
+}
+
+/* Honor users who've asked the OS to reduce motion — show only the first
+   image, no animation. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-carousel-img {
+    animation: none;
+  }
+  .hero-carousel-img:nth-child(1) {
+    opacity: 1;
+  }
+}
+
 .phone-frame {
   width: 300px;
   background: #000;
@@ -658,6 +711,62 @@ h1 .accent {
 .feature-cell-centered .feature-icon {
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Sticker library callout — small standalone box above the features grid.
+   Big numeral on the left (Archivo, cyan), short copy on the right.
+   Reads as one quick fact about the library rather than another card. */
+.features-callout {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  max-width: 540px;
+  margin: 0 auto 56px;
+  padding: 20px 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.features-callout-num {
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1;
+  color: var(--cyan);
+  letter-spacing: -2px;
+  flex-shrink: 0;
+}
+.features-callout-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.features-callout-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+.features-callout-sub {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .features-callout {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 20px;
+  }
+  .features-callout-num {
+    font-size: 48px;
+  }
 }
 
 .feature-cell {
@@ -1308,7 +1417,13 @@ footer .container {
 
     <div class="hero-phone">
       <div class="phone-frame">
-        <img src="hero-v1.1.png" alt="OSPOS Order screen showing menu with stickers and QSR mode categories" style="width: 100%; max-width: 360px; height: auto; display: block; border-radius: 36px; box-shadow: 0 24px 72px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);">
+        <div class="hero-carousel" aria-label="OSPOS app screenshots cycling through key v1.1 features">
+          <img src="hero-v1.1.png" class="hero-carousel-img" alt="OSPOS Order screen with full menu and QSR categories">
+          <img src="hero-pastries.png" class="hero-carousel-img" alt="QSR mode filtering by Pastries category">
+          <img src="hero-customize.png" class="hero-carousel-img" alt="Customize sheet with milk and extras modifier groups">
+          <img src="hero-modifiers.png" class="hero-carousel-img" alt="Cart with modifier sub-lines under each item">
+          <img src="hero-discount.png" class="hero-carousel-img" alt="Sandwich order with 15 percent Happy Hour discount applied">
+        </div>
       </div>
     </div>
   </div>
@@ -1361,11 +1476,15 @@ footer .container {
       <h2 class="section-title">Everything you need.<br>Nothing you don't.</h2>
     </div>
 
-    <!-- Real-app screenshot above the feature grid — Order screen with QSR
-         categories, sticker library, modifier groups. Mirrors the hero shot
-         but sits inside the Features context. -->
-    <div class="features-preview reveal" style="display: flex; justify-content: center; margin: 0 auto 56px; max-width: 320px;">
-      <img src="hero-v1.1.png" alt="OSPOS Order screen with QSR categories and sticker library" style="width: 100%; height: auto; display: block; border-radius: 32px; box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);">
+    <!-- Sticker library callout — small standalone box, not a feature card.
+         Surfaces the 193-sticker count as its own beat between the header
+         and the grid. -->
+    <div class="features-callout reveal">
+      <div class="features-callout-num">193</div>
+      <div class="features-callout-body">
+        <div class="features-callout-title">hand-curated stickers</div>
+        <div class="features-callout-sub">Across Food, Drinks, Retail, and Service. Search &ldquo;lettuce,&rdquo; &ldquo;pickle,&rdquo; &ldquo;iced coffee&rdquo; — find the right visual instantly.</div>
+      </div>
     </div>
 
     <div class="features-grid reveal-stagger">
