@@ -682,7 +682,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.xxl,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
+    // Generous bottom padding so the trust chip + Instagram hint have room
+    // to scroll fully clear of the pinned footer (Continue + Skip buttons,
+    // ~140pt tall) instead of peeking out under it.
+    paddingBottom: 160,
   },
   backRow: {
     flexDirection: 'row',
@@ -932,6 +935,10 @@ const styles = StyleSheet.create({
   },
 
   // ───── Trust chip ─────
+  // marginTop is intentionally large — the trust + hint chips sit below the
+  // fold by default so they don't peek under the pinned footer. Merchants who
+  // scroll find them as bonus reassurance; the primary path (Continue / Skip)
+  // stays clean and uncluttered.
   trustChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -943,7 +950,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(34,211,238,0.06)',
     borderWidth: 1,
     borderColor: 'rgba(34,211,238,0.16)',
-    marginTop: spacing.xxl,
+    marginTop: 64,
     marginBottom: spacing.md,
   },
   trustIcon: {
