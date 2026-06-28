@@ -45,3 +45,9 @@ server/.env.local
 /android
 
 .planning/
+
+# Dogfood screenshots — local-only
+screenshots/
+
+# LibreOffice/OpenOffice lock files
+*.~lock.*
