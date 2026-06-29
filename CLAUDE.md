@@ -19,7 +19,7 @@ A free, open-source point of sale app that runs on any smartphone. It is a cash 
 | Server | Express.js + TypeScript |
 | Server DB | PostgreSQL 16 (raw SQL via `pg`, no ORM) |
 | Auth | JWT (24h expiry) + Sign in with Apple |
-| Receipts | SMS (Twilio), Email (SendGrid), Bluetooth printer (ESC/POS) |
+| Receipts | Email (Resend), Bluetooth printer (ESC/POS); SMS stubbed (Twilio wiring deferred to A2P registration) |
 | Errors | Sentry |
 | Deploy | Docker Compose + Caddy (Hetzner, api.ospos.app) |
 

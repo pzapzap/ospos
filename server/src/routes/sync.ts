@@ -11,6 +11,12 @@ import {
 const router = Router();
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Strip ASCII control chars from any client-supplied value before it lands in
+// a log line — prevents log-line forging via embedded newlines (F-025).
+function safeForLog(value: unknown): string {
+  return String(value).replace(/[\x00-\x1f\x7f]/g, '?').slice(0, 200);
+}
 const PAYMENT_METHODS = new Set(['cash', 'card']);
 const REFUND_STATUSES = new Set(['none', 'partial', 'full']);
 const ORDER_STATUSES = new Set(['completed', 'refunded']);
@@ -117,18 +123,18 @@ router.post('/push', async (req: Request, res: Response): Promise<void> => {
             ? JSON.parse(record.payload) as Record<string, unknown>
             : record.payload as Record<string, unknown>;
         } catch {
-          console.error(`[SYNC] Invalid JSON payload for record ${record.id}`);
+          console.error(`[SYNC] Invalid JSON payload for record ${safeForLog(record.id)}`);
           continue;
         }
         if (!payload || typeof payload !== 'object') {
-          console.error(`[SYNC] Invalid payload shape for record ${record.id}`);
+          console.error(`[SYNC] Invalid payload shape for record ${safeForLog(record.id)}`);
           continue;
         }
 
         if (record.table_name === 'orders') {
           const valid = validateOrderPayload(payload);
           if (!valid) {
-            console.warn(`[SYNC] Rejected invalid order payload for record ${record.id}`);
+            console.warn(`[SYNC] Rejected invalid order payload for record ${safeForLog(record.id)}`);
             continue;
           }
           await upsertSyncedOrder(req.user.userId, valid);
@@ -136,7 +142,7 @@ router.post('/push', async (req: Request, res: Response): Promise<void> => {
         } else if (record.table_name === 'order_items') {
           const valid = validateOrderItemPayload(payload);
           if (!valid) {
-            console.warn(`[SYNC] Rejected invalid order_item payload for record ${record.id}`);
+            console.warn(`[SYNC] Rejected invalid order_item payload for record ${safeForLog(record.id)}`);
             continue;
           }
           await upsertSyncedOrderItem(req.user.userId, valid);
@@ -146,9 +152,9 @@ router.post('/push', async (req: Request, res: Response): Promise<void> => {
         if (error instanceof SyncOwnershipError) {
           // Cross-tenant attempt — log and skip without leaking that the
           // target id exists under another user.
-          console.warn(`[SYNC] Ownership violation for record ${record.id}: ${error.message}`);
+          console.warn(`[SYNC] Ownership violation for record ${safeForLog(record.id)}: ${error.message}`);
         } else {
-          console.error(`[SYNC] Failed to sync record ${record.id}:`, error);
+          console.error(`[SYNC] Failed to sync record ${safeForLog(record.id)}:`, error);
         }
         // Continue processing other records
       }
@@ -185,8 +191,6 @@ router.get('/pull', async (req: Request, res: Response): Promise<void> => {
     // Batch-fetch all items for all orders in one query
     if (orders.length > 0) {
       const orderIds = orders.map((o) => o.id);
-      const placeholders = orderIds.map(() => '$' + (orderIds.indexOf(orderIds[0]) + orderIds.indexOf(orderIds[0]) + 1)).join(',');
-      // Use single batch query instead of N+1
       const allItems = await Promise.all(
         orderIds.map((id) => getOrderItems(id))
       );

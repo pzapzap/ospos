@@ -13,6 +13,9 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Apple's public keys endpoint for verifying identity tokens
 const APPLE_KEYS_URL = 'https://appleid.apple.com/auth/keys';
 
+// Apple identity tokens are minted for the iOS app's bundle ID.
+const APPLE_AUDIENCE = 'com.ospos.app';
+
 // Strict rate limit on auth endpoints: 20 req per 15 min per IP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -32,7 +35,7 @@ router.post('/register', authLimiter, async (req: Request, res: Response): Promi
       return;
     }
 
-    if (typeof email !== 'string' || !EMAIL_REGEX.test(email) || email.length > 255) {
+    if (typeof email !== 'string' || email.length > 255 || !EMAIL_REGEX.test(email)) {
       res.status(400).json({ error: 'Invalid email format' });
       return;
     }
@@ -105,7 +108,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
 // POST /auth/apple — Sign in with Apple
 router.post('/apple', authLimiter, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { identityToken, email, fullName } = req.body;
+    const { identityToken } = req.body;
 
     if (!identityToken || typeof identityToken !== 'string') {
       res.status(400).json({ error: 'Identity token is required' });
@@ -113,16 +116,11 @@ router.post('/apple', authLimiter, async (req: Request, res: Response): Promise<
     }
 
     // Decode the identity token to get the Apple user ID (sub claim)
-    // Apple identity tokens are JWTs signed by Apple
-    let decoded: { sub?: string; email?: string };
+    // Apple identity tokens are JWTs signed by Apple.
+    // SECURITY: every account-binding decision below uses ONLY values from the
+    // signed token. Never trust req.body.email — see F-001 (account takeover).
+    let decoded: { sub?: string; email?: string; email_verified?: boolean | string };
     try {
-      // Decode without verification first to get header for key lookup
-      decoded = jwt.decode(identityToken) as { sub?: string; email?: string };
-      if (!decoded?.sub) {
-        throw new Error('Missing sub claim');
-      }
-
-      // Verify the token signature using Apple's public keys
       const header = jwt.decode(identityToken, { complete: true })?.header;
       if (!header?.kid) {
         throw new Error('Missing kid in token header');
@@ -135,14 +133,18 @@ router.post('/apple', authLimiter, async (req: Request, res: Response): Promise<
         throw new Error('Apple public key not found');
       }
 
-      // Convert JWK to PEM for verification
       const { createPublicKey } = await import('crypto');
       const publicKey = createPublicKey({ key: appleKey, format: 'jwk' });
 
-      jwt.verify(identityToken, publicKey, {
+      decoded = jwt.verify(identityToken, publicKey, {
         algorithms: ['RS256'],
         issuer: 'https://appleid.apple.com',
-      });
+        audience: APPLE_AUDIENCE,
+      }) as { sub?: string; email?: string; email_verified?: boolean | string };
+
+      if (!decoded?.sub) {
+        throw new Error('Missing sub claim');
+      }
     } catch (verifyErr) {
       console.error('[AUTH] Apple token verification failed:', verifyErr);
       res.status(401).json({ error: 'Invalid Apple identity token' });
@@ -150,24 +152,30 @@ router.post('/apple', authLimiter, async (req: Request, res: Response): Promise<
     }
 
     const appleIdentifier = decoded.sub!;
-    // Apple provides email on first sign-in only; use token email as fallback
-    const userEmail = email || decoded.email || `apple_${appleIdentifier.slice(0, 8)}@private.appleid.com`;
+    // Apple sets email_verified to true (or the string "true") for both real
+    // and private-relay addresses it issues. We only trust the email claim
+    // when Apple has vouched for it.
+    const emailVerified = decoded.email_verified === true || decoded.email_verified === 'true';
+    const verifiedEmail = emailVerified && typeof decoded.email === 'string' ? decoded.email : undefined;
 
-    // Check if user already exists with this Apple ID
+    // Account lookup: Apple sub is the only identity that crosses sessions.
     let user = await findUserByAppleIdentifier(appleIdentifier);
     let isNewUser = false;
 
     if (!user) {
-      // Check if email already exists (user previously registered with email/password)
-      const existingByEmail = await findUserByEmail(userEmail);
+      // Only auto-link to an existing password account when Apple has verified
+      // the same email address. This preserves the "I registered with email,
+      // now I'm tapping Sign in with Apple" UX while blocking the takeover
+      // path (an attacker's Apple token will never carry a verified email
+      // they don't control).
+      const existingByEmail = verifiedEmail ? await findUserByEmail(verifiedEmail) : null;
       if (existingByEmail) {
-        // Link Apple ID to existing account
         const { query } = await import('../db/connection');
         await query('UPDATE users SET apple_identifier = $1 WHERE id = $2', [appleIdentifier, existingByEmail.id]);
         user = { ...existingByEmail, apple_identifier: appleIdentifier };
       } else {
-        // Create new user
-        user = await createUserWithApple(userEmail, appleIdentifier);
+        const newEmail = verifiedEmail || `apple_${appleIdentifier.slice(0, 8)}@private.appleid.com`;
+        user = await createUserWithApple(newEmail, appleIdentifier);
         isNewUser = true;
       }
     }

@@ -1,3 +1,10 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# LOCAL DEVELOPMENT ONLY — DO NOT USE IN PRODUCTION.
+# This file ships hardcoded `JWT_SECRET` and Postgres credentials so `npm start`
+# works out of the box. A self-hoster running this in prod would publish a
+# universally-known JWT signing key (full auth bypass). For production use
+# docker-compose.prod.yml, which sources every secret from the environment.
+# ─────────────────────────────────────────────────────────────────────────────
 version: '3.8'
 
 services:
