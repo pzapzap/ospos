@@ -336,7 +336,7 @@ export default function AddItemModal({
       <SafeAreaView style={styles.fullScreenContainer}>
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <TouchableOpacity
             onPress={onClose}

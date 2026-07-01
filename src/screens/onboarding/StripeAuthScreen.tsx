@@ -15,9 +15,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../../constants/theme';
 import { strings } from '../../constants/strings';
-import { register, login, loginWithApple } from '../../services/api';
+import { register, login, loginWithApple, loginWithGoogle } from '../../services/api';
 import Button from '../../components/Button';
 import { lightTap } from '../../utils/haptics';
 import type { OnboardingStackParamList } from '../../navigation/OnboardingNavigator';
@@ -25,6 +26,14 @@ import type { OnboardingStackParamList } from '../../navigation/OnboardingNaviga
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'StripeAuth'>;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Google Sign-In (Android) needs the OAuth *web* client id so the returned
+// idToken can be verified server-side (its aud must match GOOGLE_CLIENT_ID).
+if (Platform.OS === 'android') {
+  GoogleSignin.configure({
+    webClientId: '677211546052-1irpevohdep32rg28rrtpf0fv39lf3im.apps.googleusercontent.com',
+  });
+}
 
 export default function StripeAuthScreen() {
   const navigation = useNavigation<Nav>();
@@ -93,6 +102,37 @@ export default function StripeAuthScreen() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+
+      const idToken = response.data?.idToken;
+      if (!idToken) {
+        throw new Error('No ID token received from Google');
+      }
+
+      const googleUser = response.data?.user;
+      const fullName = googleUser
+        ? [googleUser.givenName, googleUser.familyName].filter(Boolean).join(' ')
+        : null;
+
+      await loginWithGoogle(idToken, googleUser?.email, fullName);
+
+      navigation.navigate('StripeOnboarding');
+    } catch (err: unknown) {
+      // User cancelled — don't show error
+      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'SIGN_IN_CANCELLED') {
+        return;
+      }
+      Alert.alert('Sign in with Google Failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleMode = async () => {
     await lightTap();
     setMode(mode === 'register' ? 'login' : 'register');
@@ -135,7 +175,22 @@ export default function StripeAuthScreen() {
             />
           )}
 
-          {Platform.OS === 'ios' && (
+          {/* Sign in with Google — Android's social login */}
+          {Platform.OS === 'android' && (
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={handleGoogleSignIn}
+              activeOpacity={0.7}
+              disabled={loading}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in with Google"
+            >
+              <Ionicons name="logo-google" size={20} color={colors.text} />
+              <Text style={styles.googleButtonText}>Sign in with Google</Text>
+            </TouchableOpacity>
+          )}
+
+          {(Platform.OS === 'ios' || Platform.OS === 'android') && (
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>or</Text>
@@ -240,6 +295,23 @@ const styles = StyleSheet.create({
   appleButton: {
     height: touchTargets.chargeButton,
     marginBottom: spacing.md,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    height: touchTargets.chargeButton,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  googleButtonText: {
+    ...typography.bodyBold,
+    color: colors.text,
+    fontSize: 18,
   },
   dividerRow: {
     flexDirection: 'row',

@@ -106,7 +106,7 @@ export default function StickerPickerModal({
       <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           {/* Header row */}
           <View style={styles.headerRow}>

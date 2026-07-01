@@ -121,7 +121,7 @@ export default function DiscountModal({
       <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <TouchableOpacity
             onPress={onClose}

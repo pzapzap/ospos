@@ -63,11 +63,6 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
   // Check device compatibility on mount
   useEffect(() => {
     (async () => {
-      if (Platform.OS !== 'ios') {
-        setDeviceCompatible(false);
-        return;
-      }
-
       try {
         if (!isInitialized) {
           await initialize();
@@ -133,7 +128,7 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
       const readers = await waitForReaders();
 
       if (readers.length === 0) {
-        Alert.alert('Setup Failed', 'Could not set up Tap to Pay on iPhone. Please try again.');
+        Alert.alert('Setup Failed', `Could not set up ${strings.ttpoi.sectionTitle}. Please try again.`);
         setStep('requirements');
         return;
       }
@@ -179,8 +174,10 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
     onComplete();
   };
 
-  const isIOS = Platform.OS === 'ios';
-  const iosVersionOk = true; // Deployment target is 16.0, so runtime is always >= 16.0
+  const isSupportedPlatform = Platform.OS === 'ios' || Platform.OS === 'android';
+  // iOS deployment target is 16.0 (always ok at runtime). Stripe Tap to Pay on
+  // Android requires Android 13 (API 33)+; Platform.Version is the API level integer.
+  const osVersionOk = Platform.OS === 'android' ? Number(Platform.Version) >= 33 : true;
 
   if (step === 'configuring') {
     return (
@@ -226,18 +223,18 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
 
           <View style={styles.requirementRow}>
             <Ionicons
-              name={isIOS ? 'checkmark-circle' : 'close-circle'}
+              name={isSupportedPlatform ? 'checkmark-circle' : 'close-circle'}
               size={24}
-              color={isIOS ? colors.primary : colors.danger}
+              color={isSupportedPlatform ? colors.primary : colors.danger}
             />
             <Text style={styles.requirementText}>{strings.ttpoi.setupRequirementDevice}</Text>
           </View>
 
           <View style={styles.requirementRow}>
             <Ionicons
-              name={iosVersionOk ? 'checkmark-circle' : 'close-circle'}
+              name={osVersionOk ? 'checkmark-circle' : 'close-circle'}
               size={24}
-              color={iosVersionOk ? colors.primary : colors.danger}
+              color={osVersionOk ? colors.primary : colors.danger}
             />
             <Text style={styles.requirementText}>{strings.ttpoi.setupRequirementOS}</Text>
           </View>
@@ -268,11 +265,13 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
               variant="primary"
               size="lg"
               onPress={handleAcceptTerms}
-              disabled={deviceCompatible === false}
-              accessibilityLabel="Accept Terms and Conditions for Tap to Pay on iPhone"
+              disabled={deviceCompatible === false || !osVersionOk}
+              accessibilityLabel={`Accept Terms and Conditions for ${strings.ttpoi.sectionTitle}`}
             />
 
-            {deviceCompatible === false ? (
+            {!osVersionOk ? (
+              <Text style={styles.incompatibleText}>{strings.ttpoi.osUpdateMessage}</Text>
+            ) : deviceCompatible === false ? (
               <Text style={styles.incompatibleText}>{strings.ttpoi.incompatible}</Text>
             ) : null}
           </View>

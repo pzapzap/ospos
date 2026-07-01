@@ -218,6 +218,23 @@ export async function loginWithApple(
   return result;
 }
 
+export async function loginWithGoogle(
+  idToken: string,
+  email?: string | null,
+  fullName?: string | null
+): Promise<{ token: string; userId: string; isNewUser: boolean; terminalLocationId?: string }> {
+  const result = await request<{ token: string; userId: string; isNewUser: boolean; terminalLocationId?: string }>({
+    method: 'POST',
+    path: '/auth/google',
+    body: { idToken, email, fullName },
+  });
+  await setToken(result.token);
+  if (result.terminalLocationId) {
+    await setTerminalLocationId(result.terminalLocationId);
+  }
+  return result;
+}
+
 export async function deleteAccount(): Promise<{ success: boolean }> {
   return request({
     method: 'POST',

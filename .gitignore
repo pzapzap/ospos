@@ -51,3 +51,4 @@ screenshots/
 
 # LibreOffice/OpenOffice lock files
 *.~lock.*
+android-screenshot*.png

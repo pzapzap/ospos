@@ -1,4 +1,21 @@
 // All user-facing text externalized for future i18n readiness
+import { Platform } from 'react-native';
+
+// Platform-aware Tap to Pay branding. On iOS these render byte-identically to the
+// Apple-approved copy; on Android they substitute the device/OS/wallet wording.
+const isIOS = Platform.OS === 'ios';
+const tapToPayBrand = isIOS ? 'Tap to Pay on iPhone' : 'Tap to Pay on Android';
+const deviceName = isIOS ? 'iPhone' : 'phone';
+const deviceRequirement = isIOS ? 'iPhone XS or later' : 'NFC-capable Android device';
+const osRequirement = isIOS ? 'iOS 16.0 or later' : 'Android 13.0 or later';
+const osShort = isIOS ? 'iOS 16.0+' : 'Android 13+';
+const osName = isIOS ? 'iOS' : 'Android';
+const osUpdatePath = isIOS ? 'Settings > General > Software Update' : 'Settings > System > System update';
+const walletBrand = isIOS ? 'Apple Pay' : 'Google Pay';
+const termsOwner = isIOS ? "Apple's" : 'the';
+const privacyLine = isIOS
+  ? 'Apple doesn\'t store card numbers on Apple servers.'
+  : 'Card numbers aren\'t stored on your device or on our servers.';
 
 export const strings = {
   app: {
@@ -104,7 +121,7 @@ export const strings = {
   payment: {
     title: 'Payment',
     cash: 'Cash',
-    card: 'Tap to Pay on iPhone',
+    card: tapToPayBrand,
     cardComingSoon: 'Set up your account to accept card and contactless payments.',
     tipTitle: 'Add a tip?',
     noTip: 'No Tip',
@@ -116,13 +133,13 @@ export const strings = {
     skip: 'Skip',
     creatingPayment: 'Creating payment...',
     lookingForReader: 'Looking for reader...',
-    connectingTapToPay: 'Connecting Tap to Pay on iPhone...',
+    connectingTapToPay: `Connecting ${tapToPayBrand}...`,
     connectingReader: 'Connecting reader...',
     presentCard: 'Present card...',
     confirming: 'Confirming...',
     paymentFailed: 'Payment Failed',
     offlineUnavailable: 'Offline — unavailable',
-    noReaderAvailable: 'Tap to Pay on iPhone is not enabled. Set it up or pair a Bluetooth reader in Settings.',
+    noReaderAvailable: `${tapToPayBrand} is not enabled. Set it up or pair a Bluetooth reader in Settings.`,
   },
   receipt: {
     title: 'Payment Complete',
@@ -246,48 +263,50 @@ export const strings = {
     daysLeft: 'days left',
   },
   ttpoi: {
-    sectionTitle: 'Tap to Pay on iPhone',
-    ready: 'Tap to Pay on iPhone is ready',
+    sectionTitle: tapToPayBrand,
+    ready: `${tapToPayBrand} is ready`,
     notSetUp: 'Not Set Up',
     unavailable: 'Unavailable',
     setUp: 'Set Up',
     viewGuide: 'View Guide',
-    incompatible: 'This device doesn\'t support Tap to Pay on iPhone. Requires iPhone XS or later with iOS 16.0+.',
-    osUpdateRequired: 'iOS Update Required',
-    osUpdateMessage: 'Tap to Pay on iPhone requires iOS 16.0 or later. Please update your device in Settings > General > Software Update.',
+    incompatible: `This device doesn\'t support ${tapToPayBrand}. Requires ${deviceRequirement} with ${osShort}.`,
+    osUpdateRequired: `${osName} Update Required`,
+    osUpdateMessage: `${tapToPayBrand} requires ${osRequirement}. Please update your device in ${osUpdatePath}.`,
     // Awareness modal — Apple-approved copy (Value Proposition)
-    awarenessTitle: 'Tap to Pay on iPhone',
-    awarenessSubtitle: 'Accept physical debit and credit cards as well as Apple Pay and other digital wallets.\n\nRight on your iPhone.',
+    awarenessTitle: tapToPayBrand,
+    awarenessSubtitle: `Accept physical debit and credit cards as well as ${walletBrand} and other digital wallets.\n\nRight on your ${deviceName}.`,
     awarenessEnable: 'Enable Now',
     awarenessNotNow: 'Not Now',
     // Setup screen — Apple-approved copy
-    setupTitle: 'Tap to Pay on iPhone',
-    setupDescription: 'With Tap to Pay on iPhone and OSPOS, you can accept all types of in-person, contactless payments right on your iPhone\u2014no extra hardware needed.',
+    setupTitle: tapToPayBrand,
+    setupDescription: `With ${tapToPayBrand} and OSPOS, you can accept all types of in-person, contactless payments right on your ${deviceName}\u2014no extra hardware needed.`,
     setupRequirements: 'Device Requirements',
-    setupRequirementDevice: 'iPhone XS or later',
-    setupRequirementOS: 'iOS 16.0 or later',
+    setupRequirementDevice: deviceRequirement,
+    setupRequirementOS: osRequirement,
     setupRequirementPasscode: 'Passcode enabled',
     setupAcceptTerms: 'Accept Terms & Conditions',
-    setupAcceptTermsNote: 'You\'ll be asked to review and accept Apple\'s Terms & Conditions for Tap to Pay on iPhone.',
-    configuring: 'Setting up Tap to Pay on iPhone...',
-    configured: 'Tap to Pay on iPhone is ready!',
+    setupAcceptTermsNote: `You\'ll be asked to review and accept ${termsOwner} Terms & Conditions for ${tapToPayBrand}.`,
+    configuring: `Setting up ${tapToPayBrand}...`,
+    configured: `${tapToPayBrand} is ready!`,
     configDone: 'Done',
     // Education screens — Apple-approved "How to use" copy
     educationTitle: 'Accepting payments is easy.',
     educationCard: 'Contactless Cards',
-    educationCardDesc: 'Your customer holds their card horizontally at the top of your iPhone, over the contactless symbol for a few seconds. When you see the Done checkmark, the transaction is being processed.',
-    educationWallet: 'Apple Pay & Digital Wallets',
-    educationWalletDesc: 'Your customer holds their device at the top of your iPhone, over the contactless symbol for a few seconds. When you see the Done checkmark, the transaction is being processed.',
+    educationCardDesc: `Your customer holds their card horizontally at the top of your ${deviceName}, over the contactless symbol for a few seconds. When you see the Done checkmark, the transaction is being processed.`,
+    educationWallet: `${walletBrand} & Digital Wallets`,
+    educationWalletDesc: `Your customer holds their device at the top of your ${deviceName}, over the contactless symbol for a few seconds. When you see the Done checkmark, the transaction is being processed.`,
     educationTips: 'Privacy and security built in.',
-    educationTipsDesc: 'Tap to Pay on iPhone uses the built-in security and privacy features of iPhone to help protect your business and customer data. Apple doesn\'t store card numbers on Apple servers.',
-    // iOS 18+ branch: shown behind Apple's ProximityReaderDiscovery overlay
+    educationTipsDesc: `${tapToPayBrand} uses the built-in security and privacy features of ${deviceName} to help protect your business and customer data. ${privacyLine}`,
+    // iOS 18+ branch: shown behind Apple's ProximityReaderDiscovery overlay (iOS only)
     educationReadyTitle: 'You\'re ready to accept payments.',
-    educationReadyDesc: 'You\'ve just seen how to accept contactless cards and Apple Pay with Tap to Pay on iPhone. You can review this guide any time from Settings.',
+    educationReadyDesc: `You\'ve just seen how to accept contactless cards and ${walletBrand} with ${tapToPayBrand}. You can review this guide any time from Settings.`,
     educationWatchAgain: 'Watch the guide again',
     tryItNow: 'Try It Now',
     // Legal disclaimers (Apple-required)
     disclaimerShort: 'Terms apply.',
-    disclaimerFull: 'Tap to Pay on iPhone requires a supported payment app and the latest version of iOS. Update to the latest version by going to Settings > General > Software Update. Tap Download and Install. Some contactless cards may not be accepted. Transaction limits may apply. The Contactless Symbol is a trademark owned by and used with permission of EMVCo, LLC. Tap to Pay on iPhone is not available in all markets. When a payment is processed, Apple doesn\'t store card numbers on the device or on Apple servers.',
+    disclaimerFull: isIOS
+      ? 'Tap to Pay on iPhone requires a supported payment app and the latest version of iOS. Update to the latest version by going to Settings > General > Software Update. Tap Download and Install. Some contactless cards may not be accepted. Transaction limits may apply. The Contactless Symbol is a trademark owned by and used with permission of EMVCo, LLC. Tap to Pay on iPhone is not available in all markets. When a payment is processed, Apple doesn\'t store card numbers on the device or on Apple servers.'
+      : `Tap to Pay on Android requires a supported payment app and ${osRequirement}. Update your device in ${osUpdatePath}. Some contactless cards may not be accepted. Transaction limits may apply. The Contactless Symbol is a trademark owned by and used with permission of EMVCo, LLC. Tap to Pay on Android is not available in all markets. When a payment is processed, card numbers aren\'t stored on your device or on our servers.`,
   },
   errors: {
     dbInit: 'Failed to initialize database',

@@ -233,7 +233,7 @@ function CardButton({
             }
           }
 
-          setStatus(simulated ? 'Connecting simulated reader...' : 'Connecting Tap to Pay on iPhone...');
+          setStatus(simulated ? 'Connecting simulated reader...' : strings.payment.connectingTapToPay);
 
           discoverReaders({
             discoveryMethod: 'tapToPay',
@@ -381,10 +381,10 @@ function CardButton({
       disabled={buttonDisabled}
       accessibilityLabel={
         !ttpOiSetupComplete
-          ? 'Set up Tap to Pay on iPhone'
+          ? `Set up ${strings.ttpoi.sectionTitle}`
           : processing
             ? 'Processing payment'
-            : 'Pay with Tap to Pay on iPhone'
+            : `Pay with ${strings.ttpoi.sectionTitle}`
       }
       accessibilityRole="button"
     >
@@ -420,7 +420,7 @@ function DisabledCardButton({ onUpgrade }: { onUpgrade?: () => void }) {
         style={[styles.cardButton, styles.cardButtonEnabled, { flexDirection: 'column', gap: spacing.xs }]}
         onPress={() => setShowModal(true)}
         activeOpacity={0.7}
-        accessibilityLabel="Tap to Pay on iPhone"
+        accessibilityLabel={strings.ttpoi.sectionTitle}
         accessibilityRole="button"
       >
         <Text style={[styles.cardButtonText, styles.cardButtonTextEnabled]}>{strings.payment.card}</Text>

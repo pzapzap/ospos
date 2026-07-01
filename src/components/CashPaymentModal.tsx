@@ -78,7 +78,7 @@ export default function CashPaymentModal({
     <Modal visible={visible} animationType="slide" transparent>
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.modal}>
           <Text style={styles.title}>{strings.payment.cash}</Text>
