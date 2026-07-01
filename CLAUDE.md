@@ -172,9 +172,9 @@ Coffee shop / QSR unlock. Already shipped beyond v1.0:
   SendGrid replaced by Resend for email; SMS still stubbed)
 
 ### Infrastructure done
-- `ospos.app`, `www.ospos.app`, `api.ospos.app` all resolve to 157.180.82.227
+- `ospos.app`, `www.ospos.app`, `api.ospos.app` DNS live and pointed at the prod host
 - Resend live for email receipts (3K/mo free tier, ospos.app DNS verified)
-- TTPOi Publishing Entitlement granted by Apple (Case-ID 18719391)
+- TTPOi Publishing Entitlement granted by Apple
 
 ## Navigation Structure
 
