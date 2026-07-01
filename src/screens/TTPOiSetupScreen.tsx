@@ -4,17 +4,17 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   Platform,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { Reader } from '@stripe/stripe-terminal-react-native';
 import { colors, typography, spacing, borderRadius, touchTargets } from '../constants/theme';
 import { strings } from '../constants/strings';
 import { useApp } from '../state/AppContext';
-import { useStripeTerminal } from '../services/terminal';
+import { useStripeTerminal, ensureTerminalPermissions } from '../services/terminal';
 import { getTerminalLocationId } from '../services/api';
 import ContactlessIcon from '../components/ContactlessIcon';
 import Button from '../components/Button';
@@ -114,6 +114,17 @@ export default function TTPOiSetupScreen({ onComplete, onBack }: TTPOiSetupScree
     setStep('configuring');
 
     try {
+      // Android requires a runtime location grant before the SDK will discover.
+      const hasPerms = await ensureTerminalPermissions();
+      if (!hasPerms) {
+        Alert.alert(
+          'Location permission needed',
+          `${strings.ttpoi.sectionTitle} needs location access to find the reader. Please allow location access and try again.`,
+        );
+        setStep('requirements');
+        return;
+      }
+
       if (!isInitialized) {
         await initialize();
       }

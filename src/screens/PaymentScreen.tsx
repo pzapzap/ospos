@@ -19,7 +19,7 @@ import { useApp } from '../state/AppContext';
 import { createOrder } from '../db/queries';
 import { createPaymentIntent, getTerminalLocationId } from '../services/api';
 import type { OrderAction, OrderState } from '../state/reducers';
-import { useStripeTerminal } from '../services/terminal';
+import { useStripeTerminal, ensureTerminalPermissions } from '../services/terminal';
 import { lightTap, successNotification, errorNotification } from '../utils/haptics';
 import CashPaymentModal from '../components/CashPaymentModal';
 import ContactlessIcon from '../components/ContactlessIcon';
@@ -218,8 +218,13 @@ function CardButton({
         if (__DEV__) console.log('[OSPOS] Already connected to reader:', connectedReader?.serialNumber);
       }
 
-      // Connect to Tap to Pay on iPhone reader
+      // Connect to the Tap to Pay reader
       if (!connected) {
+        // Android needs a runtime location grant before the SDK will discover.
+        const hasPerms = await ensureTerminalPermissions();
+        if (!hasPerms) {
+          throw new Error('Location permission is required to accept card payments.');
+        }
         const simulated = isTestMode;
         try {
           if (!simulated) {

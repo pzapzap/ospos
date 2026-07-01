@@ -480,22 +480,22 @@ export default function SettingsScreen({ onDisputesTap, onUpgrade, onTTPOiSetup,
           </View>
         </View>
 
-        {/* Tap to Pay on iPhone (paid tier only) */}
+        {/* Tap to Pay (paid tier only) */}
         {isPaidTier ? (
           <View style={styles.section}>
-            <Text style={styles.label}>Tap to Pay on iPhone</Text>
+            <Text style={styles.label}>{strings.ttpoi.sectionTitle}</Text>
             {settings.ttpOiSetupComplete === 'true' ? (
               <View style={[styles.syncIndicator, { alignItems: 'center' }]}>
                 <Text style={[styles.syncText, { color: colors.primary, textAlign: 'center' }]}>
-                  Tap to Pay on iPhone is ready
+                  {strings.ttpoi.ready}
                 </Text>
                 <View style={{ marginTop: spacing.sm }}>
-                  <Button label="View Guide" variant="ghost" size="sm" onPress={() => onTTPOiEducation?.()} />
+                  <Button label={strings.ttpoi.viewGuide} variant="ghost" size="sm" onPress={() => onTTPOiEducation?.()} />
                 </View>
               </View>
             ) : (
               <Button
-                label="Set Up Tap to Pay on iPhone"
+                label={`${strings.ttpoi.setUp} ${strings.ttpoi.sectionTitle}`}
                 variant="primary"
                 size="lg"
                 onPress={() => onTTPOiSetup?.()}
