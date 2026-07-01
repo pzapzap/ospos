@@ -33,6 +33,7 @@ services:
       - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - PORT=3000
       - NODE_ENV=production
     depends_on:

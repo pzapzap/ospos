@@ -19,11 +19,14 @@ const APPLE_AUDIENCE = 'com.ospos.app';
 // Google's tokeninfo endpoint — validates an ID token's signature and returns claims.
 const GOOGLE_TOKEN_INFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
 
-// The webClientId the Android app hands to @react-native-google-signin. Google
-// mints ID tokens for this exact audience. Overridable via env if we ever
-// rotate; hardcoded fallback keeps prod working if the env var is missing.
+// The Web-application OAuth client ID the Android app hands to
+// @react-native-google-signin. Google mints ID tokens with this exact `aud`.
+// MUST be a Web-type client (not Android-type) — an Android client can't be
+// used as the aud target for server-side verification. Overridable via env
+// if we ever rotate; hardcoded fallback keeps prod working if the env var is
+// missing.
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ||
-  '677211546052-1irpevohdep32rg28rrtpf0fv39lf3im.apps.googleusercontent.com';
+  '677211546052-n0eepat32up1c1aium22gv7sh9j933jj.apps.googleusercontent.com';
 
 // Strict rate limit on auth endpoints: 20 req per 15 min per IP
 const authLimiter = rateLimit({
