@@ -31,7 +31,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // idToken can be verified server-side (its aud must match GOOGLE_CLIENT_ID).
 if (Platform.OS === 'android') {
   GoogleSignin.configure({
-    webClientId: '677211546052-1irpevohdep32rg28rrtpf0fv39lf3im.apps.googleusercontent.com',
+    webClientId: '677211546052-n0eepat32up1c1aium22gv7sh9j933jj.apps.googleusercontent.com',
   });
 }
 
