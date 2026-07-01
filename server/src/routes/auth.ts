@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
-import { findUserByEmail, findUserByAppleIdentifier, createUser, createUserWithApple, findUserById, deleteUser } from '../db/queries/users';
+import { findUserByEmail, findUserByAppleIdentifier, findUserByGoogleIdentifier, createUser, createUserWithApple, createUserWithGoogle, findUserById, deleteUser } from '../db/queries/users';
 import { generateToken, authMiddleware } from '../middleware/auth';
 
 const router = Router();
@@ -15,6 +15,15 @@ const APPLE_KEYS_URL = 'https://appleid.apple.com/auth/keys';
 
 // Apple identity tokens are minted for the iOS app's bundle ID.
 const APPLE_AUDIENCE = 'com.ospos.app';
+
+// Google's tokeninfo endpoint — validates an ID token's signature and returns claims.
+const GOOGLE_TOKEN_INFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
+
+// The webClientId the Android app hands to @react-native-google-signin. Google
+// mints ID tokens for this exact audience. Overridable via env if we ever
+// rotate; hardcoded fallback keeps prod working if the env var is missing.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ||
+  '677211546052-1irpevohdep32rg28rrtpf0fv39lf3im.apps.googleusercontent.com';
 
 // Strict rate limit on auth endpoints: 20 req per 15 min per IP
 const authLimiter = rateLimit({
@@ -189,6 +198,99 @@ router.post('/apple', authLimiter, async (req: Request, res: Response): Promise<
   } catch (error) {
     console.error('[AUTH] Apple auth error:', error);
     res.status(500).json({ error: 'Apple sign-in failed' });
+  }
+});
+
+// POST /auth/google — Sign in with Google (Android)
+//
+// SECURITY: mirrors the F-001 hardening applied to /auth/apple.
+// Every account-binding decision uses ONLY values from the verified token.
+// Never trust req.body.email — the client can put a victim's email there.
+router.post('/google', authLimiter, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken || typeof idToken !== 'string') {
+      res.status(400).json({ error: 'ID token is required' });
+      return;
+    }
+
+    // Verify the Google ID token via Google's tokeninfo endpoint. This both
+    // validates the signature server-side and returns the parsed claims.
+    let googleUserId: string;
+    let verifiedEmail: string | undefined;
+    try {
+      const verifyResponse = await fetch(
+        `${GOOGLE_TOKEN_INFO_URL}?id_token=${encodeURIComponent(idToken)}`
+      );
+      if (!verifyResponse.ok) {
+        throw new Error('Token verification failed');
+      }
+      const tokenInfo = await verifyResponse.json() as {
+        sub?: string;
+        email?: string;
+        email_verified?: string | boolean;
+        aud?: string;
+        iss?: string;
+      };
+
+      if (!tokenInfo.sub) {
+        throw new Error('Missing sub claim');
+      }
+      // aud MUST match our client ID — otherwise a token minted for a
+      // different Google app could be replayed against us.
+      if (tokenInfo.aud !== GOOGLE_CLIENT_ID) {
+        throw new Error('Token audience mismatch');
+      }
+      // iss defense — Google issues from these two hosts and no others.
+      if (tokenInfo.iss !== 'https://accounts.google.com' && tokenInfo.iss !== 'accounts.google.com') {
+        throw new Error('Token issuer mismatch');
+      }
+
+      googleUserId = tokenInfo.sub;
+      // Only trust email when Google itself has vouched for it. Google returns
+      // email_verified as either boolean true or the string "true".
+      const emailVerified = tokenInfo.email_verified === true || tokenInfo.email_verified === 'true';
+      if (emailVerified && typeof tokenInfo.email === 'string') {
+        verifiedEmail = tokenInfo.email;
+      }
+    } catch (verifyErr) {
+      console.error('[AUTH] Google token verification failed:', verifyErr);
+      res.status(401).json({ error: 'Invalid Google ID token' });
+      return;
+    }
+
+    // Account lookup: Google sub is the only identity that crosses sessions.
+    let user = await findUserByGoogleIdentifier(googleUserId);
+    let isNewUser = false;
+
+    if (!user) {
+      // Only auto-link to an existing account when Google has verified the
+      // same email address. This preserves the "I registered with email,
+      // now I'm tapping Sign in with Google" UX while blocking the takeover
+      // path (an attacker's Google token can't carry a verified email they
+      // don't control).
+      const existingByEmail = verifiedEmail ? await findUserByEmail(verifiedEmail) : null;
+      if (existingByEmail) {
+        const { query } = await import('../db/connection');
+        await query('UPDATE users SET google_identifier = $1 WHERE id = $2', [googleUserId, existingByEmail.id]);
+        user = { ...existingByEmail, google_identifier: googleUserId };
+      } else {
+        const newEmail = verifiedEmail || `google_${googleUserId.slice(0, 8)}@private.google.com`;
+        user = await createUserWithGoogle(newEmail, googleUserId);
+        isNewUser = true;
+      }
+    }
+
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+    });
+
+    res.json({ token, userId: user.id, isNewUser, terminalLocationId: user.terminal_location_id });
+  } catch (error) {
+    console.error('[AUTH] Google auth error:', error);
+    res.status(500).json({ error: 'Google sign-in failed' });
   }
 });
 

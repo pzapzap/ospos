@@ -5,6 +5,7 @@ export interface User {
   email: string;
   password_hash: string | null;
   apple_identifier: string | null;
+  google_identifier: string | null;
   stripe_account_id: string | null;
   terminal_location_id: string | null;
   push_token: string | null;
@@ -23,11 +24,15 @@ export interface SafeUser {
 
 // Auth queries need password_hash
 export async function findUserByEmail(email: string): Promise<User | null> {
-  return queryOne<User>('SELECT id, email, password_hash, apple_identifier, stripe_account_id, terminal_location_id, push_token, created_at FROM users WHERE email = $1', [email]);
+  return queryOne<User>('SELECT id, email, password_hash, apple_identifier, google_identifier, stripe_account_id, terminal_location_id, push_token, created_at FROM users WHERE email = $1', [email]);
 }
 
 export async function findUserByAppleIdentifier(appleId: string): Promise<User | null> {
-  return queryOne<User>('SELECT id, email, password_hash, apple_identifier, stripe_account_id, terminal_location_id, push_token, created_at FROM users WHERE apple_identifier = $1', [appleId]);
+  return queryOne<User>('SELECT id, email, password_hash, apple_identifier, google_identifier, stripe_account_id, terminal_location_id, push_token, created_at FROM users WHERE apple_identifier = $1', [appleId]);
+}
+
+export async function findUserByGoogleIdentifier(googleId: string): Promise<User | null> {
+  return queryOne<User>('SELECT id, email, password_hash, apple_identifier, google_identifier, stripe_account_id, terminal_location_id, push_token, created_at FROM users WHERE google_identifier = $1', [googleId]);
 }
 
 // Non-auth lookups never return password_hash
@@ -37,7 +42,7 @@ export async function findUserById(id: string): Promise<SafeUser | null> {
 
 export async function createUser(email: string, passwordHash: string): Promise<User> {
   const rows = await query<User>(
-    'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, password_hash, apple_identifier, stripe_account_id, terminal_location_id, push_token, created_at',
+    'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, password_hash, apple_identifier, google_identifier, stripe_account_id, terminal_location_id, push_token, created_at',
     [email, passwordHash]
   );
   return rows[0];
@@ -45,8 +50,16 @@ export async function createUser(email: string, passwordHash: string): Promise<U
 
 export async function createUserWithApple(email: string, appleIdentifier: string): Promise<User> {
   const rows = await query<User>(
-    'INSERT INTO users (email, apple_identifier) VALUES ($1, $2) RETURNING id, email, password_hash, apple_identifier, stripe_account_id, terminal_location_id, push_token, created_at',
+    'INSERT INTO users (email, apple_identifier) VALUES ($1, $2) RETURNING id, email, password_hash, apple_identifier, google_identifier, stripe_account_id, terminal_location_id, push_token, created_at',
     [email, appleIdentifier]
+  );
+  return rows[0];
+}
+
+export async function createUserWithGoogle(email: string, googleIdentifier: string): Promise<User> {
+  const rows = await query<User>(
+    'INSERT INTO users (email, google_identifier) VALUES ($1, $2) RETURNING id, email, password_hash, apple_identifier, google_identifier, stripe_account_id, terminal_location_id, push_token, created_at',
+    [email, googleIdentifier]
   );
   return rows[0];
 }
