@@ -115,14 +115,18 @@ export function orderReducer(state: OrderState, action: OrderAction): OrderState
       // selected modifiers. Customized items always create a new line —
       // "2 plain burgers + 1 burger with avocado" is 2 lines, not 1.
       //
-      // Both sides serialize the same way (JSON.stringify of sorted name
-      // array). The previous version short-circuited mods.length === 0 to
-      // '', which silently broke stacking for plain items because the
-      // findIndex comparison always produced '[]' for empty modifiers.
-      const modKey = JSON.stringify(mods.map((m) => m.name).sort());
+      // The merge key includes name + group_name + price_cents so lines
+      // only stack when the modifiers are genuinely identical. Matching
+      // on name alone (the previous version) collided same-named modifiers
+      // that differed in group or price, silently dropping the incoming
+      // line's price deltas and undercharging the customer. See Tank
+      // audit F-011.
+      const modSig = (m: { name: string; group_name?: string | null; price_cents: number }) =>
+        `${m.name}|${m.group_name ?? ''}|${m.price_cents}`;
+      const modKey = JSON.stringify(mods.map(modSig).sort());
       const existingIdx = state.items.findIndex(
         (i) => i.itemId === incoming.itemId &&
-               JSON.stringify(i.modifiers.map((m) => m.name).sort()) === modKey
+               JSON.stringify(i.modifiers.map(modSig).sort()) === modKey
       );
       let newItems: OrderLineItem[];
 

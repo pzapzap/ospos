@@ -91,6 +91,21 @@ class ErrorBoundary extends React.Component<
 
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
 
+// Redact PII from any string before it leaves the device. Server errors are
+// thrown verbatim by src/services/api.ts (message = `${error}: ${details}`)
+// and can carry emails, tokens, or order data; replay masking only hides the
+// screen recording, not the structured event fields. Runs BEFORE Sentry
+// serializes the event, so scrubbed values never leave the process.
+function scrubPii(input: string): string {
+  return input
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [redacted]')
+    .replace(/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g, '[jwt redacted]')
+    .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '[email redacted]')
+    .replace(/\+\d{7,15}/g, '[phone redacted]')
+    .replace(/sk_(live|test)_[A-Za-z0-9]+/g, 'sk_[redacted]')
+    .replace(/pst_[A-Za-z0-9]+/g, 'pst_[redacted]');
+}
+
 try {
   Sentry.init({
     dsn: SENTRY_DSN,
@@ -102,6 +117,45 @@ try {
       maskAllText: true,
       maskAllImages: true,
     })],
+    beforeSend(event) {
+      try {
+        if (event.message) {
+          event.message = scrubPii(String(event.message));
+        }
+        if (event.exception?.values) {
+          event.exception.values = event.exception.values.map((v) => ({
+            ...v,
+            value: v.value ? scrubPii(v.value) : v.value,
+          }));
+        }
+        if (event.request?.headers) {
+          const headers = event.request.headers as Record<string, string>;
+          if (headers.Authorization) headers.Authorization = '[redacted]';
+          if (headers.authorization) headers.authorization = '[redacted]';
+        }
+      } catch {
+        // Never let a scrubber crash the whole event pipeline
+      }
+      return event;
+    },
+    beforeBreadcrumb(breadcrumb) {
+      try {
+        if (breadcrumb.message) {
+          breadcrumb.message = scrubPii(breadcrumb.message);
+        }
+        if (breadcrumb.data && typeof breadcrumb.data === 'object') {
+          for (const k of Object.keys(breadcrumb.data)) {
+            const v = (breadcrumb.data as Record<string, unknown>)[k];
+            if (typeof v === 'string') {
+              (breadcrumb.data as Record<string, unknown>)[k] = scrubPii(v);
+            }
+          }
+        }
+      } catch {
+        // no-op
+      }
+      return breadcrumb;
+    },
   });
 } catch {}
 

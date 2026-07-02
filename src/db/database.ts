@@ -38,14 +38,34 @@ async function attemptRestoreFromBackup(): Promise<boolean> {
     if (!dirInfo.exists) return false;
 
     const files = await FileSystem.readDirectoryAsync(backupDir);
+    // Only the main .bak files are restore candidates. -wal and -shm
+    // sidecar files also start with DB_NAME (see backupDatabase in
+    // migrations.ts) but must not be picked as the "latest backup"
+    // themselves.
     const backups = files
-      .filter((f) => f.startsWith(DB_NAME))
+      .filter((f) => f.startsWith(DB_NAME) && f.endsWith('.bak'))
       .sort()
       .reverse();
 
     if (backups.length === 0) return false;
 
     const dbPath = `${FileSystem.documentDirectory}SQLite/${DB_NAME}`;
+    const walPath = `${dbPath}-wal`;
+    const shmPath = `${dbPath}-shm`;
+
+    // Before copying the backup into place, remove any leftover
+    // ospos.db-wal / -shm from the corrupted session. If we skip this,
+    // SQLite will replay the stale WAL on top of the restored main file
+    // on next open, silently re-corrupting the restore.
+    const walInfo = await FileSystem.getInfoAsync(walPath);
+    if (walInfo.exists) {
+      await FileSystem.deleteAsync(walPath, { idempotent: true });
+    }
+    const shmInfo = await FileSystem.getInfoAsync(shmPath);
+    if (shmInfo.exists) {
+      await FileSystem.deleteAsync(shmPath, { idempotent: true });
+    }
+
     const latestBackup = `${backupDir}${backups[0]}`;
     await FileSystem.copyAsync({ from: latestBackup, to: dbPath });
     return true;

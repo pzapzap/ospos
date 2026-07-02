@@ -13,14 +13,15 @@ export interface StepUpOptions {
   fallbackLabel?: string;        // shown after biometric fails — defaults to passcode
   cancelLabel?: string;          // iOS only
   // If hardware is unavailable (no biometric enrollment + no passcode) we
-  // default to allowing the action through, since blocking would prevent the
-  // user from ever using the feature on a passcode-less device. Set this to
-  // false to fail closed instead.
+  // default to FAIL CLOSED — the caller's sensitive action does not proceed.
+  // Every current caller (refund, delete-account) is a destructive money-
+  // moving op that must not silently skip step-up on a passcode-less phone.
+  // Non-sensitive UX prompts that want to fail open can pass true explicitly.
   allowWhenUnavailable?: boolean;
 }
 
 export async function stepUpAuth(opts: StepUpOptions): Promise<boolean> {
-  const allowWhenUnavailable = opts.allowWhenUnavailable ?? true;
+  const allowWhenUnavailable = opts.allowWhenUnavailable ?? false;
 
   const compatible = await LocalAuthentication.hasHardwareAsync();
   if (!compatible) return allowWhenUnavailable;

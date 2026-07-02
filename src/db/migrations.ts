@@ -132,8 +132,21 @@ async function backfillModifierGroups(db: SQLiteDatabase): Promise<void> {
 
 const DB_NAME = 'ospos.db';
 
-async function backupDatabase(): Promise<void> {
+async function backupDatabase(db: SQLiteDatabase): Promise<void> {
   try {
+    // WAL journaling means recently committed transactions live in
+    // ospos.db-wal until the next checkpoint. A raw file copy of ospos.db
+    // alone would silently drop those most-recent orders. Force a
+    // TRUNCATE checkpoint first so the WAL is drained into the main file,
+    // then copy the whole set (main + wal + shm) so the backup is an
+    // atomic snapshot on restore.
+    try {
+      await db.execAsync('PRAGMA wal_checkpoint(TRUNCATE)');
+    } catch {
+      // If the checkpoint fails (e.g. read-only reader still open), fall
+      // back to copying the sidecars so a restore can replay them.
+    }
+
     const dbPath = `${FileSystem.documentDirectory}SQLite/${DB_NAME}`;
     const backupDir = `${FileSystem.documentDirectory}backups/`;
     const dirInfo = await FileSystem.getInfoAsync(backupDir);
@@ -145,6 +158,20 @@ async function backupDatabase(): Promise<void> {
     const dbInfo = await FileSystem.getInfoAsync(dbPath);
     if (dbInfo.exists) {
       await FileSystem.copyAsync({ from: dbPath, to: backupPath });
+      // Also copy the WAL sidecars if they exist post-checkpoint. The
+      // TRUNCATE mode usually leaves them empty (or zero-length) but
+      // copying them keeps the backup byte-consistent with the main file
+      // it was captured against.
+      const walPath = `${dbPath}-wal`;
+      const shmPath = `${dbPath}-shm`;
+      const walInfo = await FileSystem.getInfoAsync(walPath);
+      if (walInfo.exists) {
+        await FileSystem.copyAsync({ from: walPath, to: `${backupPath}-wal` });
+      }
+      const shmInfo = await FileSystem.getInfoAsync(shmPath);
+      if (shmInfo.exists) {
+        await FileSystem.copyAsync({ from: shmPath, to: `${backupPath}-shm` });
+      }
     }
   } catch {
     // Backup failure is non-fatal for migrations
@@ -171,7 +198,7 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
   }
 
   // Backup before any migration
-  await backupDatabase();
+  await backupDatabase(db);
 
   for (const migration of pendingMigrations) {
     await db.execAsync('BEGIN TRANSACTION');
