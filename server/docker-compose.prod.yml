@@ -34,6 +34,7 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - ADMIN_STATS_TOKEN=${ADMIN_STATS_TOKEN:-}
       - PORT=3000
       - NODE_ENV=production
     depends_on:

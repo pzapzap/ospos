@@ -14,6 +14,7 @@ import syncRoutes from './routes/sync';
 import webhooksRoutes from './routes/webhooks';
 import supportRoutes from './routes/support';
 import notificationsRoutes from './routes/notifications';
+import adminRoutes from './routes/admin';
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use('/sync', mediumLimit, syncRoutes);
 app.use('/webhooks', webhooksRoutes); // No rate limit — Stripe controls delivery
 app.use('/support', strictLimit, supportRoutes);
 app.use('/notifications', mediumLimit, notificationsRoutes);
+app.use('/admin', mediumLimit, adminRoutes);
 
 // Start server
 app.listen(config.port, () => {
