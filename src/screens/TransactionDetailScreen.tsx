@@ -261,6 +261,30 @@ export default function TransactionDetailScreen({
                 [newStatus, totalRefunded, order.id]
               );
 
+              // Enqueue the refund update for server sync. Send the full order
+              // shape (not a delta) — matches the server's validateOrderPayload
+              // contract and upserts via ON CONFLICT. record_id stays the
+              // same UUID so a client re-push is idempotent.
+              const refundPayload = JSON.stringify({
+                id: order.id,
+                subtotal: order.subtotal,
+                tax_rate: order.tax_rate,
+                tax_amount: order.tax_amount,
+                tip_amount: order.tip_amount,
+                total: order.total,
+                payment_method: order.payment_method,
+                stripe_payment_id: order.stripe_payment_id ?? null,
+                refund_status: newStatus,
+                refund_amount: totalRefunded,
+                status: order.status,
+                created_at: order.created_at,
+              });
+              await db.runAsync(
+                `INSERT INTO sync_queue (table_name, record_id, action, payload, status, created_at)
+                 VALUES ('orders', ?, 'update', ?, 'pending', ?)`,
+                [order.id, refundPayload, new Date().toISOString()]
+              );
+
               Alert.alert('Refund Processed', `${amountDisplay} has been refunded.`);
               if (mountedRef.current) {
                 const updated = await getOrderWithItems(orderId);

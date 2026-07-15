@@ -173,13 +173,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Start sync engine and register push notifications for paid tier
+        // Start sync engine for anyone with an account (cash or paid tier).
+        // processSyncQueue() internally guards on hasToken() — a truly
+        // anonymous cash user's engine boot is a no-op, but a cash-tier
+        // merchant who created an account via Sign in with Apple/Google +
+        // skipped Stripe still needs their orders to reach the server.
+        startSyncEngine();
+
+        // Push notifications + Stripe requirements stay paid-tier-only —
+        // both require a linked Stripe account.
         if (dbSettings['tier'] === 'paid') {
-          startSyncEngine();
           registerForPushNotifications()
             .then((token) => { if (token) registerPushToken(token).catch(() => {}); })
             .catch(() => {});
-          // Check Stripe requirements on startup
           getAccountRequirements()
             .then(setStripeRequirements)
             .catch(() => {});

@@ -307,7 +307,51 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
         'INSERT INTO order_items (id, order_id, item_id, item_name, item_price, quantity, modifiers_json) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [orderItemId, orderId, item.itemId, item.itemName, Math.round(item.itemPrice), item.quantity, modifiersJson]
       );
+
+      // Enqueue the order_item for server sync. Payload shape matches the
+      // server's validateOrderItemPayload (server/src/routes/sync.ts:83).
+      // modifiers_json is intentionally excluded — the server doesn't accept
+      // it today, and rejecting an item for an unrecognized field would
+      // silently break sync. Line-price analytics still work from
+      // item_price × quantity.
+      const itemPayload = JSON.stringify({
+        id: orderItemId,
+        order_id: orderId,
+        item_id: item.itemId,
+        item_name: item.itemName,
+        item_price: Math.round(item.itemPrice),
+        quantity: item.quantity,
+      });
+      await db.runAsync(
+        `INSERT INTO sync_queue (table_name, record_id, action, payload, status, created_at)
+         VALUES ('order_items', ?, 'create', ?, 'pending', ?)`,
+        [orderItemId, itemPayload, now]
+      );
     }
+
+    // Enqueue the order itself for server sync. Payload shape matches the
+    // server's validateOrderPayload (server/src/routes/sync.ts:62). The
+    // hardcoded refund_status/refund_amount/status literals mirror the
+    // INSERT above; a refund UPDATE elsewhere enqueues its own row.
+    const orderPayload = JSON.stringify({
+      id: orderId,
+      subtotal: Math.round(input.subtotal),
+      tax_rate: input.taxRate,
+      tax_amount: Math.round(input.taxAmount),
+      tip_amount: Math.round(input.tipAmount),
+      total: Math.round(input.total),
+      payment_method: input.paymentMethod,
+      stripe_payment_id: input.stripePaymentId ?? null,
+      refund_status: 'none',
+      refund_amount: 0,
+      status: 'completed',
+      created_at: now,
+    });
+    await db.runAsync(
+      `INSERT INTO sync_queue (table_name, record_id, action, payload, status, created_at)
+       VALUES ('orders', ?, 'create', ?, 'pending', ?)`,
+      [orderId, orderPayload, now]
+    );
 
     await db.execAsync('COMMIT');
   } catch (error) {
