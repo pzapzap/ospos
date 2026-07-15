@@ -22,6 +22,7 @@ import { successNotification } from '../utils/haptics';
 import { useApp } from '../state/AppContext';
 import { sendReceipt, type ReceiptOrderData } from '../services/api';
 import { validateEmail, validatePhone, formatPhoneE164 } from '../utils/validation';
+import { formatReceiptText, openNativeMail, openNativeSms } from '../utils/nativeReceipt';
 import Eyebrow from '../components/Eyebrow';
 import Button from '../components/Button';
 import { useScreenCaptureGuard } from '../utils/useScreenCaptureGuard';
@@ -131,8 +132,24 @@ export default function ReceiptScreen({ onNewOrder }: ReceiptScreenProps) {
         discount: lastOrder.discount,
       };
       const formattedRecipient = receiptMode === 'sms' ? formatPhoneE164(recipient) : recipient.trim();
-      const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', formattedRecipient, settings.businessName || undefined, orderData);
-      if (result.success) {
+
+      // Cash-tier merchants have no server-issued JWT, so /receipts/send-*
+      // 401s for them. Hand the receipt off to the cashier's own Mail /
+      // Messages app instead — customer still gets the receipt, cashier
+      // doesn't need an OSPOS account.
+      let ok: boolean;
+      if (!isPaidTier) {
+        const businessName = settings.businessName || 'OSPOS';
+        const body = formatReceiptText(businessName, orderData, settings.currency);
+        ok = receiptMode === 'email'
+          ? await openNativeMail(formattedRecipient, `Receipt from ${businessName}`, body)
+          : await openNativeSms(formattedRecipient, body);
+      } else {
+        const result = await sendReceipt(lastOrder.orderId, receiptMode as 'sms' | 'email', formattedRecipient, settings.businessName || undefined, orderData);
+        ok = result.success;
+      }
+
+      if (ok) {
         setSent(true);
         Animated.spring(sentScale, {
           toValue: 1,

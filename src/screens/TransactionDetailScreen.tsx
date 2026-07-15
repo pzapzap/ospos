@@ -26,7 +26,8 @@ import { stepUpAuth } from '../utils/stepUpAuth';
 import { useScreenCaptureGuard } from '../utils/useScreenCaptureGuard';
 import Eyebrow from '../components/Eyebrow';
 import Button from '../components/Button';
-import { issueRefund, sendReceipt, type ReceiptOrderData } from '../services/api';
+import { issueRefund, sendReceipt, hasToken, type ReceiptOrderData } from '../services/api';
+import { formatReceiptText, openNativeMail } from '../utils/nativeReceipt';
 import { getDatabase } from '../db/database';
 
 interface TransactionDetailScreenProps {
@@ -139,8 +140,20 @@ export default function TransactionDetailScreen({
             }
           : undefined,
       };
-      const result = await sendReceipt(order.id, 'email', emailAddress.trim(), settings.businessName || undefined, orderData);
-      if (result.success) {
+      // Cash-tier merchants have no JWT — hand off to the cashier's own Mail
+      // app. Paid tier keeps the server-mediated Resend path unchanged.
+      const isPaidTier = settings.tier === 'paid';
+      let ok: boolean;
+      if (!isPaidTier) {
+        const businessName = settings.businessName || 'OSPOS';
+        const body = formatReceiptText(businessName, orderData, settings.currency);
+        ok = await openNativeMail(emailAddress.trim(), `Receipt from ${businessName}`, body);
+      } else {
+        const result = await sendReceipt(order.id, 'email', emailAddress.trim(), settings.businessName || undefined, orderData);
+        ok = result.success;
+      }
+
+      if (ok) {
         setEmailSent(true);
         successNotification();
         Animated.spring(sentScale, {
@@ -177,6 +190,21 @@ export default function TransactionDetailScreen({
 
   const handleRefund = async () => {
     if (!order.stripe_payment_id || processing) return;
+
+    // Refunds always route through Stripe, which requires a JWT + linked
+    // Stripe account. A merchant currently in cash mode (signed out, or
+    // free tier from the start) still needs to authenticate against the
+    // account that owns this PaymentIntent to refund it. Prompt them to
+    // sign in rather than silently 401.
+    const signedIn = await hasToken();
+    if (!signedIn) {
+      Alert.alert(
+        'Sign in to refund',
+        'This is a card transaction. Sign in to your OSPOS account from Settings, then try the refund again.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
 
     // All money values (order.total, order.refund_amount) are integer smallest-unit
     const decimals = getCurrencyDecimals(settings.currency);
