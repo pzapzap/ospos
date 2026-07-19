@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OSPOS — Your phone is your register.</title>
-<meta name="description" content="OSPOS is a free, open-source point-of-sale app that turns your iPhone into a full POS system. Accept cash. Accept cards. No monthly fees. No contracts.">
+<meta name="description" content="OSPOS is a free, open-source point-of-sale app that turns your phone into a full POS system. Now on iPhone and Android. Accept cash. Accept cards. No monthly fees. No contracts.">
 <meta property="og:title" content="OSPOS — Your phone is your register.">
 <meta property="og:description" content="Free, open-source POS app. Accept cash and cards from your phone. No monthly fees. No contracts. Just 1% on card transactions.">
 <meta property="og:type" content="website">
@@ -354,6 +354,11 @@ h1 .accent {
   letter-spacing: -0.4px;
   margin-top: -2px;
 }
+
+/* Play Store variant — same shell, cyan-tinted svg for parity with the OSPOS palette */
+.playstore-btn { }
+.playstore-btn svg { color: var(--cyan); }
+.playstore-btn:hover svg { color: var(--bg); transition: color 0.2s; }
 
 .btn-secondary {
   background: var(--surface);
@@ -1329,13 +1334,20 @@ footer .container {
     <div class="hero-content">
       <div class="hero-badge">v1.1 live &middot; Modifier groups, QSR mode, sold-out toggles</div>
       <h1>Your phone is<br>your <span class="accent">register.</span></h1>
-      <p class="hero-sub">OSPOS is a free, open-source point-of-sale app that turns your iPhone into a full POS system. Accept cash. Accept cards. No monthly fees. No contracts.</p>
+      <p class="hero-sub">OSPOS is a free, open-source point-of-sale app that turns your phone into a full POS system. Available on iPhone and Android. Accept cash. Accept cards. No monthly fees. No contracts.</p>
       <div class="hero-ctas" id="download">
         <a href="https://apps.apple.com/us/app/ospos/id6766436501" target="_blank" rel="noopener" class="appstore-btn" aria-label="Download OSPOS on the App Store">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 21.99 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 21.99C7.79 22.03 6.8 20.68 5.96 19.47C4.25 16.97 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/></svg>
           <span class="appstore-text">
             <span class="appstore-small">Download on the</span>
             <span class="appstore-big">App Store</span>
+          </span>
+        </a>
+        <a href="https://play.google.com/store/apps/details?id=com.ospos.app" target="_blank" rel="noopener" class="appstore-btn playstore-btn" aria-label="Get OSPOS on Google Play">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.61 1.81c-.38.4-.61 1.02-.61 1.82v16.74c0 .8.23 1.42.61 1.82l.05.05L13.06 12.85v-1.7L3.66 1.76l-.05.05zM17.14 15.03l-3.14-3.14L4.71 21.28c.51.15 1.03.06 1.6-.24l10.83-6.01M4.71 2.72c-.57-.3-1.09-.39-1.6-.24l9.29 9.29 3.14-3.14L4.71 2.72zM20.16 10.81l-2.85-1.58-3.32 3.32 3.32 3.32 2.85-1.58c1.14-.65 1.14-1.77 0-2.48z"/></svg>
+          <span class="appstore-text">
+            <span class="appstore-small">Get it on</span>
+            <span class="appstore-big">Google Play</span>
           </span>
         </a>
         <a href="https://github.com/pzapzap/ospos" target="_blank" rel="noopener" class="btn btn-secondary">View source</a>
@@ -1396,7 +1408,7 @@ footer .container {
       <div class="selling-card reveal">
         <div class="selling-card-num">60s</div>
         <h3>Set up in sixty seconds.</h3>
-        <p>Download, build your menu, start selling. Card payments take five minutes to enable with Stripe. No hardware required&thinsp;&mdash;&thinsp;Tap to Pay on iPhone works right out of the box.</p>
+        <p>Download, build your menu, start selling. Card payments take five minutes to enable with Stripe. No hardware required&thinsp;&mdash;&thinsp;Tap to Pay works right out of the box on iPhone and Android.</p>
       </div>
       <div class="selling-card reveal">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -1465,7 +1477,7 @@ footer .container {
           <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="currentColor" fill="none"/><path d="M8 12l3 3 5-5" fill="none"/></svg>
         </div>
         <h3>Tap to Pay</h3>
-        <p>Accept contactless cards with just your iPhone. No reader needed. Uses Apple's built-in NFC.</p>
+        <p>Accept contactless cards on your iPhone or Android phone. No external reader needed. Uses the built-in NFC on your device.</p>
       </div>
       <div class="feature-cell reveal">
         <div class="feature-icon">
@@ -1633,7 +1645,7 @@ footer .container {
       </div>
     </div>
 
-    <p class="roadmap-note reveal">June 30: repo flips public at <a href="https://github.com/pzapzap/ospos" style="color:#22D3EE;">github.com/pzapzap/ospos</a> under AGPL-3.0. Audit it, fork it, self-host it. Hosted version stays on the App Store at 1% on cards.</p>
+    <p class="roadmap-note reveal">June 30: repo public at <a href="https://github.com/pzapzap/ospos" style="color:#22D3EE;">github.com/pzapzap/ospos</a> under AGPL-3.0. Audit it, fork it, self-host it. Hosted version on the App Store and Google Play at 1% on cards.</p>
   </div>
 </section>
 
@@ -1644,13 +1656,20 @@ footer .container {
   <div class="container">
     <div class="final-cta-inner reveal">
       <h2>Start selling<br>in sixty seconds.</h2>
-      <p>OSPOS v1.0 is out today. Download it, build your menu, and ring up your first sale. Free forever for cash. Just 1% for cards. No signup required.</p>
+      <p>OSPOS is out today on iPhone and Android. Download it, build your menu, and ring up your first sale. Free forever for cash. Just 1% for cards. No signup required.</p>
       <div class="hero-ctas">
         <a href="https://apps.apple.com/us/app/ospos/id6766436501" target="_blank" rel="noopener" class="appstore-btn" aria-label="Download OSPOS on the App Store">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 21.99 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 21.99C7.79 22.03 6.8 20.68 5.96 19.47C4.25 16.97 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/></svg>
           <span class="appstore-text">
             <span class="appstore-small">Download on the</span>
             <span class="appstore-big">App Store</span>
+          </span>
+        </a>
+        <a href="https://play.google.com/store/apps/details?id=com.ospos.app" target="_blank" rel="noopener" class="appstore-btn playstore-btn" aria-label="Get OSPOS on Google Play">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.61 1.81c-.38.4-.61 1.02-.61 1.82v16.74c0 .8.23 1.42.61 1.82l.05.05L13.06 12.85v-1.7L3.66 1.76l-.05.05zM17.14 15.03l-3.14-3.14L4.71 21.28c.51.15 1.03.06 1.6-.24l10.83-6.01M4.71 2.72c-.57-.3-1.09-.39-1.6-.24l9.29 9.29 3.14-3.14L4.71 2.72zM20.16 10.81l-2.85-1.58-3.32 3.32 3.32 3.32 2.85-1.58c1.14-.65 1.14-1.77 0-2.48z"/></svg>
+          <span class="appstore-text">
+            <span class="appstore-small">Get it on</span>
+            <span class="appstore-big">Google Play</span>
           </span>
         </a>
       </div>
