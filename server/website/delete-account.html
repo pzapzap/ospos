@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delete Your Account — OSPOS</title>
+<meta name="description" content="How to delete your OSPOS account and all associated data.">
+<meta property="og:title" content="Delete Your Account — OSPOS">
+<meta property="og:url" content="https://ospos.app/delete-account">
+<meta name="theme-color" content="#09090B">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18323294453"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18323294453');
+</script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='38' fill='none' stroke='%2322D3EE' stroke-width='6.5' stroke-linecap='round' stroke-dasharray='220 18.5' stroke-dashoffset='9.3'/><circle cx='50' cy='50' r='11' fill='%23D4A574'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;500;600;700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #09090B;
+  --surface: #18181B;
+  --surface-light: #27272A;
+  --border: #27272A;
+  --text: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted: #52525B;
+  --cyan: #22D3EE;
+  --cyan-dark: #06B6D4;
+  --gold: #D4A574;
+  --font-display: 'Bitter', Georgia, serif;
+  --font-num: 'Archivo', 'Helvetica Neue', sans-serif;
+  --radius: 14px;
+  --radius-lg: 20px;
+}
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font-display); background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+a { color: var(--cyan); text-decoration: none; transition: color 0.2s; }
+a:hover { color: #67E8F9; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 16px 0;
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+nav .container {
+  max-width: 1120px; margin: 0 auto; padding: 0 24px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--text);
+}
+.nav-logo:hover { color: var(--text); }
+.nav-links {
+  display: flex; align-items: center; gap: 32px; list-style: none;
+}
+.nav-links a {
+  font-size: 14px; font-weight: 500; color: var(--text-secondary); transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+
+.container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.legal-content {
+  max-width: 760px; margin: 0 auto;
+  padding: 140px 24px 100px;
+}
+.legal-content h1 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(28px, 4vw, 40px); letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+.legal-meta {
+  font-size: 14px; color: var(--text-muted); margin-bottom: 48px;
+}
+.legal-content h2 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 20px; margin-top: 48px; margin-bottom: 16px;
+  color: var(--text); letter-spacing: -0.3px;
+}
+.legal-content h3 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 17px; margin-top: 32px; margin-bottom: 12px;
+  color: var(--text);
+}
+.legal-content p {
+  font-size: 15px; color: var(--text-secondary); line-height: 1.8;
+  margin-bottom: 16px;
+}
+.legal-content strong { color: var(--text); font-weight: 600; }
+.legal-content ul, .legal-content ol {
+  margin-bottom: 16px; padding-left: 24px;
+}
+.legal-content li {
+  font-size: 15px; color: var(--text-secondary); line-height: 1.8;
+  margin-bottom: 8px;
+}
+.legal-content hr {
+  border: none; border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+
+/* Card for the primary in-app path */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  margin: 24px 0 40px;
+}
+.card h2 { margin-top: 0; }
+.card ol { padding-left: 24px; margin-top: 12px; }
+.card ol li { margin-bottom: 12px; }
+
+/* Data-fate table */
+.data-table {
+  width: 100%; border-collapse: collapse; margin: 24px 0;
+  font-size: 14px;
+}
+.data-table th, .data-table td {
+  padding: 12px 16px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.data-table th {
+  font-weight: 600; color: var(--text); background: var(--surface);
+  font-family: var(--font-num); font-size: 13px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.data-table td { color: var(--text-secondary); }
+.data-table tr:last-child td { border-bottom: none; }
+
+/* Email button */
+.mail-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 22px;
+  background: var(--cyan);
+  color: #09090B;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-family: var(--font-num);
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+.mail-cta:hover { background: #67E8F9; color: #09090B; }
+
+footer {
+  padding: 48px 0;
+  border-top: 1px solid var(--border);
+}
+footer .container {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 24px;
+}
+.footer-left { display: flex; flex-direction: column; gap: 6px; }
+.footer-brand { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--text); }
+.footer-tagline { font-size: 13px; color: var(--text-muted); }
+.footer-tagline a { color: var(--text-muted); }
+.footer-tagline a:hover { color: var(--cyan); }
+.footer-links { display: flex; gap: 28px; list-style: none; }
+.footer-links a { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy {
+  font-size: 12px; color: var(--text-muted); width: 100%;
+  text-align: center; margin-top: 24px; padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  footer .container { flex-direction: column; text-align: center; }
+  .footer-links { flex-wrap: wrap; justify-content: center; }
+  .card { padding: 24px; }
+  .data-table { font-size: 13px; }
+  .data-table th, .data-table td { padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="/" class="nav-logo">
+      <svg viewBox="0 0 1024 1024" width="36" height="36"><circle cx="512" cy="512" r="389" fill="none" stroke="#22D3EE" stroke-width="67" stroke-linecap="round" stroke-dasharray="2255 190" stroke-dashoffset="95"/><circle cx="512" cy="512" r="113" fill="#D4A574"/></svg>
+      <span>OSPOS</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="/terms">Terms</a></li>
+      <li><a href="mailto:phil@ospos.app">Support</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="legal-content">
+  <h1>Delete Your Account</h1>
+  <p class="legal-meta">Effective Date: July 19, 2026 &middot; Last Updated: July 19, 2026</p>
+  <hr>
+
+  <p>You can delete your OSPOS account and all associated server-stored data at any time. This page describes both the in-app method (recommended) and the email fallback for users who no longer have the app installed.</p>
+
+  <div class="card">
+    <h2>Delete from within the app</h2>
+    <p>This is the fastest and most secure method. Deletion is confirmed with your device biometric.</p>
+    <ol>
+      <li>Open OSPOS on your device.</li>
+      <li>Tap <strong>Settings</strong>.</li>
+      <li>Scroll to the <strong>Account</strong> section and tap <strong>Delete Account</strong>.</li>
+      <li>Confirm with Face ID, Touch ID, or your device passcode.</li>
+    </ol>
+    <p>Your account and server-stored data are marked for deletion immediately. See the retention schedule below.</p>
+  </div>
+
+  <div class="card">
+    <h2>Deletion by email</h2>
+    <p>If you have already uninstalled the app, or you cannot access it for any reason, request deletion by email.</p>
+    <p>Send a message from the email address associated with your OSPOS account to <a href="mailto:phil@ospos.app?subject=Account%20Deletion%20Request&amp;body=Please%20delete%20my%20OSPOS%20account%20and%20all%20associated%20data.%0A%0AAccount%20email%3A%20">phil@ospos.app</a> with the subject line <strong>&ldquo;Account Deletion Request.&rdquo;</strong> We process such requests within 30 days.</p>
+    <p><a class="mail-cta" href="mailto:phil@ospos.app?subject=Account%20Deletion%20Request&amp;body=Please%20delete%20my%20OSPOS%20account%20and%20all%20associated%20data.%0A%0AAccount%20email%3A%20">Email a deletion request</a></p>
+  </div>
+
+  <h2>What gets deleted</h2>
+  <table class="data-table">
+    <thead>
+      <tr><th>Data</th><th>What happens</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Email address, sign-in provider ID, password hash</td><td>Retained 90 days for recovery, then permanently deleted</td></tr>
+      <tr><td>Business name, business settings</td><td>Retained 90 days for recovery, then permanently deleted</td></tr>
+      <tr><td>Order and transaction history (server-stored)</td><td>Retained 90 days for recovery, then permanently deleted</td></tr>
+      <tr><td>Receipt-recipient email or phone numbers</td><td>Deleted with the associated order</td></tr>
+      <tr><td>Push notification token</td><td>Deleted immediately</td></tr>
+      <tr><td>Anonymized aggregate statistics</td><td>Retained (no personal identifiers)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What is NOT deleted</h2>
+  <ul>
+    <li><strong>Data stored locally on your device.</strong> Delete the app to remove local data — OSPOS uses SQLite in the app's private container, which the operating system deletes with the app.</li>
+    <li><strong>Records held by Stripe.</strong> Card payments are processed by Stripe. Stripe retains transaction records under its own policy — see <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's Privacy Policy</a>. Deleting your OSPOS account does not delete your Stripe account or their transaction records.</li>
+    <li><strong>Records we are legally required to retain.</strong> Certain financial records may be retained to satisfy tax, fraud, or dispute-related obligations.</li>
+  </ul>
+
+  <h2>Recovery window</h2>
+  <p>During the 90-day retention window, we can restore your account and associated data on request if you change your mind. After 90 days, deletion is permanent and irreversible. Contact <a href="mailto:phil@ospos.app">phil@ospos.app</a> during that window if you want to recover a deleted account.</p>
+
+  <h2>Questions</h2>
+  <p>See our <a href="/privacy">Privacy Policy</a> for the full details on how OSPOS handles your data, or email <a href="mailto:phil@ospos.app">phil@ospos.app</a>.</p>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="footer-left">
+      <div class="footer-brand">OSPOS</div>
+      <div class="footer-tagline">Made in California by <a href="#">TTTS Co</a>&thinsp;&mdash;&thinsp;the think tank that ships.</div>
+    </div>
+    <ul class="footer-links">
+      <li><a href="/terms">Terms</a></li>
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="https://github.com/pzapzap/ospos" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="mailto:phil@ospos.app">Support</a></li>
+    </ul>
+    <div class="footer-copy">&copy; 2026 OSPOS. All rights reserved.</div>
+  </div>
+</footer>
+
+</body>
+</html>
