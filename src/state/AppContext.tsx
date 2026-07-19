@@ -202,6 +202,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        // App came to foreground — flush any queued sales to the server.
+        // Android throttles/suspends the 30s setInterval while backgrounded,
+        // so a sale rung right before backgrounding can otherwise sit unsynced
+        // until the next lucky foreground tick. processSyncQueue() guards on
+        // hasToken(), so this is a no-op when signed out.
+        processSyncQueue();
+
         // App came to foreground - check requirements
         if (settings.tier === 'paid') {
           getAccountRequirements()
@@ -259,11 +266,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Some keys are stored in AsyncStorage, not SQLite settings
     if (key === 'tier') {
       await setSetting('tier', value);
-      if (value === 'paid') {
-        startSyncEngine();
-      } else {
-        stopSyncEngine();
-      }
+      // Sync runs for ANY account, cash or paid (matches the boot effect and
+      // the v1.1.3 intent): a cash-tier merchant who created an account still
+      // needs their orders to reach the server. Previously a non-'paid' tier
+      // called stopSyncEngine(), which silently killed sync for those users.
+      // startSyncEngine() guards against double-start; processSyncQueue()
+      // inside it guards on hasToken(), so this is a no-op when signed out.
+      startSyncEngine();
       return;
     }
 
