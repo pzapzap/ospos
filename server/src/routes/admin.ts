@@ -29,6 +29,10 @@ interface StatsRow {
   orders_7d: number;
   gmv_24h_cents: number;
   gmv_7d_cents: number;
+  gmv_24h_cash_cents: number;
+  gmv_24h_card_cents: number;
+  gmv_7d_cash_cents: number;
+  gmv_7d_card_cents: number;
   receipts_7d: number;
 }
 
@@ -46,6 +50,10 @@ async function fetchStats(): Promise<StatsRow> {
       (SELECT COUNT(*)::int FROM synced_orders WHERE created_at > NOW() - INTERVAL '7 days') AS orders_7d,
       (SELECT COALESCE(SUM(total),0)::bigint FROM synced_orders WHERE created_at > NOW() - INTERVAL '24 hours') AS gmv_24h_cents,
       (SELECT COALESCE(SUM(total),0)::bigint FROM synced_orders WHERE created_at > NOW() - INTERVAL '7 days') AS gmv_7d_cents,
+      (SELECT COALESCE(SUM(total) FILTER (WHERE payment_method = 'cash'),0)::bigint FROM synced_orders WHERE created_at > NOW() - INTERVAL '24 hours') AS gmv_24h_cash_cents,
+      (SELECT COALESCE(SUM(total) FILTER (WHERE payment_method = 'card'),0)::bigint FROM synced_orders WHERE created_at > NOW() - INTERVAL '24 hours') AS gmv_24h_card_cents,
+      (SELECT COALESCE(SUM(total) FILTER (WHERE payment_method = 'cash'),0)::bigint FROM synced_orders WHERE created_at > NOW() - INTERVAL '7 days') AS gmv_7d_cash_cents,
+      (SELECT COALESCE(SUM(total) FILTER (WHERE payment_method = 'card'),0)::bigint FROM synced_orders WHERE created_at > NOW() - INTERVAL '7 days') AS gmv_7d_card_cents,
       (SELECT COUNT(*)::int FROM receipt_logs WHERE created_at > NOW() - INTERVAL '7 days') AS receipts_7d`
   );
   return rows[0];
@@ -208,6 +216,21 @@ function renderPage(s: StatsRow): string {
     letter-spacing: 0.2px;
   }
   .stat-money .stat-num { font-size: 26px; }
+  .stat-split {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .stat-split .k { color: var(--text-muted); }
+  .stat-split .v { color: var(--text-secondary); font-family: 'DM Serif Display', Georgia, serif; font-size: 14px; letter-spacing: 0; text-transform: none; }
   footer {
     margin-top: 40px;
     padding-top: 20px;
@@ -287,10 +310,18 @@ function renderPage(s: StatsRow): string {
       <div class="stat stat-money">
         <div class="stat-num accent">${escapeHtml(formatMoney(s.gmv_24h_cents))}</div>
         <div class="stat-label">GMV · last 24h · ${formatNumber(s.orders_24h)} orders</div>
+        <div class="stat-split">
+          <span class="k">Cash <span class="v">${escapeHtml(formatMoney(s.gmv_24h_cash_cents))}</span></span>
+          <span class="k">Card <span class="v">${escapeHtml(formatMoney(s.gmv_24h_card_cents))}</span></span>
+        </div>
       </div>
       <div class="stat stat-money">
         <div class="stat-num accent">${escapeHtml(formatMoney(s.gmv_7d_cents))}</div>
         <div class="stat-label">GMV · last 7d · ${formatNumber(s.orders_7d)} orders</div>
+        <div class="stat-split">
+          <span class="k">Cash <span class="v">${escapeHtml(formatMoney(s.gmv_7d_cash_cents))}</span></span>
+          <span class="k">Card <span class="v">${escapeHtml(formatMoney(s.gmv_7d_card_cents))}</span></span>
+        </div>
       </div>
       <div class="stat">
         <div class="stat-num">${formatNumber(s.receipts_7d)}</div>
