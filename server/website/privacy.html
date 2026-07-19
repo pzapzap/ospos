@@ -164,21 +164,21 @@ footer .container {
     <ul class="nav-links">
       <li><a href="/">Home</a></li>
       <li><a href="/terms">Terms</a></li>
-      <li><a href="https://github.com/ospos" target="_blank" rel="noopener">GitHub</a></li>
-      <li><a href="mailto:hello@ospos.app">Support</a></li>
+      <li><a href="https://github.com/pzapzap/ospos" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="mailto:phil@ospos.app">Support</a></li>
     </ul>
   </div>
 </nav>
 
 <div class="legal-content">
   <h1>Privacy Policy</h1>
-  <p class="legal-meta">Effective Date: March 1, 2026 &middot; Last Updated: March 1, 2026</p>
+  <p class="legal-meta">Effective Date: July 19, 2026 &middot; Last Updated: July 19, 2026</p>
   <hr>
 
-  <p>This Privacy Policy describes how OSPOS ("we," "us," "our") collects, uses, and protects your information when you use the OSPOS mobile application and related services (the "Service"). We are committed to protecting your privacy and being transparent about our data practices.</p>
+  <p>This Privacy Policy describes how OSPOS ("we," "us," "our") collects, uses, and protects your information when you use the OSPOS mobile applications for iPhone, iPad, and Android and related services (the "Service"). We are committed to protecting your privacy and being transparent about our data practices.</p>
 
   <h2>1. Our Privacy Principles</h2>
-  <p>OSPOS is built on a simple idea: <strong>your data is yours.</strong> We designed the app so that the Free Tier works entirely on your device with zero data leaving your phone. For Paid Tier users, we collect only what's necessary to provide cloud features. We never sell your data.</p>
+  <p>OSPOS is built on a simple idea: <strong>your data is yours.</strong> We designed the app so that the Free Tier works entirely on your device with zero data leaving your phone. For Paid Tier users, we collect only what's necessary to provide cloud features. We never sell your data. Our source code is public at <a href="https://github.com/pzapzap/ospos" target="_blank" rel="noopener">github.com/pzapzap/ospos</a> so you can verify our claims.</p>
 
   <h2>2. Information We Collect</h2>
 
@@ -192,88 +192,142 @@ footer .container {
       <tr><th>Data</th><th>Purpose</th><th>Storage</th></tr>
     </thead>
     <tbody>
-      <tr><td>Email address</td><td>Account authentication, notifications</td><td>Our servers</td></tr>
-      <tr><td>Business name</td><td>Receipts, account identification</td><td>Our servers</td></tr>
+      <tr><td>Email address</td><td>Account authentication, transactional notifications</td><td>Our servers</td></tr>
+      <tr><td>Password (hashed)</td><td>Account authentication (bcrypt, never stored in plaintext)</td><td>Our servers</td></tr>
+      <tr><td>Sign-in provider identifier</td><td>Apple, Google, or email account linkage</td><td>Our servers</td></tr>
+      <tr><td>Business name</td><td>Receipt branding, account identification</td><td>Our servers</td></tr>
       <tr><td>Business settings</td><td>Tax rate, tip config, sync preferences</td><td>Our servers + device</td></tr>
-      <tr><td>Order history</td><td>Cloud sync, reporting</td><td>Our servers + device</td></tr>
+      <tr><td>Order history</td><td>Cloud sync, reporting, dispute evidence</td><td>Our servers + device</td></tr>
       <tr><td>Transaction records</td><td>Cloud sync, reporting, receipts</td><td>Our servers + device</td></tr>
-      <tr><td>Customer phone/email</td><td>Receipt delivery (entered per-transaction)</td><td>Our servers (with order)</td></tr>
+      <tr><td>Customer phone or email</td><td>Receipt delivery only, entered per-transaction</td><td>Our servers (with order)</td></tr>
+      <tr><td>Stripe account identifier</td><td>Route card payments to your Stripe account</td><td>Our servers</td></tr>
+      <tr><td>Push notification token (optional)</td><td>Send you dispute alerts and account notices</td><td>Our servers</td></tr>
     </tbody>
   </table>
 
-  <h3>Apple Sign In</h3>
+  <h3>Sign in with Apple</h3>
   <p>If you sign in with Apple, we receive only the information Apple provides based on your choices: your name (if you share it) and either your real email address or an Apple-generated private relay address. We use this solely for account creation and authentication.</p>
+
+  <h3>Sign in with Google</h3>
+  <p>If you sign in with Google (Android), we receive only the identity claims that Google's verified ID token provides: a stable Google identifier ("sub"), your email address, and optionally your name. We use this solely for account creation and authentication. We never receive or store your Google password.</p>
+
+  <h3>Email &amp; Password Sign-In</h3>
+  <p>If you create an account with an email address and password, your password is immediately hashed with bcrypt on our servers. We never store, log, or transmit your password in plaintext, and we cannot recover it if lost.</p>
 
   <h2>3. Information We Never Collect</h2>
   <p>We <strong>never</strong> collect, store, process, or have access to:</p>
   <ul>
-    <li>Credit card numbers, debit card numbers, or cardholder data</li>
-    <li>Your location (location permission is used only for Stripe Terminal and never transmitted to us)</li>
-    <li>Your contacts, messages, call logs, or browsing history</li>
-    <li>Device advertising identifiers</li>
-    <li>Biometric data (Face ID / Touch ID is processed entirely on-device by iOS)</li>
+    <li>Credit card numbers, debit card numbers, PINs, CVVs, or any cardholder data</li>
+    <li>Card data read via Tap to Pay on iPhone (NFC data is processed by Apple's ProximityReader framework and transmitted directly to Stripe, never touching our servers or your device's main app process)</li>
+    <li>Your geographic location (Location permission is used only by the Stripe Terminal SDK for reader discovery, as required by Stripe's terms, and is never transmitted to us)</li>
+    <li>Your contacts, calendar, messages, call logs, or browsing history</li>
+    <li>Photos or videos other than menu-item images or dispute-evidence uploads that you explicitly choose to send</li>
+    <li>Device advertising identifiers (IDFA on iOS, AAID on Android)</li>
+    <li>Biometric data (Face ID, Touch ID, and Android biometrics are processed entirely on-device by the operating system)</li>
+    <li>Screen recordings or keystrokes</li>
   </ul>
   <p>All payment card data is handled exclusively by <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe</a> in accordance with PCI DSS standards.</p>
 
-  <h2>4. How We Use Your Information</h2>
+  <h2>4. Device Permissions</h2>
+  <p>OSPOS requests certain device permissions only when you use the features that require them. We do not use these permissions for any other purpose.</p>
+  <ul>
+    <li><strong>Bluetooth:</strong> Required by Stripe Terminal to communicate with external card readers and receipt printers, and by our optional two-device pairing feature to discover a nearby paired iPhone.</li>
+    <li><strong>Location (Fine, while in use):</strong> Required by Stripe Terminal to discover card readers, per Stripe's terms. We do not read or transmit your location.</li>
+    <li><strong>NFC:</strong> Used by Tap to Pay on iPhone. The card read is handled entirely by Apple's ProximityReader framework and Stripe; OSPOS never sees card data.</li>
+    <li><strong>Camera:</strong> Optional. Used only if you choose to add a photo to a menu item or upload dispute evidence.</li>
+    <li><strong>Photo Library:</strong> Optional. Same purpose as Camera.</li>
+    <li><strong>Local Network / Bonjour:</strong> Used only when you enable OSPOS's optional two-device mode, so a paired iPhone can be discovered on the same local network as your iPad. No data leaves your local network for this feature.</li>
+    <li><strong>Face ID / Biometrics:</strong> Optional. Used to confirm sensitive actions like refunds and account deletion. The authentication is performed by the operating system; we only receive a yes/no result.</li>
+    <li><strong>Push Notifications:</strong> Optional. Used to alert you to Stripe disputes and important account notices.</li>
+  </ul>
+
+  <h2>5. Two-Device Mode (iPad + iPhone)</h2>
+  <p>OSPOS optionally lets you pair an iPad and an iPhone so the iPad displays the cashier interface and the iPhone acts as a customer-facing display and card reader. When you enable this feature:</p>
+  <ul>
+    <li>Both devices communicate directly with each other over Apple's MultipeerConnectivity framework (Bluetooth and local Wi-Fi). No data is sent to our servers by the pairing itself.</li>
+    <li>The connection is encrypted by Apple's framework.</li>
+    <li>Cart contents and charge amounts flow from the iPad to the iPhone in real time only for the duration of a session. Nothing is retained on either device beyond the current transaction.</li>
+    <li>Card payments continue to be processed by Stripe Terminal and Apple's ProximityReader. OSPOS never sees card data on either device.</li>
+  </ul>
+
+  <h2>6. How We Use Your Information</h2>
   <p>We use your information solely to:</p>
   <ul>
-    <li>Provide and operate the Service (account management, data sync, receipts)</li>
-    <li>Send transactional emails (account verification, password resets, receipts)</li>
+    <li>Provide and operate the Service (account management, data sync, receipts, dispute handling)</li>
+    <li>Send transactional emails (account verification, password resets, receipts, dispute alerts)</li>
     <li>Communicate service updates and important notices</li>
     <li>Improve the Service using aggregated, anonymized analytics</li>
+    <li>Detect and prevent fraud and abuse</li>
     <li>Comply with legal obligations</li>
   </ul>
   <p>We <strong>do not</strong> use your data for advertising, profiling, or marketing to third parties.</p>
 
-  <h2>5. Third-Party Services</h2>
-  <p>The Paid Tier integrates with the following third-party services, each with their own privacy policies:</p>
+  <h2>7. Third-Party Services</h2>
+  <p>OSPOS integrates with the following third-party services, each with their own privacy policies:</p>
   <ul>
-    <li><strong>Stripe</strong> — Payment processing. Stripe receives transaction and business data necessary to process payments. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's Privacy Policy</a>.</li>
-    <li><strong>Twilio</strong> — SMS receipt delivery. Twilio receives customer phone numbers only when an SMS receipt is sent. See <a href="https://www.twilio.com/legal/privacy" target="_blank" rel="noopener">Twilio's Privacy Policy</a>.</li>
-    <li><strong>SendGrid</strong> — Email receipt delivery. SendGrid receives customer email addresses only when an email receipt is sent. See <a href="https://www.twilio.com/legal/privacy" target="_blank" rel="noopener">SendGrid's Privacy Policy</a>.</li>
-    <li><strong>Sentry</strong> — Error monitoring. Sentry receives anonymized crash reports and error data to help us fix bugs. No personally identifiable information is sent. See <a href="https://sentry.io/privacy/" target="_blank" rel="noopener">Sentry's Privacy Policy</a>.</li>
+    <li><strong>Stripe</strong> &mdash; Payment processing and Tap to Pay. Stripe receives transaction and business data necessary to process payments and handle disputes. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's Privacy Policy</a>.</li>
+    <li><strong>Apple</strong> &mdash; Sign in with Apple and Tap to Pay on iPhone. See <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noopener">Apple's Privacy Policy</a>.</li>
+    <li><strong>Google</strong> &mdash; Sign in with Google on Android. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
+    <li><strong>Resend</strong> &mdash; Email receipt and account notification delivery. Resend receives customer email addresses only when an email receipt is sent, and your email address for account notifications. See <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">Resend's Privacy Policy</a>.</li>
+    <li><strong>Twilio</strong> &mdash; SMS receipt delivery (not currently enabled; pending A2P registration). When enabled, Twilio would receive customer phone numbers only when an SMS receipt is sent. See <a href="https://www.twilio.com/legal/privacy" target="_blank" rel="noopener">Twilio's Privacy Policy</a>.</li>
+    <li><strong>Sentry</strong> &mdash; Error monitoring. Sentry receives anonymized crash reports and error data to help us fix bugs. Personally identifiable information such as emails, tokens, and phone numbers is automatically scrubbed before events are transmitted. See <a href="https://sentry.io/privacy/" target="_blank" rel="noopener">Sentry's Privacy Policy</a>.</li>
+    <li><strong>Hetzner Online GmbH</strong> &mdash; Cloud hosting for our server. See <a href="https://www.hetzner.com/legal/privacy-policy" target="_blank" rel="noopener">Hetzner's Privacy Policy</a>.</li>
   </ul>
   <p>We do not share your data with any other third parties.</p>
 
-  <h2>6. Data Security</h2>
+  <h2>8. Data Security</h2>
   <p>We take reasonable measures to protect your data:</p>
   <ul>
-    <li><strong>In transit:</strong> All communication between the app and our servers uses TLS encryption (HTTPS).</li>
-    <li><strong>At rest:</strong> Server-stored data is encrypted. Local data on iOS is protected by Apple's filesystem encryption.</li>
-    <li><strong>Authentication:</strong> Account tokens are stored in your device's secure keychain (Keychain on iOS), not in plaintext storage.</li>
-    <li><strong>Payment data:</strong> We never handle card data. Stripe manages all payment security in compliance with PCI DSS.</li>
+    <li><strong>In transit:</strong> All communication between the app and our servers uses TLS 1.2 or higher (HTTPS). Two-device pairing traffic is encrypted by Apple's MultipeerConnectivity framework.</li>
+    <li><strong>At rest:</strong> Server-stored data is protected by our provider's disk encryption. Local data on iOS is protected by Apple's filesystem encryption; local data on Android is protected by the platform's app-sandbox encryption.</li>
+    <li><strong>Authentication:</strong> Session tokens are stored in your device's secure store (Keychain on iOS, EncryptedSharedPreferences on Android), never in plaintext storage.</li>
+    <li><strong>Password storage:</strong> Passwords are hashed with bcrypt (cost factor 12) on our servers. We never store, log, or transmit your password in plaintext.</li>
+    <li><strong>Payment data:</strong> We never handle card data. Stripe manages all payment security in compliance with PCI DSS Level 1.</li>
+    <li><strong>Ongoing security:</strong> Our source code is public, and we have undergone independent security audits including MASVS-mobile and OWASP-Top-10 reviews.</li>
   </ul>
 
-  <h2>7. Data Retention</h2>
+  <h2>9. Data Retention</h2>
   <ul>
     <li><strong>Free Tier:</strong> Data exists only on your device. Deleting the app deletes your data.</li>
-    <li><strong>Paid Tier:</strong> We retain your data for as long as your account is active. After account deletion, server-stored data is retained for 90 days (to allow recovery), then permanently deleted.</li>
-    <li><strong>Legal obligations:</strong> We may retain certain records longer if required by law (e.g., tax records, fraud prevention).</li>
+    <li><strong>Paid Tier:</strong> We retain your data for as long as your account is active. After account deletion (see Section 11), server-stored data is retained for 90 days to allow recovery, then permanently deleted.</li>
+    <li><strong>Legal obligations:</strong> We may retain certain records longer if required by law (e.g., tax records, fraud prevention, dispute records that Stripe requires us to preserve).</li>
+    <li><strong>Anonymized aggregates:</strong> We may retain aggregated statistics (such as total merchant counts and platform-wide transaction volume) indefinitely; these do not identify any individual user or business.</li>
   </ul>
 
-  <h2>8. Your Rights</h2>
+  <h2>10. Your Rights</h2>
   <p>You have the right to:</p>
   <ul>
-    <li><strong>Access your data:</strong> Export your transaction data via CSV at any time. Request a full data export by contacting us.</li>
-    <li><strong>Delete your data:</strong> Request deletion of your server-stored data by emailing <a href="mailto:hello@ospos.app">hello@ospos.app</a>. We process requests within 30 days.</li>
-    <li><strong>Correct your data:</strong> Update your account information at any time through the app.</li>
+    <li><strong>Access your data:</strong> Export your transaction data via CSV at any time from within the app (Settings &rarr; Export Data). Request a full data export by contacting us.</li>
+    <li><strong>Correct your data:</strong> Update your business information at any time through the app.</li>
     <li><strong>Port your data:</strong> Export your data in CSV format for use with other services.</li>
+    <li><strong>Delete your data:</strong> See Section 11 below.</li>
+    <li><strong>Withdraw consent:</strong> Sign out of your account at any time; you can also revoke Stripe access from the app.</li>
   </ul>
   <p>If you are located in the European Union, United Kingdom, or California, you may have additional rights under GDPR, UK GDPR, or CCPA respectively. Contact us to exercise these rights.</p>
 
-  <h2>9. Children's Privacy</h2>
-  <p>OSPOS is a business tool intended for users 18 years of age or older. We do not knowingly collect information from children under 13 (or under 16 in the EU). If you believe we have inadvertently collected such data, please contact us and we will promptly delete it.</p>
+  <h2>11. How to Delete Your Account</h2>
+  <p>You can delete your OSPOS account and all associated server-stored data at any time:</p>
+  <ol>
+    <li>Open OSPOS on your device.</li>
+    <li>Tap <strong>Settings</strong>.</li>
+    <li>Scroll to the <strong>Account</strong> section and tap <strong>Delete Account</strong>.</li>
+    <li>Confirm with Face ID, Touch ID, or your device passcode.</li>
+  </ol>
+  <p>Deletion is immediate on our servers except for a 90-day recovery window during which the data is retained but not accessible. After 90 days it is permanently deleted. Stripe payment records may be retained by Stripe separately according to <a href="https://stripe.com/privacy" target="_blank" rel="noopener">their policy</a>.</p>
+  <p>If you cannot access the app (for example, if you have already uninstalled it), you may request deletion by emailing <a href="mailto:phil@ospos.app">phil@ospos.app</a> from the email address associated with your account. We process such requests within 30 days.</p>
 
-  <h2>10. International Data Transfers</h2>
-  <p>Our servers are located in the United States and Germany (Hetzner). If you use the Paid Tier from outside these regions, your data will be transferred to and processed in these locations. By using the Paid Tier, you consent to this transfer. We ensure appropriate safeguards are in place for international transfers.</p>
+  <h2>12. Children's Privacy</h2>
+  <p>OSPOS is a business tool intended for merchants and business operators 18 years of age or older. We do not knowingly collect information from children under 13 (or under 16 in the EU). If you believe we have inadvertently collected such data, please contact us and we will promptly delete it.</p>
 
-  <h2>11. Changes to This Policy</h2>
+  <h2>13. International Data Transfers</h2>
+  <p>Our servers are located in Germany (Hetzner Online GmbH), and our third-party subprocessors operate in the United States and other jurisdictions. If you use the Paid Tier from outside these regions, your data will be transferred to and processed in these locations. By using the Paid Tier, you consent to this transfer. We rely on Standard Contractual Clauses (SCCs) and equivalent safeguards for transfers of personal data from the EU/UK.</p>
+
+  <h2>14. Changes to This Policy</h2>
   <p>We may update this Privacy Policy from time to time. For material changes, we will provide at least 30 days' notice via email (for Paid Tier users) or in-app notification. The most current version will always be available at <a href="/privacy">ospos.app/privacy</a>.</p>
 
-  <h2>12. Contact Us</h2>
+  <h2>15. Contact Us</h2>
   <p>If you have questions about this Privacy Policy or want to exercise your data rights, contact us at:</p>
-  <p><strong>OSPOS</strong><br>Email: <a href="mailto:hello@ospos.app">hello@ospos.app</a><br>Website: <a href="https://ospos.app">ospos.app</a></p>
+  <p><strong>OSPOS &mdash; TTTS Co.</strong><br>Email: <a href="mailto:phil@ospos.app">phil@ospos.app</a><br>Website: <a href="https://ospos.app">ospos.app</a><br>Source Code: <a href="https://github.com/pzapzap/ospos" target="_blank" rel="noopener">github.com/pzapzap/ospos</a></p>
 </div>
 
 <footer>
@@ -285,8 +339,8 @@ footer .container {
     <ul class="footer-links">
       <li><a href="/terms">Terms</a></li>
       <li><a href="/privacy">Privacy</a></li>
-      <li><a href="https://github.com/ospos" target="_blank" rel="noopener">GitHub</a></li>
-      <li><a href="mailto:hello@ospos.app">Support</a></li>
+      <li><a href="https://github.com/pzapzap/ospos" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="mailto:phil@ospos.app">Support</a></li>
     </ul>
     <div class="footer-copy">&copy; 2026 OSPOS. All rights reserved.</div>
   </div>
