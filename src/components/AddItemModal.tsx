@@ -252,21 +252,27 @@ export default function AddItemModal({
   };
 
   const handlePickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Photo Access Required', 'Please enable photo library access in Settings to add item images.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+    // Uses the system photo picker (Android Photo Picker on API 33+, iOS
+    // PHPicker). Neither requires READ_MEDIA_IMAGES nor a runtime prompt for
+    // NSPhotoLibraryUsageDescription — the OS runs the picker in a separate
+    // process and hands us only the specific image the user selected.
+    //
+    // Per Google Play's photo/video permissions policy (Android 13+), broad
+    // storage permissions are only permitted when the system picker is
+    // "technically insufficient." Attaching one photo to a menu item is
+    // exactly the case the system picker was designed for.
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch (err) {
+      Alert.alert('Could not open photo picker', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
